@@ -9,18 +9,20 @@ import SwiftUI
 
 struct CommunityView: View {
     @EnvironmentObject var userManager: UserManager
+    @EnvironmentObject var appState: AppState
     @State private var selectedTab: CommunityTab = .discussions
     @State private var showingNewPost = false
     @State private var searchText = ""
+    @FocusState private var isSearchFocused: Bool
     
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
                 // Search Bar
-                SearchBar(text: $searchText)
+                SearchBar(text: $searchText, isFocused: $isSearchFocused)
                 
                 // Tab Selector
-                TabSelector(selectedTab: $selectedTab)
+                TabSelector(selectedTab: $selectedTab, onTabChange: dismissKeyboard)
                 
                 // Content - Using conditional views instead of nested TabView
                 Group {
@@ -36,6 +38,9 @@ struct CommunityView: View {
                     }
                 }
                 .animation(.easeInOut(duration: 0.3), value: selectedTab)
+                .onTapGesture {
+                    dismissKeyboard()
+                }
             }
             .navigationTitle("Community")
             .navigationBarTitleDisplayMode(.large)
@@ -50,7 +55,20 @@ struct CommunityView: View {
             .sheet(isPresented: $showingNewPost) {
                 NewPostView()
             }
+            .onChange(of: appState.selectedTab) { _, newTab in
+                if newTab != .community {
+                    dismissKeyboard()
+                }
+            }
+            .onDisappear {
+                dismissKeyboard()
+            }
         }
+    }
+    
+    private func dismissKeyboard() {
+        isSearchFocused = false
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
 }
 
@@ -89,6 +107,7 @@ enum CommunityTab: String, CaseIterable {
 
 struct SearchBar: View {
     @Binding var text: String
+    @FocusState.Binding var isFocused: Bool
     
     var body: some View {
         HStack {
@@ -97,6 +116,20 @@ struct SearchBar: View {
             
             TextField("Search community...", text: $text)
                 .textFieldStyle(PlainTextFieldStyle())
+                .focused($isFocused)
+                .onSubmit {
+                    isFocused = false
+                }
+            
+            if !text.isEmpty {
+                Button(action: {
+                    text = ""
+                    isFocused = false
+                }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundColor(.secondary)
+                }
+            }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
@@ -109,6 +142,7 @@ struct SearchBar: View {
 
 struct TabSelector: View {
     @Binding var selectedTab: CommunityTab
+    let onTabChange: () -> Void
     
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
@@ -120,6 +154,7 @@ struct TabSelector: View {
                     ) {
                         withAnimation(.easeInOut(duration: 0.3)) {
                             selectedTab = tab
+                            onTabChange()
                         }
                     }
                 }

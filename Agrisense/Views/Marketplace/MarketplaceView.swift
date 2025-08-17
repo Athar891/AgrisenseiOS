@@ -9,14 +9,23 @@ import SwiftUI
 import PhotosUI
 import UIKit
 
+// MARK: - Keyboard Helper Extension
+extension View {
+    func hideKeyboard() {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+    }
+}
+
 struct MarketplaceView: View {
     @EnvironmentObject var userManager: UserManager
+    @EnvironmentObject var appState: AppState
     @StateObject private var cartManager: CartManager
     @State private var searchText = ""
     @State private var selectedCategory: ProductCategory = .all
     @State private var showingFilters = false
     @State private var showingAddProduct = false
     @State private var showingCart = false
+    @FocusState private var isSearchFieldFocused: Bool
     
     init() {
         // Initialize with a default user ID, will be updated when user changes
@@ -31,7 +40,8 @@ struct MarketplaceView: View {
                     searchText: $searchText,
                     selectedCategory: $selectedCategory,
                     showingFilters: $showingFilters,
-                    showingAddProduct: $showingAddProduct
+                    showingAddProduct: $showingAddProduct,
+                    isSearchFieldFocused: $isSearchFieldFocused
                 )
                 
                 // Category Pills
@@ -45,10 +55,44 @@ struct MarketplaceView: View {
                         }
                     }
                     .padding()
+                    .background(
+                        Color.clear
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                // Dismiss keyboard when tapping in scroll area
+                                isSearchFieldFocused = false
+                            }
+                    )
                 }
             }
             .navigationTitle("Marketplace")
             .navigationBarTitleDisplayMode(.large)
+            .background(
+                // Invisible background to catch taps
+                Color.clear
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        // Dismiss keyboard when tapping outside text field
+                        isSearchFieldFocused = false
+                    }
+            )
+            .onDisappear {
+                // Dismiss keyboard when leaving this view
+                isSearchFieldFocused = false
+            }
+            .onChange(of: isSearchFieldFocused) { focused in
+                if !focused {
+                    // Additional fallback to ensure keyboard is dismissed
+                    self.hideKeyboard()
+                }
+            }
+            .onChange(of: appState.selectedTab) { newTab in
+                // Dismiss keyboard when switching away from market tab
+                if newTab != .market {
+                    isSearchFieldFocused = false
+                    self.hideKeyboard()
+                }
+            }
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: { showingCart = true }) {
@@ -113,6 +157,7 @@ struct SearchFilterBar: View {
     @Binding var showingFilters: Bool
     @Binding var showingAddProduct: Bool
     @EnvironmentObject var userManager: UserManager
+    @FocusState.Binding var isSearchFieldFocused: Bool
     
     var body: some View {
         VStack(spacing: 12) {
@@ -123,6 +168,16 @@ struct SearchFilterBar: View {
                     
                     TextField("Search products...", text: $searchText)
                         .textFieldStyle(PlainTextFieldStyle())
+                        .focused($isSearchFieldFocused)
+                        .toolbar {
+                            ToolbarItemGroup(placement: .keyboard) {
+                                Spacer()
+                                Button("Done") {
+                                    isSearchFieldFocused = false
+                                }
+                                .foregroundColor(.green)
+                            }
+                        }
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)

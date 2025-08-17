@@ -7,11 +7,20 @@
 
 import SwiftUI
 
+// Extension to handle keyboard dismissal
+extension View {
+    func dismissKeyboard() {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+    }
+}
+
 struct AssistantView: View {
     @EnvironmentObject var userManager: UserManager
+    @EnvironmentObject var appState: AppState
     @State private var messageText = ""
     @State private var messages: [ChatMessage] = []
     @State private var showingQuickActions = false
+    @FocusState private var isTextFieldFocused: Bool
     
     var body: some View {
         NavigationView {
@@ -31,6 +40,11 @@ struct AssistantView: View {
                             }
                         }
                         .padding()
+                    }
+                    .onTapGesture {
+                        // Dismiss keyboard when tapping in chat area
+                        dismissKeyboard()
+                        isTextFieldFocused = false
                     }
                     .onChange(of: messages.count) { _, _ in
                         if let lastMessage = messages.last {
@@ -52,6 +66,7 @@ struct AssistantView: View {
                 // Input Area
                 MessageInputView(
                     text: $messageText,
+                    isTextFieldFocused: $isTextFieldFocused,
                     onSend: sendMessage,
                     onQuickActions: { showingQuickActions.toggle() }
                 )
@@ -66,6 +81,28 @@ struct AssistantView: View {
                     }
                 }
             }
+            .onTapGesture {
+                // Dismiss keyboard when tapping outside text field
+                dismissKeyboard()
+                isTextFieldFocused = false
+            }
+            .onDisappear {
+                // Dismiss keyboard when leaving the view
+                dismissKeyboard()
+                isTextFieldFocused = false
+            }
+            .onChange(of: appState.selectedTab) { _, newTab in
+                // Dismiss keyboard when switching away from assistant tab
+                if newTab != AppState.Tab.assistant {
+                    dismissKeyboard()
+                    isTextFieldFocused = false
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
+                // Dismiss keyboard when app goes to background
+                dismissKeyboard()
+                isTextFieldFocused = false
+            }
         }
     }
     
@@ -79,6 +116,10 @@ struct AssistantView: View {
         
         messages.append(userMessage)
         messageText = ""
+        
+        // Dismiss keyboard after sending message
+        dismissKeyboard()
+        isTextFieldFocused = false
         
         // Simulate AI response
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
@@ -341,6 +382,7 @@ struct AssistantQuickActionButton: View {
 
 struct MessageInputView: View {
     @Binding var text: String
+    @FocusState.Binding var isTextFieldFocused: Bool
     let onSend: (String) -> Void
     let onQuickActions: () -> Void
     
@@ -358,10 +400,14 @@ struct MessageInputView: View {
                 TextField("Ask me anything...", text: $text, axis: .vertical)
                     .textFieldStyle(PlainTextFieldStyle())
                     .lineLimit(1...4)
+                    .focused($isTextFieldFocused)
                 
                 Button(action: {
                     if !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                         onSend(text)
+                        // Additional keyboard dismissal for safety
+                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                        isTextFieldFocused = false
                     }
                 }) {
                     Image(systemName: "arrow.up.circle.fill")
