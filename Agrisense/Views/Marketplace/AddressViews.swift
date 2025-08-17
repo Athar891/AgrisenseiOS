@@ -230,11 +230,8 @@ struct AddEditAddressView: View {
                 Section(header: Text("Address Type")) {
                     Picker("Type", selection: $addressType) {
                         ForEach(AddressType.allCases, id: \.self) { type in
-                            HStack {
-                                Image(systemName: type.icon)
-                                Text(type.rawValue)
-                            }
-                            .tag(type)
+                            Image(systemName: type.icon)
+                                .tag(type)
                         }
                     }
                     .pickerStyle(SegmentedPickerStyle())

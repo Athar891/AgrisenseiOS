@@ -261,11 +261,14 @@ struct CheckoutView: View {
     @State private var showingOrderConfirmation = false
     @State private var showingAddressSelection = false
     @State private var selectedAddress: DeliveryAddress?
+    @State private var placedOrder: Order?
     @StateObject private var addressManager: AddressManager
+    @StateObject private var orderManager: OrderManager
     
     init(cartManager: CartManager) {
         self.cartManager = cartManager
         self._addressManager = StateObject(wrappedValue: AddressManager(userId: cartManager.currentCart.userId))
+        self._orderManager = StateObject(wrappedValue: OrderManager(userId: cartManager.currentCart.userId))
     }
     
     var body: some View {
@@ -377,15 +380,23 @@ struct CheckoutView: View {
                 dismiss()
             }
         } message: {
-            Text("Your order has been placed successfully! You will receive a confirmation shortly.")
+            if let order = placedOrder {
+                Text("Your order #\(order.orderNumber) has been placed successfully! You can track it in your profile.")
+            } else {
+                Text("Your order has been placed successfully! You will receive a confirmation shortly.")
+            }
         }
     }
     
     private func placeOrder() {
-        guard selectedAddress != nil else {
+        guard let address = selectedAddress else {
             showingAddressSelection = true
             return
         }
+        
+        // Create and save the order
+        let newOrder = orderManager.placeOrder(from: cartManager.currentCart, deliveryAddress: address)
+        placedOrder = newOrder
         showingOrderConfirmation = true
     }
 }

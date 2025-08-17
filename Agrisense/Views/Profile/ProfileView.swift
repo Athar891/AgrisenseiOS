@@ -6,6 +6,8 @@ struct ProfileView: View {
     @EnvironmentObject var appState: AppState
     @State private var isEditing = false
     @State private var showingSettings = false
+    @State private var showingOrderHistory = false
+    @StateObject private var orderManager: OrderManager
     
     // Use PhotosPickerItem for modern photo picking
     @State private var selectedPhotoItem: PhotosPickerItem?
@@ -15,6 +17,11 @@ struct ProfileView: View {
     @State private var name: String = ""
     @State private var phoneNumber: String = ""
     @State private var location: String = ""  // Changed from address to location to match User model
+    
+    init() {
+        // Initialize OrderManager with empty string - will be updated in onAppear
+        self._orderManager = StateObject(wrappedValue: OrderManager(userId: ""))
+    }
     
     var body: some View {
         NavigationView {
@@ -29,6 +36,40 @@ struct ProfileView: View {
                         selectedPhotoItem: $selectedPhotoItem,
                         isUpdatingProfile: $isUpdatingProfile
                     )
+                    
+                    // Order History Section
+                    Button(action: { showingOrderHistory = true }) {
+                        HStack {
+                            Image(systemName: "bag")
+                                .foregroundColor(.green)
+                                .font(.title2)
+                            
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Order History")
+                                    .font(.subheadline)
+                                    .fontWeight(.medium)
+                                    .foregroundColor(.primary)
+                                
+                                if let summary = orderManager.orderSummary {
+                                    Text("\(summary.totalOrders) orders • \(summary.formattedTotalSpent) spent")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                } else {
+                                    Text("View your past orders")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                            }
+                            
+                            Spacer()
+                            
+                            Image(systemName: "chevron.right")
+                                .foregroundColor(.gray)
+                        }
+                        .padding()
+                        .background(Color(.secondarySystemBackground))
+                        .cornerRadius(12)
+                    }
                     
                     // Dark Mode Toggle
                     HStack {
@@ -77,10 +118,18 @@ struct ProfileView: View {
             .sheet(isPresented: $showingSettings) {
                 Text("Settings View") // Placeholder
             }
+            .sheet(isPresented: $showingOrderHistory) {
+                OrderHistoryView(orderManager: orderManager)
+            }
             .onAppear(perform: loadInitialUserData)
             .onChange(of: selectedPhotoItem, handlePhotoSelection)
             .onChange(of: isEditing) { oldValue, newValue in
                 handleEditModeChange(from: oldValue, to: newValue)
+            }
+            .onChange(of: userManager.currentUser?.id) { newValue in
+                if let userId = newValue {
+                    orderManager.switchUser(to: userId)
+                }
             }
         }
     }
@@ -90,6 +139,8 @@ struct ProfileView: View {
             name = user.name
             phoneNumber = user.phoneNumber ?? ""
             location = user.location ?? ""
+            // Initialize OrderManager with current user ID
+            orderManager.switchUser(to: user.id)
         }
     }
     

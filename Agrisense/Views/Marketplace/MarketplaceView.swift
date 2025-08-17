@@ -485,6 +485,7 @@ struct ProductDetailView: View {
     let cartManager: CartManager
     @Environment(\.dismiss) private var dismiss
     @State private var quantity = 1
+    @State private var addedQuantity = 1 // Store the quantity that was actually added
     @State private var showingAddedToCartAlert = false
     @State private var showingStockAlert = false
     
@@ -605,10 +606,10 @@ struct ProductDetailView: View {
                     }
                 }
             }
-            .alert("Added to Cart!", isPresented: $showingAddedToCartAlert) {
+            .alert(addedQuantity == 1 ? "Item Added to Cart!" : "Items Added to Cart!", isPresented: $showingAddedToCartAlert) {
                 Button("OK") { }
             } message: {
-                Text("\(quantity) \(product.unit) of \(product.name) added to your cart.")
+                Text("\(addedQuantity) \(product.unit) of \(product.name) \(addedQuantity == 1 ? "has" : "have") been added to your cart.")
             }
             .alert("Cannot Add to Cart", isPresented: $showingStockAlert) {
                 Button("OK") { }
@@ -624,6 +625,7 @@ struct ProductDetailView: View {
     
     private func addToCart() {
         if cartManager.addToCart(product: product, quantity: quantity) {
+            addedQuantity = quantity // Store the quantity before resetting
             showingAddedToCartAlert = true
             // Reset quantity to 1 after successful add
             quantity = 1
