@@ -1,0 +1,123 @@
+import SwiftUI
+import FirebaseCore
+import GoogleSignIn
+
+class AppDelegate: NSObject, UIApplicationDelegate {
+    func application(_ application: UIApplication,
+                    didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
+        FirebaseApp.configure()
+        
+        // Configure Google Sign-In with client ID
+        guard let path = Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist"),
+              let plist = NSDictionary(contentsOfFile: path),
+              let clientId = plist["CLIENT_ID"] as? String else {
+            print("❌ Failed to get Google Sign-In client ID from GoogleService-Info.plist")
+            return true
+        }
+        
+        GIDSignIn.sharedInstance.configuration = GIDConfiguration(clientID: clientId)
+        print("✅ Google Sign-In configured with client ID: \(clientId)")
+        
+        // Initialize Google Sign-In
+        GIDSignIn.sharedInstance.restorePreviousSignIn { user, error in
+            if let error = error {
+                print("Error restoring previous sign-in: \(error.localizedDescription)")
+            } else if let user = user {
+                print("✅ Previous Google Sign-In restored for: \(user.profile?.email ?? "unknown")")
+            }
+        }
+        return true
+    }
+    
+    // Handle URL for Google Sign-In
+    func application(_ app: UIApplication, 
+                    open url: URL, 
+                    options: [UIApplication.OpenURLOptionsKey : Any] = [:]) -> Bool {
+        return GIDSignIn.sharedInstance.handle(url)
+    }
+}
+
+@main
+struct AgrisenseApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
+    @StateObject private var appState = AppState()
+    
+    // Initialize DI container with live implementations
+    
+    private var colorScheme: ColorScheme? {
+        appState.isDarkMode ? .dark : .light
+    }
+    
+    var body: some Scene {
+        WindowGroup {
+            TabView(selection: $appState.selectedTab) {
+                    .tabItem {
+                        Label("Home", systemImage: appState.tabIcon(for: .home))
+                    }
+                    .tag(AppState.Tab.home)
+                
+                MarketplaceView()
+                    .tabItem {
+                        Label("Market", systemImage: appState.tabIcon(for: .market))
+                    }
+                    .tag(AppState.Tab.market)
+                
+                CommunityView
+                    .tabItem {
+                        Label("Community", systemImage: appState.tabIcon(for: .community))
+                    }
+                    .tag(AppState.Tab.community)
+                
+                AssistantView(state: appState, di: di)
+                    .tabItem {
+                        Label("Assistant", systemImage: appState.tabIcon(for: .assistant))
+                    }
+                    .tag(AppState.Tab.assistant)
+                
+                ProfileView(state: appState, di: di)
+                    .tabItem {
+                        Label("Profile", systemImage: appState.tabIcon(for: .profile))
+                    }
+                    .tag(AppState.Tab.profile)
+            }
+            .tint(.green) // Agriculture theme color
+            .environment(\.isDarkMode, appState.isDarkMode)
+            .preferredColorScheme(colorScheme)
+            .onChange(of: appState.isDarkMode) { newValue in
+                print("App color scheme changed to: \(newValue ? "dark" : "light")")
+            }
+            .onAppear {
+                configureTabBarAppearance()
+                print("App appeared with dark mode: \(appState.isDarkMode)")
+            }
+            .onOpenURL { url in
+                print("🔗 App received URL: \(url)")
+                let handled = GIDSignIn.sharedInstance.handle(url)
+                print("🔗 Google Sign-In handled URL: \(handled)")
+            }
+        }
+    }
+    
+    private func configureTabBarAppearance() {
+        // Configure tab bar appearance for consistent dark mode support
+        let tabBarAppearance = UITabBarAppearance()
+        tabBarAppearance.configureWithOpaqueBackground()
+        tabBarAppearance.backgroundColor = UIColor.systemBackground
+        
+        // Configure selected and unselected item appearance
+        tabBarAppearance.stackedLayoutAppearance.selected.iconColor = UIColor.systemGreen
+        tabBarAppearance.stackedLayoutAppearance.selected.titleTextAttributes = [.foregroundColor: UIColor.systemGreen]
+        
+        tabBarAppearance.stackedLayoutAppearance.normal.iconColor = UIColor.systemGray
+        tabBarAppearance.stackedLayoutAppearance.normal.titleTextAttributes = [.foregroundColor: UIColor.systemGray]
+        
+        // Apply appearance to all tab bar states
+        UITabBar.appearance().standardAppearance = tabBarAppearance
+        UITabBar.appearance().scrollEdgeAppearance = tabBarAppearance
+        
+        // Ensure consistent background across scroll states
+        if #available(iOS 15.0, *) {
+            UITabBar.appearance().scrollEdgeAppearance = tabBarAppearance
+        }
+    }
+}
