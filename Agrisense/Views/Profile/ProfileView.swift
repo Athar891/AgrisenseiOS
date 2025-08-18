@@ -12,6 +12,7 @@ struct ProfileView: View {
     // Use PhotosPickerItem for modern photo picking
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var isUpdatingProfile = false
+    @State private var showSuccessMessage = false
     
     // Local state for text fields to enable editing
     @State private var name: String = ""
@@ -132,6 +133,21 @@ struct ProfileView: View {
                 }
             }
         }
+        .overlay(
+            // Success message overlay
+            VStack {
+                if showSuccessMessage {
+                    Text("Profile image updated successfully!")
+                        .padding()
+                        .background(Color.green)
+                        .foregroundColor(.white)
+                        .cornerRadius(8)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                }
+                Spacer()
+            }
+            .animation(.easeInOut(duration: 0.3), value: showSuccessMessage)
+        )
     }
     
     private func loadInitialUserData() {
@@ -145,12 +161,14 @@ struct ProfileView: View {
     }
     
     private func handleEditModeChange(from wasEditing: Bool, to isNowEditing: Bool) {
-        if wasEditing && !isNowEditing {
+        // Clear any previous errors when entering edit mode
+        if !wasEditing && isNowEditing {
+            userManager.profileUpdateError = nil
+            loadInitialUserData()
+        } else if wasEditing && !isNowEditing {
             Task {
                 await saveProfileChanges()
             }
-        } else if !wasEditing && isNowEditing {
-            loadInitialUserData()
         }
     }
     
@@ -174,7 +192,11 @@ struct ProfileView: View {
         
         Task {
             isUpdatingProfile = true
-            defer { isUpdatingProfile = false }
+            defer { 
+                isUpdatingProfile = false
+                // Reset the selected photo item to allow selecting the same image again
+                selectedPhotoItem = nil
+            }
             
             do {
                 guard let data = try await item.loadTransferable(type: Data.self), let uiImage = UIImage(data: data) else {
@@ -185,8 +207,15 @@ struct ProfileView: View {
                 // Upload the profile image - UserManager will update the current user
                 _ = try await userManager.uploadProfileImage(uiImage)
                 
+                // Show success message briefly
+                showSuccessMessage = true
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                    showSuccessMessage = false
+                }
+                
             } catch {
                 print("Error processing new profile image: \(error.localizedDescription)")
+                // The error will be available in userManager.profileUpdateError for UI display
             }
         }
     }
@@ -200,6 +229,9 @@ struct ProfileHeader: View {
     @Binding var location: String
     @Binding var selectedPhotoItem: PhotosPickerItem?
     @Binding var isUpdatingProfile: Bool
+    @EnvironmentObject var userManager: UserManager
+    @State private var showingErrorAlert = false
+    @State private var imageRefreshId = UUID()
 
     var body: some View {
         VStack(spacing: 12) {
@@ -207,11 +239,14 @@ struct ProfileHeader: View {
                 PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
                     Group {
                         if let profileImage = user?.profileImage, let url = URL(string: profileImage) {
-                            AsyncImage(url: url) { image in
+                            // Add cache busting parameter to force refresh
+                            let cacheBustingUrl = URL(string: "\(profileImage)?v=\(imageRefreshId.uuidString)")
+                            AsyncImage(url: cacheBustingUrl ?? url) { image in
                                 image.resizable().aspectRatio(contentMode: .fill)
                             } placeholder: {
                                 ProgressView()
                             }
+                            .id(imageRefreshId) // Force refresh when imageRefreshId changes
                         } else {
                             Image(systemName: "person.circle.fill")
                                 .resizable()
@@ -262,6 +297,24 @@ struct ProfileHeader: View {
                     }
                     .padding(.top, 8)
                 }
+            }
+        }
+        .alert("Upload Error", isPresented: $showingErrorAlert) {
+            Button("OK") {
+                userManager.profileUpdateError = nil
+            }
+        } message: {
+            Text(userManager.profileUpdateError ?? "An unknown error occurred")
+        }
+        .onChange(of: userManager.profileUpdateError) { oldValue, newValue in
+            if newValue != nil {
+                showingErrorAlert = true
+            }
+        }
+        .onChange(of: user?.profileImage) { oldValue, newValue in
+            // Force image refresh when profile image URL changes
+            if oldValue != newValue && newValue != nil {
+                imageRefreshId = UUID()
             }
         }
     }

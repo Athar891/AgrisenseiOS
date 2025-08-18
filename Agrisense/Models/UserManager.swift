@@ -15,6 +15,7 @@ class UserManager: ObservableObject {
     @Published var currentUser: User?
     @Published var isAuthenticated = false
     @Published var isUpdatingProfile = false
+    @Published var profileUpdateError: String?
 
     private var authStateHandle: AuthStateDidChangeListenerHandle?
     let db = Firestore.firestore() // Made public for CropManager access
@@ -67,6 +68,10 @@ class UserManager: ObservableObject {
 
     // MARK: - Profile Update Functions
     
+    func clearProfileUpdateError() {
+        profileUpdateError = nil
+    }
+    
     func updateUserProfile(name: String, phoneNumber: String, location: String) async throws {
         guard let user = currentUser else {
             throw NSError(domain: "UserManager", code: 0, userInfo: [NSLocalizedDescriptionKey: "No current user"])
@@ -115,22 +120,40 @@ class UserManager: ObservableObject {
     }
     
     func uploadProfileImage(_ image: UIImage) async throws -> String {
+        // Clear any previous errors
+        profileUpdateError = nil
+        
         guard let imageData = flattenImageForUpload(image) else {
-            throw NSError(domain: "ImageProcessingError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Failed to process image for upload."])
+            let errorMessage = "Failed to process image for upload. Please try a different image."
+            profileUpdateError = errorMessage
+            throw NSError(domain: "ImageProcessingError", code: 0, userInfo: [NSLocalizedDescriptionKey: errorMessage])
         }
         
         guard let user = currentUser else {
-            throw NSError(domain: "UserManager", code: 0, userInfo: [NSLocalizedDescriptionKey: "No current user"])
+            let errorMessage = "No current user found. Please sign in again."
+            profileUpdateError = errorMessage
+            throw NSError(domain: "UserManager", code: 0, userInfo: [NSLocalizedDescriptionKey: errorMessage])
         }
         
-        // Check if image data is valid
+        // Check if image data is valid and within size limits
         guard imageData.count > 0 else {
-            throw NSError(domain: "UserManager", code: 0, userInfo: [NSLocalizedDescriptionKey: "Image data is empty"])
+            let errorMessage = "Image data is empty. Please try a different image."
+            profileUpdateError = errorMessage
+            throw NSError(domain: "UserManager", code: 0, userInfo: [NSLocalizedDescriptionKey: errorMessage])
+        }
+        
+        // Check if compressed image is still too large (shouldn't happen, but just in case)
+        let sizeInKB = imageData.count / 1024
+        guard sizeInKB <= 500 else {
+            let errorMessage = "Image is too large (\(sizeInKB)KB). Please try a smaller image."
+            profileUpdateError = errorMessage
+            throw NSError(domain: "UserManager", code: 0, userInfo: [NSLocalizedDescriptionKey: errorMessage])
         }
         
         do {
-            // Upload image to Cloudinary
-            let imageUrl = try await uploadToCloudinary(imageData: imageData, fileName: "profile_\(user.id)")
+            // Upload image to Cloudinary with timestamp to ensure unique URL
+            let timestamp = Int(Date().timeIntervalSince1970)
+            let imageUrl = try await uploadToCloudinary(imageData: imageData, fileName: "profile_\(user.id)_\(timestamp)")
             
             // Update Firestore with new profile image URL
             try await db.collection("users").document(user.id).updateData([
@@ -150,23 +173,86 @@ class UserManager: ObservableObject {
             
             self.currentUser = updatedUser
             
+            // Clear URLSession cache to ensure AsyncImage loads the new image
+            URLCache.shared.removeAllCachedResponses()
+            
             return imageUrl
             
         } catch {
+            let errorMessage = "Failed to upload image: \(error.localizedDescription)"
+            profileUpdateError = errorMessage
             print("Error uploading profile image: \(error.localizedDescription)")
-            throw NSError(domain: "UserManager", code: 0, userInfo: [NSLocalizedDescriptionKey: "Failed to upload image: \(error.localizedDescription)"])
+            throw NSError(domain: "UserManager", code: 0, userInfo: [NSLocalizedDescriptionKey: errorMessage])
         }
     }
     
     private func flattenImageForUpload(_ image: UIImage) -> Data? {
-        // Redraw the image to flatten it and convert to a standard sRGB color space
-        let renderer = UIGraphicsImageRenderer(size: image.size)
-        let flattenedImage = renderer.image { _ in
-            image.draw(in: CGRect(origin: .zero, size: image.size))
+        // Compress the image to under 500KB
+        guard let compressedImage = compressImage(image, maxSizeKB: 500) else {
+            return nil
         }
         
-        // Now convert the flattened image to JPEG data
-        return flattenedImage.jpegData(compressionQuality: 0.8)
+        // Redraw the image to flatten it and convert to a standard sRGB color space
+        let renderer = UIGraphicsImageRenderer(size: compressedImage.size)
+        let flattenedImage = renderer.image { _ in
+            compressedImage.draw(in: CGRect(origin: .zero, size: compressedImage.size))
+        }
+        
+        // Convert the flattened image to JPEG data with high quality since it's already compressed
+        return flattenedImage.jpegData(compressionQuality: 0.9)
+    }
+    
+    private func compressImage(_ image: UIImage, maxSizeKB: Int) -> UIImage? {
+        let maxSizeBytes = maxSizeKB * 1024
+        var compressionQuality: CGFloat = 0.8
+        let minCompressionQuality: CGFloat = 0.1
+        let compressionStep: CGFloat = 0.1
+        
+        // First, resize the image if it's too large (profile images should be reasonable size)
+        let resizedImage = resizeImage(image, maxDimension: 800)
+        
+        guard var imageData = resizedImage.jpegData(compressionQuality: compressionQuality) else {
+            return nil
+        }
+        
+        // Reduce compression quality until we reach the target size
+        while imageData.count > maxSizeBytes && compressionQuality > minCompressionQuality {
+            compressionQuality -= compressionStep
+            guard let newImageData = resizedImage.jpegData(compressionQuality: compressionQuality) else {
+                break
+            }
+            imageData = newImageData
+        }
+        
+        return UIImage(data: imageData)
+    }
+    
+    private func resizeImage(_ image: UIImage, maxDimension: CGFloat) -> UIImage {
+        let size = image.size
+        let aspectRatio = size.width / size.height
+        
+        var newSize: CGSize
+        if size.width > size.height {
+            // Landscape
+            newSize = CGSize(width: min(maxDimension, size.width), 
+                           height: min(maxDimension, size.width) / aspectRatio)
+        } else {
+            // Portrait or square
+            newSize = CGSize(width: min(maxDimension, size.height) * aspectRatio, 
+                           height: min(maxDimension, size.height))
+        }
+        
+        // Don't upscale
+        if newSize.width >= size.width && newSize.height >= size.height {
+            return image
+        }
+        
+        UIGraphicsBeginImageContextWithOptions(newSize, false, 0.0)
+        image.draw(in: CGRect(origin: .zero, size: newSize))
+        let resizedImage = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+        
+        return resizedImage ?? image
     }
 
     private func uploadToCloudinary(imageData: Data, fileName: String) async throws -> String {
