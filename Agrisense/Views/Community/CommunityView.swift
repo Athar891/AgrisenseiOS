@@ -14,6 +14,7 @@ struct CommunityView: View {
     @State private var showingNewPost = false
     @State private var searchText = ""
     @FocusState private var isSearchFocused: Bool
+    @State private var refreshTrigger = UUID()
     
     var body: some View {
         NavigationView {
@@ -28,7 +29,7 @@ struct CommunityView: View {
                 Group {
                     switch selectedTab {
                     case .discussions:
-                        DiscussionsView(searchText: searchText)
+                        DiscussionsView(searchText: searchText, refreshTrigger: refreshTrigger)
                     case .events:
                         EventsView()
                     case .experts:
@@ -53,7 +54,9 @@ struct CommunityView: View {
                 }
             }
             .sheet(isPresented: $showingNewPost) {
-                NewPostView()
+                NewPostView(onPostCreated: {
+                    refreshTrigger = UUID()
+                })
             }
             .onChange(of: appState.selectedTab) { _, newTab in
                 if newTab != .community {

@@ -16,9 +16,9 @@ class CropManager: ObservableObject {
     
     private let db = Firestore.firestore()
     
-    // Cloudinary Configuration
-    private let cloudinaryCloudName = "derhnhko0"
-    private let cloudinaryUploadPreset = "crop_images"
+    // Cloudinary Configuration (centralized in Secrets)
+    private let cloudinaryCloudName = Secrets.cloudinaryCloudName
+    private let cloudinaryUploadPreset = Secrets.cloudinaryUploadPreset
     
     func addCrop(_ crop: Crop, for userId: String) async throws {
         isLoading = true

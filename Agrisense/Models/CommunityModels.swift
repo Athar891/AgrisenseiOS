@@ -14,6 +14,7 @@ enum DiscussionCategory: String, CaseIterable {
     case market = "market"
     case weather = "weather"
     case equipment = "equipment"
+    case other = "other"
     
     var displayName: String {
         switch self {
@@ -29,12 +30,15 @@ enum DiscussionCategory: String, CaseIterable {
             return "Weather"
         case .equipment:
             return "Equipment"
+        case .other:
+            return "Other"
         }
     }
 }
 
 struct Discussion: Identifiable {
-    let id = UUID()
+    var id = UUID()
+    let firestoreId: String
     let title: String
     let content: String
     let author: String
@@ -44,19 +48,58 @@ struct Discussion: Identifiable {
     let likes: Int
     let isLiked: Bool
     let authorAvatar: String?
+    let userId: String
+    let imageUrl: String?
+    let likedByUsers: [String]
+    
+    init(id: UUID = UUID(), firestoreId: String = "", title: String, content: String, author: String, category: DiscussionCategory, timestamp: Date, replies: Int = 0, likes: Int = 0, isLiked: Bool = false, authorAvatar: String? = nil, userId: String = "", imageUrl: String? = nil, likedByUsers: [String] = []) {
+        self.id = id
+        self.firestoreId = firestoreId
+        self.title = title
+        self.content = content
+        self.author = author
+        self.category = category
+        self.timestamp = timestamp
+        self.replies = replies
+        self.likes = likes
+        self.isLiked = isLiked
+        self.authorAvatar = authorAvatar
+        self.userId = userId
+        self.imageUrl = imageUrl
+        self.likedByUsers = likedByUsers
+    }
 }
 
 struct Event: Identifiable {
-    let id = UUID()
+    var id = UUID()
+    let firestoreId: String
     let title: String
     let description: String
     let date: Date
     let location: String
     let organizer: String
-    let attendees: Int
-    let maxAttendees: Int
-    let isAttending: Bool
+    let organizerId: String
+    var attendees: Int
+    var maxAttendees: Int
+    var attendeesList: [String]
+    var isAttending: Bool
     let type: EventType
+
+    init(firestoreId: String = "", id: UUID = UUID(), title: String, description: String, date: Date, location: String, organizer: String, organizerId: String = "", attendees: Int = 0, maxAttendees: Int = 0, attendeesList: [String] = [], isAttending: Bool = false, type: EventType) {
+        self.id = id
+        self.firestoreId = firestoreId
+        self.title = title
+        self.description = description
+        self.date = date
+        self.location = location
+        self.organizer = organizer
+        self.organizerId = organizerId
+        self.attendees = attendees
+        self.maxAttendees = maxAttendees
+        self.attendeesList = attendeesList
+        self.isAttending = isAttending
+        self.type = type
+    }
 }
 
 enum EventType: String, CaseIterable {
@@ -111,6 +154,14 @@ struct CommunityGroup: Identifiable {
     let isMember: Bool
     let category: String
     let avatar: String?
+}
+
+struct Comment: Identifiable {
+    let id: String
+    let author: String
+    let userId: String
+    let content: String
+    let timestamp: Date
 }
 
 // Sample Data

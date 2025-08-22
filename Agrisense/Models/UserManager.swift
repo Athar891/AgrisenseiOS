@@ -20,9 +20,9 @@ class UserManager: ObservableObject {
     private var authStateHandle: AuthStateDidChangeListenerHandle?
     let db = Firestore.firestore() // Made public for CropManager access
     
-    // Cloudinary Configuration
-    private let cloudinaryCloudName = "derhnhko0" // Replace with your actual cloud name
-    private let cloudinaryUploadPreset = "profile_images" // The preset we created
+    // Cloudinary Configuration (centralized in Secrets)
+    private let cloudinaryCloudName = Secrets.cloudinaryCloudName
+    private let cloudinaryUploadPreset = Secrets.cloudinaryUploadPreset
 
     init() {
         listenToAuthState()
