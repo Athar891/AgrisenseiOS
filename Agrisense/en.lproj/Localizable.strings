@@ -4,6 +4,7 @@
 "language_settings" = "Language Settings";
 "language_selected_preview" = "Language selected: %@";
 "select_language" = "Select language";
+"select_indian_language" = "Choose Indian Language";
 "cancel" = "Cancel";
 "upload_photo" = "Upload Photo";
 "uploading" = "Uploading...";

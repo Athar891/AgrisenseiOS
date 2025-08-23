@@ -107,7 +107,7 @@ struct ProfileView: View {
                                     .font(.subheadline)
                                     .fontWeight(.medium)
 
-                                Text(LocalizationManager.shared.localizedString(for: "select_language"))
+                                Text(LocalizationManager.shared.localizedString(for: "select_indian_language"))
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                             }
@@ -313,7 +313,8 @@ struct LanguageSelectionSheet: View {
     var body: some View {
         NavigationView {
             List {
-                ForEach(LocalizationManager.shared.availableLanguages(), id: \.code) { item in
+                // Filter out English from the selectable languages, focusing on Indian languages
+                ForEach(LocalizationManager.shared.availableLanguages().filter { $0.code != "en" }, id: \.code) { item in
                     Button(action: {
                         selectedCode = item.code
                         LocalizationManager.shared.setLanguage(code: item.code)
@@ -332,22 +333,22 @@ struct LanguageSelectionSheet: View {
                     }
                 }
 
-                // Reset to system language
+                // Reset to system language (English will be system default)
                 Button(action: {
                     selectedCode = nil
                     LocalizationManager.shared.setLanguage(code: nil)
                 }) {
                     HStack {
-                        Text("System Default")
+                        Text("System Default (English)")
                         Spacer()
-                        if selectedCode == nil {
+                        if selectedCode == nil || selectedCode == "en" {
                             Image(systemName: "checkmark")
                                 .foregroundColor(.accentColor)
                         }
                     }
                 }
             }
-            .navigationTitle(LocalizationManager.shared.localizedString(for: "select_language"))
+            .navigationTitle(LocalizationManager.shared.localizedString(for: "select_indian_language"))
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button(LocalizationManager.shared.localizedString(for: "cancel")) {

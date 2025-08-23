@@ -4,6 +4,7 @@
 "language_settings" = "भाषा सेटिंग्स";
 "language_selected_preview" = "भाषा चुनी गई: %@";
 "select_language" = "भाषा चुनें";
+"select_indian_language" = "भारतीय भाषा चुनें";
 "cancel" = "रद्द करें";
 "upload_photo" = "फ़ोटो अपलोड करें";
 "uploading" = "अपलोड हो रहा है...";

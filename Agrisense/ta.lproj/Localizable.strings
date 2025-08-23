@@ -4,6 +4,7 @@
 "language_settings" = "மொழி அமைப்புகள்";
 "language_selected_preview" = "மொழி தேர்ந்தெடுக்கப்பட்டது: %@";
 "select_language" = "மொழியை தேர்வு செய்க";
+"select_indian_language" = "இந்திய மொழியை தேர்வு செய்க";
 "cancel" = "ரத்து";
 "upload_photo" = "புகைப்படத்தை பதிவேற்றவும்";
 "uploading" = "பதிவேற்றப்படுகிறது...";

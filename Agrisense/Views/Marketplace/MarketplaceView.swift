@@ -166,13 +166,13 @@ struct SearchFilterBar: View {
                     Image(systemName: "magnifyingglass")
                         .foregroundColor(.secondary)
                     
-                                TextField(LocalizationManager.shared.localizedString(for: "search_products_placeholder"), text: $searchText)
+                                TextField(LocalizationManager.shared.localizedString(for: "Search products..."), text: $searchText)
                         .textFieldStyle(PlainTextFieldStyle())
                         .focused($isSearchFieldFocused)
                         .toolbar {
                             ToolbarItemGroup(placement: .keyboard) {
                                 Spacer()
-                                Button(LocalizationManager.shared.localizedString(for: "done")) {
+                                Button("Done") {
                                     isSearchFieldFocused = false
                                 }
                                 .foregroundColor(.green)
@@ -613,7 +613,7 @@ struct ProductDetailView: View {
                         
                         // Quantity Selector
                         HStack {
-                            Text(LocalizationManager.shared.localizedString(for: "quantity_label"))
+                            Text("Quantity:")
                                 .font(.subheadline)
                                 .fontWeight(.medium)
                             
@@ -638,7 +638,7 @@ struct ProductDetailView: View {
                         
                         // Add to Cart Button
                         Button(action: addToCart) {
-                                Text(String(format: LocalizationManager.shared.localizedString(for: "add_to_cart_with_price"), String(format: "%.2f", product.price * Double(quantity))))
+                            Text("Add to Cart - ₹\(String(format: "%.2f", product.price * Double(quantity)))")
                                 .font(.headline)
                                 .fontWeight(.semibold)
                                 .foregroundColor(.white)

@@ -35,17 +35,17 @@ struct AddressSelectionView: View {
                     EmptyAddressView()
                 }
             }
-            .navigationTitle(LocalizationManager.shared.localizedString(for: "select_address_title"))
+            .navigationTitle("Select Address")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button(LocalizationManager.shared.localizedString(for: "cancel")) {
+                    Button("Cancel") {
                         dismiss()
                     }
                 }
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(LocalizationManager.shared.localizedString(for: "add_new")) {
+                    Button("Add New") {
                         showingAddAddress = true
                     }
                 }
@@ -85,7 +85,7 @@ struct AddressSelectionRow: View {
                             .fontWeight(.semibold)
                         
                         if address.isDefault {
-                            Text(LocalizationManager.shared.localizedString(for: "default_label"))
+                            Text("DEFAULT")
                                 .font(.caption)
                                 .fontWeight(.bold)
                                 .foregroundColor(.white)
@@ -243,13 +243,13 @@ struct AddEditAddressView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button(LocalizationManager.shared.localizedString(for: "cancel")) {
+                    Button("Cancel") {
                         dismiss()
                     }
                 }
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(LocalizationManager.shared.localizedString(for: "save")) {
+                    Button("Save") {
                         saveAddress()
                     }
                     .fontWeight(.semibold)
