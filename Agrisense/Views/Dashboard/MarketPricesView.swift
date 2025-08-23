@@ -6,16 +6,16 @@ struct MarketPricesView: View {
     var body: some View {
         NavigationView {
             List {
-                Section(header: Text("Crop Prices")) {
-                    Text("Wheat: ₹2,000 / quintal")
-                    Text("Corn: ₹1,800 / quintal")
-                    Text("Soybeans: ₹4,500 / quintal")
+                Section(header: Text(LocalizationManager.shared.localizedString(for: "crop_prices"))) {
+                    Text(LocalizationManager.shared.localizedString(for: "wheat_price"))
+                    Text(LocalizationManager.shared.localizedString(for: "corn_price"))
+                    Text(LocalizationManager.shared.localizedString(for: "soybeans_price"))
                 }
             }
-            .navigationTitle("Market Prices")
+            .navigationTitle(LocalizationManager.shared.localizedString(for: "market_prices"))
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Done") {
+                    Button(LocalizationManager.shared.localizedString(for: "done")) {
                         dismiss()
                     }
                 }

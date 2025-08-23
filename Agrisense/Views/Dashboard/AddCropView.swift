@@ -1,6 +1,7 @@
 import SwiftUI
 import PhotosUI
 
+@MainActor
 struct AddCropView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var userManager: UserManager
@@ -23,15 +24,15 @@ struct AddCropView: View {
     var body: some View {
         NavigationView {
             Form {
-                Section(header: Text("Basic Information")) {
-                    TextField("Crop Name", text: $cropName)
-                    TextField("Field/Location", text: $fieldLocation)
-                    DatePicker("Planting Date", selection: $plantingDate, displayedComponents: .date)
-                    DatePicker("Expected Harvest Date", selection: $harvestDate, displayedComponents: .date)
+                Section(header: Text(LocalizationManager.shared.localizedString(for: "basic_information"))) {
+                    TextField(LocalizationManager.shared.localizedString(for: "crop_name"), text: $cropName)
+                    TextField(LocalizationManager.shared.localizedString(for: "field_location"), text: $fieldLocation)
+                    DatePicker(LocalizationManager.shared.localizedString(for: "planting_date"), selection: $plantingDate, displayedComponents: .date)
+                    DatePicker(LocalizationManager.shared.localizedString(for: "expected_harvest"), selection: $harvestDate, displayedComponents: .date)
                 }
-                
-                Section(header: Text("Current Status")) {
-                    Picker("Growth Stage", selection: $currentGrowthStage) {
+
+                Section(header: Text(LocalizationManager.shared.localizedString(for: "current_status"))) {
+                    Picker(LocalizationManager.shared.localizedString(for: "growth_stage"), selection: $currentGrowthStage) {
                         ForEach(GrowthStage.allCases, id: \.self) { stage in
                             HStack {
                                 Image(systemName: stage.icon)
@@ -49,7 +50,8 @@ struct AddCropView: View {
                     }
                 }
                 
-                Section(header: Text("Crop Image (Optional)")) {
+                // Crop Image (Optional)
+                Section(header: Text(LocalizationManager.shared.localizedString(for: "crop_image_optional"))) {
                     PhotosPicker(
                         selection: $selectedImage,
                         matching: .images,
@@ -65,20 +67,20 @@ struct AddCropView: View {
                         } else {
                             HStack {
                                 Image(systemName: "photo")
-                                Text("Select Crop Image")
+                                Text(LocalizationManager.shared.localizedString(for: "select_crop_image"))
                             }
                             .foregroundColor(.blue)
                         }
                     }
                 }
                 
-                Section(header: Text("Notes (Optional)")) {
-                    TextField("Additional notes about this crop...", text: $notes, axis: .vertical)
+                Section(header: Text(LocalizationManager.shared.localizedString(for: "notes_optional"))) {
+                    TextField(LocalizationManager.shared.localizedString(for: "additional_notes_placeholder"), text: $notes, axis: .vertical)
                         .lineLimit(3...6)
                 }
 
                 Section {
-                    Button("Add Crop") {
+                    Button(LocalizationManager.shared.localizedString(for: "add_crop")) {
                         Task {
                             await addCrop()
                         }
@@ -86,11 +88,11 @@ struct AddCropView: View {
                     .disabled(cropName.isEmpty || fieldLocation.isEmpty || isLoading)
                 }
             }
-            .navigationTitle("Add New Crop")
+            .navigationTitle(LocalizationManager.shared.localizedString(for: "add_new_crop"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
+                    Button(LocalizationManager.shared.localizedString(for: "cancel")) {
                         dismiss()
                     }
                 }
@@ -167,9 +169,9 @@ struct AddCropView: View {
                 }
             }
             
-            try await userManager.db.collection("users").document(userId).updateData([
+            try await userManager.db.collection("users").document(userId).setData([
                 "crops": cropsData
-            ])
+            ], merge: true)
             
             // Update local user
             userManager.currentUser = updatedUser

@@ -39,11 +39,11 @@ struct AuthenticationView: View {
                             .shadow(color: .green.opacity(0.3), radius: 10, x: 0, y: 5)
                         
                         VStack(spacing: 12) {
-                            Text("AgriSense")
+                            Text(LocalizationManager.shared.localizedString(for: "app_name"))
                                 .font(.system(size: 36, weight: .bold, design: .rounded))
                                 .foregroundColor(.primary)
                             
-                            Text("Empowering Agriculture Through Technology")
+                            Text(LocalizationManager.shared.localizedString(for: "app_tagline"))
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
                                 .multilineTextAlignment(.center)
@@ -60,7 +60,7 @@ struct AuthenticationView: View {
                         Button(action: {
                             showingRoleSelection = true
                         }) {
-                            Text("Get Started")
+                            Text(LocalizationManager.shared.localizedString(for: "get_started"))
                                 .font(.headline)
                                 .fontWeight(.semibold)
                                 .foregroundColor(.white)
@@ -80,7 +80,7 @@ struct AuthenticationView: View {
                         Button(action: {
                             showingOnboarding = true
                         }) {
-                            Text("Learn More")
+                            Text(LocalizationManager.shared.localizedString(for: "learn_more"))
                                 .font(.headline)
                                 .fontWeight(.medium)
                                 .foregroundColor(.green)

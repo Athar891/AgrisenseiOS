@@ -264,10 +264,10 @@ struct DiscussionCard: View {
         // Add or remove the user from the likedByUsers array
         if isLiked {
             // User has already liked, so unlike
-            postRef.updateData([
+            postRef.setData([
                 "likes": FieldValue.increment(Int64(-1)),
                 "likedByUsers": FieldValue.arrayRemove([currentUserId])
-            ]) { error in
+            ], merge: true) { error in
                 if let error = error {
                     print("❌ Error updating likes: \(error)")
                 }
@@ -276,10 +276,10 @@ struct DiscussionCard: View {
             likesCount -= 1
         } else {
             // User hasn't liked, so like
-            postRef.updateData([
+            postRef.setData([
                 "likes": FieldValue.increment(Int64(1)),
                 "likedByUsers": FieldValue.arrayUnion([currentUserId])
-            ]) { error in
+            ], merge: true) { error in
                 if let error = error {
                     print("❌ Error updating likes: \(error)")
                 }
@@ -310,9 +310,9 @@ struct DiscussionCard: View {
                 print("❌ Error adding comment: \(error)")
             } else {
                 // Update replies count in main document
-                postRef.updateData([
+                postRef.setData([
                     "replies": FieldValue.increment(Int64(1))
-                ])
+                ], merge: true)
                 repliesCount += 1
             }
         }

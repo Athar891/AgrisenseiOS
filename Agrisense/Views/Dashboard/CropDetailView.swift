@@ -86,7 +86,7 @@ struct CropImageHeader: View {
                             Image(systemName: "leaf.fill")
                                 .font(.system(size: 40))
                                 .foregroundColor(.green)
-                            Text("No Image")
+                            Text(LocalizationManager.shared.localizedString(for: "no_image"))
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
@@ -102,20 +102,20 @@ struct CropBasicInfoSection: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Basic Information")
+            Text(LocalizationManager.shared.localizedString(for: "basic_information"))
                 .font(.headline)
                 .fontWeight(.semibold)
             
             VStack(spacing: 12) {
-                InfoRow(title: "Field Location", value: crop.fieldLocation, icon: "location.fill")
-                InfoRow(title: "Planted", value: crop.plantingDate.formatted(date: .abbreviated, time: .omitted), icon: "calendar")
-                InfoRow(title: "Expected Harvest", value: crop.expectedHarvestDate.formatted(date: .abbreviated, time: .omitted), icon: "calendar.badge.clock")
-                InfoRow(title: "Days Since Planting", value: "\(crop.daysSincePlanting) days", icon: "clock.fill")
+                InfoRow(title: LocalizationManager.shared.localizedString(for: "field_location"), value: crop.fieldLocation, icon: "location.fill")
+                InfoRow(title: LocalizationManager.shared.localizedString(for: "planted"), value: crop.plantingDate.formatted(date: .abbreviated, time: .omitted), icon: "calendar")
+                InfoRow(title: LocalizationManager.shared.localizedString(for: "expected_harvest"), value: crop.expectedHarvestDate.formatted(date: .abbreviated, time: .omitted), icon: "calendar.badge.clock")
+                InfoRow(title: LocalizationManager.shared.localizedString(for: "days_since_planting"), value: "\(crop.daysSincePlanting) \(LocalizationManager.shared.localizedString(for: "days"))", icon: "clock.fill")
                 
                 if crop.daysUntilHarvest > 0 {
-                    InfoRow(title: "Days Until Harvest", value: "\(crop.daysUntilHarvest) days", icon: "timer")
+                    InfoRow(title: LocalizationManager.shared.localizedString(for: "days_until_harvest"), value: "\(crop.daysUntilHarvest) \(LocalizationManager.shared.localizedString(for: "days"))", icon: "timer")
                 } else if crop.isOverdue {
-                    InfoRow(title: "Status", value: "Overdue for harvest", icon: "exclamationmark.triangle.fill")
+                    InfoRow(title: LocalizationManager.shared.localizedString(for: "status"), value: LocalizationManager.shared.localizedString(for: "overdue_for_harvest"), icon: "exclamationmark.triangle.fill")
                 }
             }
         }
@@ -130,7 +130,7 @@ struct CropStatusSection: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Current Status")
+            Text(LocalizationManager.shared.localizedString(for: "current_status"))
                 .font(.headline)
                 .fontWeight(.semibold)
             
@@ -138,7 +138,7 @@ struct CropStatusSection: View {
                 // Growth Stage
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Growth Stage")
+                        Text(LocalizationManager.shared.localizedString(for: "growth_stage"))
                             .font(.subheadline)
                             .fontWeight(.medium)
                         
@@ -159,7 +159,7 @@ struct CropStatusSection: View {
                 // Health Status
                 HStack {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Health Status")
+                        Text(LocalizationManager.shared.localizedString(for: "health_status"))
                             .font(.subheadline)
                             .fontWeight(.medium)
                         
@@ -195,7 +195,7 @@ struct CropTimelineSection: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Progress Timeline")
+            Text(LocalizationManager.shared.localizedString(for: "progress_timeline"))
                 .font(.headline)
                 .fontWeight(.semibold)
             
@@ -205,13 +205,13 @@ struct CropTimelineSection: View {
                     .tint(.green)
                 
                 HStack {
-                    Text("Planted")
+                    Text(LocalizationManager.shared.localizedString(for: "planted"))
                         .font(.caption)
                         .foregroundColor(.secondary)
                     
                     Spacer()
                     
-                    Text("\(Int(crop.progressPercentage * 100))% Complete")
+                    Text(String(format: LocalizationManager.shared.localizedString(for: "percent_complete"), Int(crop.progressPercentage * 100)))
                         .font(.caption)
                         .fontWeight(.medium)
                         .foregroundColor(.primary)
@@ -235,7 +235,7 @@ struct CropNotesSection: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Notes")
+            Text(LocalizationManager.shared.localizedString(for: "notes"))
                 .font(.headline)
                 .fontWeight(.semibold)
             
@@ -371,37 +371,37 @@ struct EditCropView: View {
                         } else {
                             HStack {
                                 Image(systemName: "photo")
-                                Text("Select Crop Image")
+                                Text(LocalizationManager.shared.localizedString(for: "select_crop_image"))
                             }
                             .foregroundColor(.blue)
                         }
                     }
                 }
                 
-                Section(header: Text("Notes")) {
-                    TextField("Additional notes about this crop...", text: $notes, axis: .vertical)
+                Section(header: Text(LocalizationManager.shared.localizedString(for: "notes"))) {
+                    TextField(LocalizationManager.shared.localizedString(for: "additional_notes_placeholder"), text: $notes, axis: .vertical)
                         .lineLimit(3...6)
                 }
                 
                 Section {
-                    Button("Save Changes") {
+                    Button(LocalizationManager.shared.localizedString(for: "save_changes")) {
                         Task {
                             await updateCrop()
                         }
                     }
                     .disabled(cropName.isEmpty || fieldLocation.isEmpty || isLoading)
                     
-                    Button("Delete Crop", role: .destructive) {
+                    Button(LocalizationManager.shared.localizedString(for: "delete_crop"), role: .destructive) {
                         showingDeleteAlert = true
                     }
                     .disabled(isLoading)
                 }
             }
-            .navigationTitle("Edit \(crop.name)")
+            .navigationTitle(String(format: LocalizationManager.shared.localizedString(for: "edit_x"), crop.name))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
+                    Button(LocalizationManager.shared.localizedString(for: "cancel")) {
                         dismiss()
                     }
                 }
@@ -415,20 +415,20 @@ struct EditCropView: View {
                     }
                 }
             }
-            .alert("Error", isPresented: $showingAlert) {
-                Button("OK") { }
+            .alert(LocalizationManager.shared.localizedString(for: "error"), isPresented: $showingAlert) {
+                Button(LocalizationManager.shared.localizedString(for: "ok")) { }
             } message: {
                 Text(alertMessage)
             }
             .alert("Delete Crop", isPresented: $showingDeleteAlert) {
-                Button("Delete", role: .destructive) {
+                Button(LocalizationManager.shared.localizedString(for: "delete"), role: .destructive) {
                     Task {
                         await deleteCrop()
                     }
                 }
-                Button("Cancel", role: .cancel) { }
+                Button(LocalizationManager.shared.localizedString(for: "cancel"), role: .cancel) { }
             } message: {
-                Text("Are you sure you want to delete this crop? This action cannot be undone.")
+                Text(LocalizationManager.shared.localizedString(for: "delete_crop_confirmation"))
             }
             .overlay {
                 if isLoading {
@@ -446,7 +446,7 @@ struct EditCropView: View {
     
     private func updateCrop() async {
         guard let userId = userManager.currentUser?.id else {
-            alertMessage = "User not found. Please try logging in again."
+                    alertMessage = LocalizationManager.shared.localizedString(for: "user_not_found_try_login")
             showingAlert = true
             return
         }
@@ -490,16 +490,16 @@ struct EditCropView: View {
                 }
             }
             
-            try await userManager.db.collection("users").document(userId).updateData([
+            try await userManager.db.collection("users").document(userId).setData([
                 "crops": cropsData
-            ])
+            ], merge: true)
             
             // Update local user
             userManager.currentUser = updatedUser
             
             dismiss()
-        } catch {
-            alertMessage = "Failed to update crop: \(error.localizedDescription)"
+            } catch {
+            alertMessage = String(format: LocalizationManager.shared.localizedString(for: "failed_update_crop"), error.localizedDescription)
             showingAlert = true
         }
         
@@ -532,16 +532,16 @@ struct EditCropView: View {
                 }
             }
             
-            try await userManager.db.collection("users").document(userId).updateData([
+            try await userManager.db.collection("users").document(userId).setData([
                 "crops": cropsData
-            ])
+            ], merge: true)
             
             // Update local user
             userManager.currentUser = updatedUser
             
             dismiss()
-        } catch {
-            alertMessage = "Failed to delete crop: \(error.localizedDescription)"
+            } catch {
+            alertMessage = String(format: LocalizationManager.shared.localizedString(for: "failed_delete_crop"), error.localizedDescription)
             showingAlert = true
         }
         

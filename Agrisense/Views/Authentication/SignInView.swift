@@ -30,12 +30,12 @@ struct SignInView: View {
                             .font(.system(size: 60))
                             .foregroundColor(.green)
                         
-                        Text("Welcome Back")
+                        Text(LocalizationManager.shared.localizedString(for: "welcome_back"))
                             .font(.largeTitle)
                             .fontWeight(.bold)
                             .foregroundColor(.primary)
                         
-                        Text("Sign in to your account")
+                        Text(LocalizationManager.shared.localizedString(for: "sign_in_to_your_account"))
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                     }
@@ -45,11 +45,11 @@ struct SignInView: View {
                     VStack(spacing: 20) {
                         // Email
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("Email Address")
+                            Text(LocalizationManager.shared.localizedString(for: "email_address_label"))
                                 .font(.subheadline)
                                 .fontWeight(.medium)
                             
-                            TextField("Enter your email", text: $email)
+                            TextField(LocalizationManager.shared.localizedString(for: "enter_email_placeholder"), text: $email)
                                 .textFieldStyle(RoundedBorderTextFieldStyle())
                                 .keyboardType(.emailAddress)
                                 .autocapitalization(.none)
@@ -57,15 +57,15 @@ struct SignInView: View {
                         
                         // Password
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("Password")
+                            Text(LocalizationManager.shared.localizedString(for: "password_label"))
                                 .font(.subheadline)
                                 .fontWeight(.medium)
                             
                             HStack {
                                 if showingPassword {
-                                    TextField("Enter your password", text: $password)
+                                    TextField(LocalizationManager.shared.localizedString(for: "enter_password_placeholder"), text: $password)
                                 } else {
-                                    SecureField("Enter your password", text: $password)
+                                    SecureField(LocalizationManager.shared.localizedString(for: "enter_password_placeholder"), text: $password)
                                 }
                                 
                                 Button(action: { showingPassword.toggle() }) {
@@ -80,7 +80,7 @@ struct SignInView: View {
                         HStack {
                             Spacer()
                             
-                            Button("Forgot Password?") {
+                            Button(LocalizationManager.shared.localizedString(for: "forgot_password")) {
                                 // Handle forgot password
                                 alertMessage = "Password reset link sent to your email"
                                 showingAlert = true
@@ -101,7 +101,7 @@ struct SignInView: View {
                                 Image(systemName: "envelope.fill")
                             }
                             
-                            Text("Sign In with Email")
+                            Text(LocalizationManager.shared.localizedString(for: "sign_in_with_email"))
                                 .fontWeight(.semibold)
                         }
                         .foregroundColor(.white)
@@ -119,7 +119,7 @@ struct SignInView: View {
                             .frame(height: 1)
                             .foregroundColor(.gray.opacity(0.3))
                         
-                        Text("or")
+                        Text(LocalizationManager.shared.localizedString(for: "or"))
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                             .padding(.horizontal, 16)
@@ -137,7 +137,7 @@ struct SignInView: View {
                                 Image(systemName: "globe")
                                     .foregroundColor(.white)
                                 
-                                Text("Continue with Google")
+                                Text(LocalizationManager.shared.localizedString(for: "continue_with_google"))
                                     .fontWeight(.semibold)
                             }
                             .foregroundColor(.white)
@@ -154,7 +154,7 @@ struct SignInView: View {
                                 Image(systemName: "applelogo")
                                     .foregroundColor(.white)
                                 
-                                Text("Continue with Apple")
+                                Text(LocalizationManager.shared.localizedString(for: "continue_with_apple"))
                                     .fontWeight(.semibold)
                             }
                             .foregroundColor(.white)
@@ -168,10 +168,10 @@ struct SignInView: View {
                     
                     // Sign Up Link
                     HStack {
-                        Text("Don't have an account?")
+                        Text(LocalizationManager.shared.localizedString(for: "dont_have_account"))
                             .foregroundColor(.secondary)
                         
-                        Button("Sign Up") {
+                        Button(LocalizationManager.shared.localizedString(for: "sign_up")) {
                             showingSignup = true
                         }
                         .foregroundColor(.green)
@@ -187,7 +187,7 @@ struct SignInView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Cancel") {
+                    Button(LocalizationManager.shared.localizedString(for: "cancel")) {
                         dismiss()
                     }
                     .foregroundColor(.green)

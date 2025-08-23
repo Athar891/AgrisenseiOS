@@ -8,22 +8,22 @@ struct SoilTestView: View {
     var body: some View {
         NavigationView {
             Form {
-                Section(header: Text("Soil Test Request")) {
-                    TextField("Location", text: $location)
-                    TextField("Sample ID", text: $sampleID)
+                Section(header: Text(LocalizationManager.shared.localizedString(for: "soil_test_request"))) {
+                    TextField(LocalizationManager.shared.localizedString(for: "location"), text: $location)
+                    TextField(LocalizationManager.shared.localizedString(for: "sample_id"), text: $sampleID)
                 }
 
                 Section {
-                    Button("Request Soil Test") {
+            Button(LocalizationManager.shared.localizedString(for: "request_soil_test")) {
                         // Request soil test logic here
                         dismiss()
                     }
                 }
             }
-            .navigationTitle("Soil Test")
+        .navigationTitle(LocalizationManager.shared.localizedString(for: "soil_test"))
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
+            Button(LocalizationManager.shared.localizedString(for: "cancel")) {
                         dismiss()
                     }
                 }

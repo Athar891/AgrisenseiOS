@@ -92,9 +92,9 @@ class CropManager: ObservableObject {
             }
         }
         
-        try await db.collection("users").document(userId).updateData([
+        try await db.collection("users").document(userId).setData([
             "crops": cropsData
-        ])
+        ], merge: true)
     }
     
     func uploadCropImage(_ image: UIImage) async throws -> String {

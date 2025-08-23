@@ -157,10 +157,10 @@ struct EventCard: View {
 
         if event.attendeesList.contains(uid) {
             // Leave
-            postRef.updateData([
+            postRef.setData([
                 "attendees": FieldValue.increment(Int64(-1)),
                 "attendeesList": FieldValue.arrayRemove([uid])
-            ]) { error in
+            ], merge: true) { error in
                 if let error = error { print("Error leaving event: \(error)") }
             }
             event.attendees = max(0, event.attendees - 1)
@@ -169,10 +169,10 @@ struct EventCard: View {
         } else {
             // Join
             guard event.maxAttendees == 0 || event.attendees < event.maxAttendees else { return }
-            postRef.updateData([
+            postRef.setData([
                 "attendees": FieldValue.increment(Int64(1)),
                 "attendeesList": FieldValue.arrayUnion([uid])
-            ]) { error in
+            ], merge: true) { error in
                 if let error = error { print("Error joining event: \(error)") }
             }
             event.attendees += 1

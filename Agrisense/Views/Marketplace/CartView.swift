@@ -16,23 +16,23 @@ struct CartView: View {
         NavigationView {
             Group {
                 if cartManager.currentCart.isEmpty {
-                    EmptyCartView()
+            EmptyCartView()
                 } else {
                     CartContentView(cartManager: cartManager, showingCheckout: $showingCheckout)
                 }
             }
-            .navigationTitle("My Cart")
+        .navigationTitle(LocalizationManager.shared.localizedString(for: "my_cart"))
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Close") {
+            Button(LocalizationManager.shared.localizedString(for: "close")) {
                         dismiss()
                     }
                 }
                 
                 if !cartManager.currentCart.isEmpty {
                     ToolbarItem(placement: .navigationBarTrailing) {
-                        Button("Clear") {
+            Button(LocalizationManager.shared.localizedString(for: "clear")) {
                             cartManager.clearCart()
                         }
                         .foregroundColor(.red)
@@ -54,11 +54,11 @@ struct EmptyCartView: View {
                 .foregroundColor(.gray)
             
             VStack(spacing: 8) {
-                Text("Your cart is empty")
+                Text(LocalizationManager.shared.localizedString(for: "your_cart_empty"))
                     .font(.title2)
                     .fontWeight(.semibold)
                 
-                Text("Add some products from the marketplace to get started")
+                Text(LocalizationManager.shared.localizedString(for: "add_products_prompt"))
                     .font(.body)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
@@ -153,8 +153,8 @@ struct CartItemRow: View {
                         .frame(minWidth: 30)
                     
                     Button(action: { increaseQuantity() }) {
-                        Image(systemName: "plus.circle.fill")
-                            .foregroundColor(item.quantity < item.maxStock ? .green : .gray)
+                    Image(systemName: "plus.circle.fill")
+                        .foregroundColor(item.quantity < item.maxStock ? .green : .gray)
                     }
                     .disabled(item.quantity >= item.maxStock)
                     

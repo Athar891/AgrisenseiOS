@@ -65,7 +65,7 @@ struct MarketplaceView: View {
                     )
                 }
             }
-            .navigationTitle("Marketplace")
+            .navigationTitle(LocalizationManager.shared.localizedString(for: "marketplace_title"))
             .navigationBarTitleDisplayMode(.large)
             .background(
                 // Invisible background to catch taps
@@ -166,13 +166,13 @@ struct SearchFilterBar: View {
                     Image(systemName: "magnifyingglass")
                         .foregroundColor(.secondary)
                     
-                    TextField("Search products...", text: $searchText)
+                                TextField(LocalizationManager.shared.localizedString(for: "search_products_placeholder"), text: $searchText)
                         .textFieldStyle(PlainTextFieldStyle())
                         .focused($isSearchFieldFocused)
                         .toolbar {
                             ToolbarItemGroup(placement: .keyboard) {
                                 Spacer()
-                                Button("Done") {
+                                Button(LocalizationManager.shared.localizedString(for: "done")) {
                                     isSearchFieldFocused = false
                                 }
                                 .foregroundColor(.green)
@@ -613,7 +613,7 @@ struct ProductDetailView: View {
                         
                         // Quantity Selector
                         HStack {
-                            Text("Quantity:")
+                            Text(LocalizationManager.shared.localizedString(for: "quantity_label"))
                                 .font(.subheadline)
                                 .fontWeight(.medium)
                             
@@ -638,7 +638,7 @@ struct ProductDetailView: View {
                         
                         // Add to Cart Button
                         Button(action: addToCart) {
-                            Text("Add to Cart - ₹\(String(format: "%.2f", product.price * Double(quantity)))")
+                                Text(String(format: LocalizationManager.shared.localizedString(for: "add_to_cart_with_price"), String(format: "%.2f", product.price * Double(quantity))))
                                 .font(.headline)
                                 .fontWeight(.semibold)
                                 .foregroundColor(.white)

@@ -52,6 +52,23 @@ class UserManager: ObservableObject {
         
         // Here, you would typically save additional user info (like userType) to Firestore.
         // For now, the listener will update the currentUser.
+        // Create a Firestore user document so other flows that call updateData won't fail.
+        let userData: [String: Any] = [
+            "name": fullName,
+            "email": email,
+            "userType": userType.rawValue,
+            "profileImage": NSNull(),
+            "location": "",
+            "phoneNumber": "",
+            "crops": []
+        ]
+
+        do {
+            try await db.collection("users").document(authResult.user.uid).setData(userData)
+        } catch {
+            // Non-fatal: print for debugging but don't fail signup because auth succeeded.
+            print("Warning: failed to create Firestore user document: \(error.localizedDescription)")
+        }
     }
 
     func signIn(email: String, password: String) async throws {
@@ -123,7 +140,7 @@ class UserManager: ObservableObject {
         // Clear any previous errors
         profileUpdateError = nil
         
-        guard let imageData = flattenImageForUpload(image) else {
+    guard let imageData = flattenImageForUpload(image) else {
             let errorMessage = "Failed to process image for upload. Please try a different image."
             profileUpdateError = errorMessage
             throw NSError(domain: "ImageProcessingError", code: 0, userInfo: [NSLocalizedDescriptionKey: errorMessage])
@@ -143,9 +160,11 @@ class UserManager: ObservableObject {
         }
         
         // Check if compressed image is still too large (shouldn't happen, but just in case)
+        // Allow up to 5 MB profile images (5120 KB)
         let sizeInKB = imageData.count / 1024
-        guard sizeInKB <= 500 else {
-            let errorMessage = "Image is too large (\(sizeInKB)KB). Please try a smaller image."
+        let maxAllowedKB = 5 * 1024
+        guard sizeInKB <= maxAllowedKB else {
+            let errorMessage = "Image is too large (\(sizeInKB)KB). Please choose an image under 5 MB."
             profileUpdateError = errorMessage
             throw NSError(domain: "UserManager", code: 0, userInfo: [NSLocalizedDescriptionKey: errorMessage])
         }
@@ -156,9 +175,9 @@ class UserManager: ObservableObject {
             let imageUrl = try await uploadToCloudinary(imageData: imageData, fileName: "profile_\(user.id)_\(timestamp)")
             
             // Update Firestore with new profile image URL
-            try await db.collection("users").document(user.id).updateData([
+            try await db.collection("users").document(user.id).setData([
                 "profileImage": imageUrl
-            ])
+            ], merge: true)
             
             // Update local user object
             let updatedUser = User(
@@ -187,72 +206,23 @@ class UserManager: ObservableObject {
     }
     
     private func flattenImageForUpload(_ image: UIImage) -> Data? {
-        // Compress the image to under 500KB
-        guard let compressedImage = compressImage(image, maxSizeKB: 500) else {
+        // Target up to 5 MB for profile images
+        let maxKB = 5 * 1024
+        guard let compressedData = ImageCompressor.compressImageData(image, maxSizeKB: maxKB) else {
             return nil
         }
-        
-        // Redraw the image to flatten it and convert to a standard sRGB color space
-        let renderer = UIGraphicsImageRenderer(size: compressedImage.size)
-        let flattenedImage = renderer.image { _ in
-            compressedImage.draw(in: CGRect(origin: .zero, size: compressedImage.size))
-        }
-        
-        // Convert the flattened image to JPEG data with high quality since it's already compressed
-        return flattenedImage.jpegData(compressionQuality: 0.9)
-    }
-    
-    private func compressImage(_ image: UIImage, maxSizeKB: Int) -> UIImage? {
-        let maxSizeBytes = maxSizeKB * 1024
-        var compressionQuality: CGFloat = 0.8
-        let minCompressionQuality: CGFloat = 0.1
-        let compressionStep: CGFloat = 0.1
-        
-        // First, resize the image if it's too large (profile images should be reasonable size)
-        let resizedImage = resizeImage(image, maxDimension: 800)
-        
-        guard var imageData = resizedImage.jpegData(compressionQuality: compressionQuality) else {
-            return nil
-        }
-        
-        // Reduce compression quality until we reach the target size
-        while imageData.count > maxSizeBytes && compressionQuality > minCompressionQuality {
-            compressionQuality -= compressionStep
-            guard let newImageData = resizedImage.jpegData(compressionQuality: compressionQuality) else {
-                break
+
+        // Redraw to standard sRGB color space to avoid color/profile issues
+        if let uiImage = UIImage(data: compressedData) {
+            let renderer = UIGraphicsImageRenderer(size: uiImage.size)
+            let flattenedImage = renderer.image { _ in
+                uiImage.draw(in: CGRect(origin: .zero, size: uiImage.size))
             }
-            imageData = newImageData
+            // Return JPEG data (already compressed)
+            return flattenedImage.jpegData(compressionQuality: 0.9) ?? compressedData
         }
-        
-        return UIImage(data: imageData)
-    }
-    
-    private func resizeImage(_ image: UIImage, maxDimension: CGFloat) -> UIImage {
-        let size = image.size
-        let aspectRatio = size.width / size.height
-        
-        var newSize: CGSize
-        if size.width > size.height {
-            // Landscape
-            newSize = CGSize(width: min(maxDimension, size.width), 
-                           height: min(maxDimension, size.width) / aspectRatio)
-        } else {
-            // Portrait or square
-            newSize = CGSize(width: min(maxDimension, size.height) * aspectRatio, 
-                           height: min(maxDimension, size.height))
-        }
-        
-        // Don't upscale
-        if newSize.width >= size.width && newSize.height >= size.height {
-            return image
-        }
-        
-        UIGraphicsBeginImageContextWithOptions(newSize, false, 0.0)
-        image.draw(in: CGRect(origin: .zero, size: newSize))
-        let resizedImage = UIGraphicsGetImageFromCurrentImageContext()
-        UIGraphicsEndImageContext()
-        
-        return resizedImage ?? image
+
+        return compressedData
     }
 
     private func uploadToCloudinary(imageData: Data, fileName: String) async throws -> String {
