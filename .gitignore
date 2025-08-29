@@ -1,5 +1,23 @@
 # Visual Studio Code settings
 .vscode/
-build/build-local/
-build/build-remote/
+# Build artifacts
+build/
+build/**
+
+# Xcode and user data
+DerivedData/
+xcuserdata/
+*.xcuserstate
+*.xcworkspace
+*.xcuserdatad
+
+# Swift Package Manager
+SourcePackages/
+.build/
+
+# CocoaPods
+Pods/
+
+# Carthage
+Carthage/
 
