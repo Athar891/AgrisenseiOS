@@ -1,0 +1,5 @@
+# Visual Studio Code settings
+.vscode/
+build/build-local/
+build/build-remote/
+
