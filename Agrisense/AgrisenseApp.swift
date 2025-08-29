@@ -42,6 +42,7 @@ struct AgrisenseApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
     @StateObject private var userManager = UserManager()
     @StateObject private var appState = AppState()
+    @StateObject private var localizationManager = LocalizationManager.shared
     
     private var colorScheme: ColorScheme? {
         appState.isDarkMode ? .dark : .light
@@ -52,6 +53,7 @@ struct AgrisenseApp: App {
             ContentView()
                 .environmentObject(userManager)
                 .environmentObject(appState)
+                .environmentObject(localizationManager)
                 .preferredColorScheme(colorScheme)
                 .onChange(of: appState.isDarkMode) { _, newValue in
                     print("App color scheme changed to: \(newValue ? "dark" : "light")")

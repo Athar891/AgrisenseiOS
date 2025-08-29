@@ -4,10 +4,10 @@ import PhotosUI
 struct ProfileView: View {
     @EnvironmentObject var userManager: UserManager
     @EnvironmentObject var appState: AppState
+    @EnvironmentObject var localizationManager: LocalizationManager
     @State private var isEditing = false
     @State private var showingSettings = false
     @State private var showingOrderHistory = false
-    @State private var showingLanguageSheet = false
     @StateObject private var orderManager: OrderManager
     
     // Use PhotosPickerItem for modern photo picking
@@ -51,7 +51,7 @@ struct ProfileView: View {
                                 .font(.title2)
                             
                             VStack(alignment: .leading, spacing: 4) {
-                                Text("Order History")
+                                Text(localizationManager.localizedString(for: "order_history_title"))
                                     .font(.subheadline)
                                     .fontWeight(.medium)
                                     .foregroundColor(.primary)
@@ -61,7 +61,7 @@ struct ProfileView: View {
                                         .font(.caption)
                                         .foregroundColor(.secondary)
                                 } else {
-                                    Text("View your past orders")
+                                    Text(localizationManager.localizedString(for: "view_past_orders"))
                                         .font(.caption)
                                         .foregroundColor(.secondary)
                                 }
@@ -77,50 +77,9 @@ struct ProfileView: View {
                         .cornerRadius(12)
                     }
                     
-                    // Dark Mode Toggle
-                    HStack {
-                        Image(systemName: appState.isDarkMode ? "moon.fill" : "sun.max.fill")
-                            .foregroundColor(appState.isDarkMode ? .purple : .orange)
-                        
-                        Text("Dark Mode")
-                            .font(.subheadline)
-                            .fontWeight(.medium)
-                        
-                        Spacer()
-                        
-                        Toggle("", isOn: $appState.isDarkMode)
-                            .labelsHidden()
-                    }
-                    .padding()
-                    .background(Color(.secondarySystemBackground))
-                    .cornerRadius(12)
+                    // Dark mode toggle moved to Settings view
                     
-                    // Language Settings
-                    Button(action: { showingLanguageSheet = true }) {
-                        HStack {
-                            Image(systemName: "globe")
-                                .foregroundColor(.blue)
-                                .font(.title2)
-
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(LocalizationManager.shared.localizedString(for: "language_settings"))
-                                    .font(.subheadline)
-                                    .fontWeight(.medium)
-
-                                Text(LocalizationManager.shared.localizedString(for: "select_indian_language"))
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
-
-                            Spacer()
-
-                            Image(systemName: "chevron.right")
-                                .foregroundColor(.gray)
-                        }
-                        .padding()
-                        .background(Color(.secondarySystemBackground))
-                        .cornerRadius(12)
-                    }
+                    // Language settings moved to Settings view
                     
                     // Sign Out Button
                     Button(action: {
@@ -128,7 +87,7 @@ struct ProfileView: View {
                     }) {
                         HStack {
                             Image(systemName: "rectangle.portrait.and.arrow.right")
-                            Text("Sign Out")
+                            Text(localizationManager.localizedString(for: "sign_out"))
                         }
                         .frame(maxWidth: .infinity)
                         .padding()
@@ -139,7 +98,7 @@ struct ProfileView: View {
                 }
                 .padding()
             }
-            .navigationTitle(LocalizationManager.shared.localizedString(for: "profile_title"))
+            .navigationTitle(localizationManager.localizedString(for: "profile_title"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -149,7 +108,9 @@ struct ProfileView: View {
                 }
             }
             .sheet(isPresented: $showingSettings) {
-                Text("Settings View") // Placeholder
+                SettingsView()
+                    .environmentObject(localizationManager)
+                    .environmentObject(appState)
             }
             .sheet(isPresented: $showingOrderHistory) {
                 OrderHistoryView(orderManager: orderManager)
@@ -171,9 +132,6 @@ struct ProfileView: View {
                     }
                 )
             }
-            .sheet(isPresented: $showingLanguageSheet) {
-                LanguageSelectionSheet()
-            }
             .onAppear(perform: loadInitialUserData)
             .onChange(of: selectedPhotoItem, handlePhotoSelection)
             .onChange(of: isEditing) { oldValue, newValue in
@@ -185,11 +143,11 @@ struct ProfileView: View {
                 }
             }
         }
-        .overlay(
+    .overlay(
             // Success message overlay
             VStack {
                 if showSuccessMessage {
-                    Text("Profile image updated successfully!")
+            Text(localizationManager.localizedString(for: "profile_image_updated"))
                         .padding()
                         .background(Color.green)
                         .foregroundColor(.white)
@@ -308,16 +266,22 @@ struct ProfileView: View {
 // MARK: - Language Selection Sheet
 struct LanguageSelectionSheet: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var selectedCode: String? = LocalizationManager.shared.currentLanguageCode
+    @EnvironmentObject var localizationManager: LocalizationManager
+    @State private var selectedCode: String?
+    
+    init() {
+        // Note: We'll set this in onAppear since we can't access environment objects in init
+        _selectedCode = State(initialValue: nil)
+    }
 
     var body: some View {
         NavigationView {
             List {
                 // Filter out English from the selectable languages, focusing on Indian languages
-                ForEach(LocalizationManager.shared.availableLanguages().filter { $0.code != "en" }, id: \.code) { item in
+                ForEach(localizationManager.availableLanguages().filter { $0.code != "en" }, id: \.code) { item in
                     Button(action: {
                         selectedCode = item.code
-                        LocalizationManager.shared.setLanguage(code: item.code)
+                        localizationManager.setLanguage(code: item.code)
                     }) {
                         HStack {
                             Text(item.nativeName)
@@ -336,7 +300,7 @@ struct LanguageSelectionSheet: View {
                 // Reset to system language (English will be system default)
                 Button(action: {
                     selectedCode = nil
-                    LocalizationManager.shared.setLanguage(code: nil)
+                    localizationManager.setLanguage(code: nil)
                 }) {
                     HStack {
                         Text("System Default (English)")
@@ -348,13 +312,16 @@ struct LanguageSelectionSheet: View {
                     }
                 }
             }
-            .navigationTitle(LocalizationManager.shared.localizedString(for: "select_indian_language"))
+            .navigationTitle(localizationManager.localizedString(for: "select_indian_language"))
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button(LocalizationManager.shared.localizedString(for: "cancel")) {
+                    Button(localizationManager.localizedString(for: "cancel")) {
                         dismiss()
                     }
                 }
+            }
+            .onAppear {
+                selectedCode = localizationManager.currentLanguageCode
             }
         }
     }

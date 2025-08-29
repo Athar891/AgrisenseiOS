@@ -10,6 +10,7 @@ import SwiftUI
 struct CommunityView: View {
     @EnvironmentObject var userManager: UserManager
     @EnvironmentObject var appState: AppState
+    @EnvironmentObject var localizationManager: LocalizationManager
     @State private var selectedTab: CommunityTab = .discussions
     @State private var showingNewPost = false
     @State private var searchText = ""
@@ -43,7 +44,7 @@ struct CommunityView: View {
                     dismissKeyboard()
                 }
             }
-            .navigationTitle("Community")
+            .navigationTitle(localizationManager.localizedString(for: "community_title"))
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -81,16 +82,16 @@ enum CommunityTab: String, CaseIterable {
     case experts = "experts"
     case groups = "groups"
     
-    var title: String {
+    func title(localizationManager: LocalizationManager) -> String {
         switch self {
         case .discussions:
-            return "Discussions"
+            return localizationManager.localizedString(for: "community_discussions")
         case .events:
-            return "Events"
+            return localizationManager.localizedString(for: "community_events")
         case .experts:
-            return "Experts"
+            return localizationManager.localizedString(for: "community_experts")
         case .groups:
-            return "Groups"
+            return localizationManager.localizedString(for: "community_groups")
         }
     }
     
@@ -109,6 +110,7 @@ enum CommunityTab: String, CaseIterable {
 }
 
 struct SearchBar: View {
+    @EnvironmentObject var localizationManager: LocalizationManager
     @Binding var text: String
     @FocusState.Binding var isFocused: Bool
     
@@ -117,7 +119,7 @@ struct SearchBar: View {
             Image(systemName: "magnifyingglass")
                 .foregroundColor(.secondary)
             
-            TextField("Search community...", text: $text)
+            TextField(localizationManager.localizedString(for: "search_community"), text: $text)
                 .textFieldStyle(PlainTextFieldStyle())
                 .focused($isFocused)
                 .onSubmit {
@@ -169,6 +171,7 @@ struct TabSelector: View {
 }
 
 struct TabButton: View {
+    @EnvironmentObject var localizationManager: LocalizationManager
     let tab: CommunityTab
     let isSelected: Bool
     let action: () -> Void
@@ -180,7 +183,7 @@ struct TabButton: View {
                     .font(.title3)
                     .foregroundColor(isSelected ? .green : .secondary)
                 
-                Text(tab.title)
+                Text(tab.title(localizationManager: localizationManager))
                     .font(.caption)
                     .fontWeight(.medium)
                     .foregroundColor(isSelected ? .green : .secondary)

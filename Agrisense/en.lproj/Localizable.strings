@@ -9,6 +9,31 @@
 "upload_photo" = "Upload Photo";
 "uploading" = "Uploading...";
 
+/* Tab Titles */
+"tab_home" = "Home";
+"tab_market" = "Market";
+"tab_community" = "Community";
+"tab_assistant" = "Assistant";
+"tab_profile" = "Profile";
+
+/* Navigation Titles */
+"community_title" = "Community";
+"ai_assistant_title" = "AI Assistant";
+"order_history_title" = "Order History";
+
+/* Community Tabs */
+"community_discussions" = "Discussions";
+"community_events" = "Events";
+"community_experts" = "Experts";
+"community_groups" = "Groups";
+
+/* Search & UI Elements */
+"search_community" = "Search community...";
+"dark_mode" = "Dark Mode";
+"view_past_orders" = "View your past orders";
+"orders_spent" = "%d orders • %@ spent";
+"sign_out" = "Sign Out";
+
 /* Authentication / Onboarding */
 "app_name" = "AgriSense";
 "app_tagline" = "Empowering Agriculture Through Technology";
@@ -129,3 +154,99 @@
 "soybeans_price" = "Soybeans: ₹4,500 / quintal";
 "done" = "Done";
 "add_new_crop" = "Add New Crop";
+/* Marketplace */
+"search_products_placeholder" = "Search products...";
+"by_seller" = "by %@";
+"per_unit" = "per %@";
+"in_stock" = "%d in stock";
+"quantity_label" = "Quantity:";
+"add_to_cart_with_price" = "Add to Cart - ₹%@";
+"product_details_title" = "Product Details";
+"item_added_single" = "Item Added to Cart!";
+"item_added_plural" = "Items Added to Cart!";
+"items_added_message" = "%d %@ of %@ %@ been added to your cart.";
+"cannot_add_to_cart" = "Cannot Add to Cart";
+"not_enough_stock" = "Not enough stock available. Only %d items remaining.";
+"has" = "has";
+"have" = "have";
+"quantity_label" = "Quantity:";
+"product_images_section" = "Product Images";
+"product_information_section" = "Product Information";
+"description_placeholder" = "Description";
+"category_picker" = "Category";
+"pricing_stock_section" = "Pricing & Stock";
+"price_placeholder" = "Price";
+"stock_quantity_placeholder" = "Stock Quantity";
+"add_product_title" = "Add Product";
+"save" = "Save";
+
+/* Categories */
+"category_all" = "All";
+"category_vegetables" = "Vegetables";
+"category_fruits" = "Fruits";
+"category_grains" = "Grains";
+"category_dairy" = "Dairy";
+"category_meat" = "Meat";
+"category_equipment" = "Equipment";
+"category_seeds" = "Seeds";
+/* Cart */
+"per_unit_price" = "%@ per %@";
+"remove_item_title" = "Remove Item";
+"remove_item_message" = "Are you sure you want to remove %@ from your cart?";
+"total_items_label" = "Total Items:";
+"total_amount_label" = "Total Amount:";
+"proceed_to_checkout" = "Proceed to Checkout";
+"order_summary" = "Order Summary";
+"total_label" = "Total:";
+"delivery_address_title" = "Delivery Address";
+"select_delivery_address" = "Select Delivery Address";
+"place_order" = "Place Order";
+"checkout_title" = "Checkout";
+"back" = "Back";
+"order_placed_title" = "Order Placed!";
+"order_placed_with_number" = "Your order has been placed successfully. You can track it in your profile.";
+"order_placed_message" = "Your order has been placed successfully! You will receive a confirmation shortly.";
+/* Address Views */
+"select_address_title" = "Select Address";
+"add_new" = "Add New";
+"default_label" = "DEFAULT";
+"no_addresses" = "No Addresses";
+"add_delivery_address_prompt" = "Add a delivery address to continue with your order";
+"edit_address_title" = "Edit Address";
+"add_address_title" = "Add Address";
+"contact_information" = "Contact Information";
+"full_name_placeholder" = "Full Name";
+"phone_number_placeholder" = "Phone Number";
+"address_section" = "Address";
+"street_address_placeholder" = "Street Address";
+"apartment_placeholder" = "Apartment, suite, etc. (optional)";
+"city_placeholder" = "City";
+"state_placeholder" = "State/Province";
+"zip_placeholder" = "ZIP/Postal Code";
+"country_placeholder" = "Country";
+"address_type_section" = "Address Type";
+"set_as_default" = "Set as default address";
+"validation_error_title" = "Validation Error";
+/* Role Selection */
+"choose_role" = "Choose Your Role";
+"role_farmer" = "I'm a Farmer";
+"role_seller" = "I'm a Seller";
+
+/* Order History */
+"search_orders_placeholder" = "Search orders...";
+"order_history_title" = "Order History";
+"order_filter_all" = "All";
+"order_filter_active" = "Active";
+"order_filter_delivered" = "Delivered";
+"order_filter_cancelled" = "Cancelled";
+"no_orders_yet" = "No orders yet";
+"no_active_orders" = "No active orders";
+"no_delivered_orders" = "No delivered orders";
+"no_cancelled_orders" = "No cancelled orders";
+"start_shopping_prompt" = "Start shopping in the marketplace to see your orders here";
+
+/* Profile */
+"settings_view_placeholder" = "Settings View";
+"profile_image_updated" = "Profile image updated successfully!";
+"done" = "Done";
+"product_name_placeholder" = "Product Name";

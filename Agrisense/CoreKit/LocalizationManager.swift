@@ -63,11 +63,14 @@ public final class LocalizationManager: ObservableObject {
             currentLocale = Locale.current
             bundle = .main
         }
-        // Post notification for dynamic UI update
-        NotificationCenter.default.post(name: .languageChanged, object: nil)
-        Task { @MainActor in
+        
+        // Notify SwiftUI views to update
+        DispatchQueue.main.async {
             self.objectWillChange.send()
         }
+        
+        // Post notification for dynamic UI update
+        NotificationCenter.default.post(name: .languageChanged, object: nil)
     }
 
     private func updateBundle(for code: String) {
@@ -81,4 +84,29 @@ public final class LocalizationManager: ObservableObject {
 
 public extension Notification.Name {
     static let languageChanged = Notification.Name("LocalizationManagerLanguageChanged")
+}
+
+// MARK: - SwiftUI Extensions
+import SwiftUI
+
+public extension View {
+    /// Returns a localized string that updates when the language changes
+    func localizedString(for key: String, localizationManager: LocalizationManager = LocalizationManager.shared) -> String {
+        return localizationManager.localizedString(for: key)
+    }
+}
+
+/// A SwiftUI Text view that automatically updates when the language changes
+public struct LocalizedText: View {
+    @ObservedObject private var localizationManager: LocalizationManager
+    private let key: String
+    
+    public init(_ key: String, localizationManager: LocalizationManager = LocalizationManager.shared) {
+        self.key = key
+        self.localizationManager = localizationManager
+    }
+    
+    public var body: some View {
+        Text(localizationManager.localizedString(for: key))
+    }
 }

@@ -9,6 +9,31 @@
 "upload_photo" = "ఫోటో అప్లోడ్ చేయండి";
 "uploading" = "అప్లోడవుతోంది...";
 
+/* Tab Titles */
+"tab_home" = "హోమ్";
+"tab_market" = "మార్కెట్";
+"tab_community" = "కమ్యూనిటీ";
+"tab_assistant" = "సహాయకుడు";
+"tab_profile" = "ప్రొఫైల్";
+
+/* Navigation Titles */
+"community_title" = "కమ్యూనిటీ";
+"ai_assistant_title" = "AI సహాయకుడు";
+"order_history_title" = "ఆర్డర్ చరిత్ర";
+
+/* Community Tabs */
+"community_discussions" = "చర్చలు";
+"community_events" = "ఈవెంట్లు";
+"community_experts" = "నిపుణులు";
+"community_groups" = "గ్రూపులు";
+
+/* Search & UI Elements */
+"search_community" = "కమ్యూనిటీని వెతకండి...";
+"dark_mode" = "డార్క్ మోడ్";
+"view_past_orders" = "మీ గత ఆర్డర్లను చూడండి";
+"orders_spent" = "%d ఆర్డర్లు • %@ ఖర్చు";
+"sign_out" = "సైన్ అవుట్";
+
 /* Authentication / Onboarding */
 "app_name" = "AgriSense";
 "app_tagline" = "సాంకేతికత ద్వారా వ్యవసాయాన్ని సాధికారంగా చేయడం";

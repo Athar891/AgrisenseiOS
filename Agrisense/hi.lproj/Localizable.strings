@@ -9,6 +9,31 @@
 "upload_photo" = "फ़ोटो अपलोड करें";
 "uploading" = "अपलोड हो रहा है...";
 
+/* Tab Titles */
+"tab_home" = "होम";
+"tab_market" = "मार्केट";
+"tab_community" = "समुदाय";
+"tab_assistant" = "सहायक";
+"tab_profile" = "प्रोफ़ाइल";
+
+/* Navigation Titles */
+"community_title" = "समुदाय";
+"ai_assistant_title" = "AI सहायक";
+"order_history_title" = "ऑर्डर इतिहास";
+
+/* Community Tabs */
+"community_discussions" = "चर्चा";
+"community_events" = "कार्यक्रम";
+"community_experts" = "विशेषज्ञ";
+"community_groups" = "समूह";
+
+/* Search & UI Elements */
+"search_community" = "समुदाय खोजें...";
+"dark_mode" = "डार्क मोड";
+"view_past_orders" = "अपने पिछले ऑर्डर देखें";
+"orders_spent" = "%d ऑर्डर • %@ खर्च";
+"sign_out" = "साइन आउट";
+
 /* Authentication / Onboarding */
 "app_name" = "AgriSense";
 "app_tagline" = "कृषि को तकनीक के माध्यम से सशक्त बनाना";
@@ -128,3 +153,99 @@
 "soybeans_price" = "सोयाबीन: ₹4,500 / क्विंटल";
 "done" = "हो गया";
 "add_new_crop" = "नई फसल जोड़ें";
+/* Marketplace */
+"search_products_placeholder" = "उत्पाद खोजें...";
+"by_seller" = "द्वारा %@";
+"per_unit" = "%@ प्रति";
+"in_stock" = "%d स्टॉक में";
+"quantity_label" = "मात्रा:";
+"add_to_cart_with_price" = "कार्ट में जोड़ें - ₹%@";
+"product_details_title" = "उत्पाद विवरण";
+"item_added_single" = "आइटम कार्ट में जोड़ा गया!";
+"item_added_plural" = "आइटम कार्ट में जोड़े गए!";
+"items_added_message" = "%d %@ का(की) %@ कार्ट में जोड़ा गया है.";
+"cannot_add_to_cart" = "कार्ट में जोड़ना संभव नहीं";
+"not_enough_stock" = "पर्याप्त स्टॉक उपलब्ध नहीं है। केवल %d आइटम शेष हैं.";
+"has" = "है";
+"have" = "हैं";
+"quantity_label" = "मात्रा:";
+"product_images_section" = "उत्पाद छवियाँ";
+"product_information_section" = "उत्पाद जानकारी";
+"description_placeholder" = "विवरण";
+"category_picker" = "श्रेणी";
+"pricing_stock_section" = "मूल्य और स्टॉक";
+"price_placeholder" = "मूल्य";
+"stock_quantity_placeholder" = "स्टॉक मात्रा";
+"add_product_title" = "उत्पाद जोड़ें";
+"save" = "सहेजें";
+
+/* Categories */
+"category_all" = "सभी";
+"category_vegetables" = "सब्ज़ियाँ";
+"category_fruits" = "फल";
+"category_grains" = "अनाज";
+"category_dairy" = "डेयरी";
+"category_meat" = "मांस";
+"category_equipment" = "उपकरण";
+"category_seeds" = "बीज";
+/* Cart */
+"per_unit_price" = "%@ प्रति %@";
+"remove_item_title" = "आइटम हटाएं";
+"remove_item_message" = "क्या आप वाकई %@ को अपने कार्ट से हटाना चाहते हैं?";
+"total_items_label" = "कुल आइटम:";
+"total_amount_label" = "कुल राशि:";
+"proceed_to_checkout" = "चेकआउट पर जाएँ";
+"order_summary" = "ऑर्डर सारांश";
+"total_label" = "कुल:";
+"delivery_address_title" = "डिलीवरी पता";
+"select_delivery_address" = "डिलीवरी पता चुनें";
+"place_order" = "ऑर्डर दें";
+"checkout_title" = "चेकआउट";
+"back" = "वापस";
+"order_placed_title" = "ऑर्डर दिया गया!";
+"order_placed_with_number" = "आपका ऑर्डर सफलतापूर्वक दिया गया है। आप इसे अपनी प्रोफ़ाइल में ट्रैक कर सकते हैं।";
+"order_placed_message" = "आपका ऑर्डर सफलतापूर्वक दिया गया है! आपको जल्द ही पुष्टि प्राप्त होगी.";
+/* Address Views */
+"select_address_title" = "पता चुनें";
+"add_new" = "नया जोड़ें";
+"default_label" = "डिफ़ॉल्ट";
+"no_addresses" = "कोई पता नहीं";
+"add_delivery_address_prompt" = "आर्डर जारी रखने के लिए डिलीवरी पता जोड़ें";
+"edit_address_title" = "पता संपादित करें";
+"add_address_title" = "पता जोड़ें";
+"contact_information" = "संपर्क जानकारी";
+"full_name_placeholder" = "पूरा नाम";
+"phone_number_placeholder" = "फोन नंबर";
+"address_section" = "पता";
+"street_address_placeholder" = "सड़क का पता";
+"apartment_placeholder" = "अपार्टमेंट, सुइट आदि (वैकल्पिक)";
+"city_placeholder" = "शहर";
+"state_placeholder" = "राज्य/प्रांत";
+"zip_placeholder" = "ज़िप/पिन कोड";
+"country_placeholder" = "देश";
+"address_type_section" = "पता प्रकार";
+"set_as_default" = "डिफ़ॉल्ट पता निर्धारित करें";
+"validation_error_title" = "मान्यकरण त्रुटि";
+/* Role Selection */
+"choose_role" = "अपना रोल चुनें";
+"role_farmer" = "मैं एक किसान हूँ";
+"role_seller" = "मैं एक विक्रेता हूँ";
+
+/* Order History */
+"search_orders_placeholder" = "ऑर्डर खोजें...";
+"order_history_title" = "ऑर्डर इतिहास";
+"order_filter_all" = "सभी";
+"order_filter_active" = "सक्रिय";
+"order_filter_delivered" = "डिलीवर किए गए";
+"order_filter_cancelled" = "रद्द किए गए";
+"no_orders_yet" = "कोई ऑर्डर नहीं";
+"no_active_orders" = "कोई सक्रिय ऑर्डर नहीं";
+"no_delivered_orders" = "कोई वितरित ऑर्डर नहीं";
+"no_cancelled_orders" = "कोई रद्द ऑर्डर नहीं";
+"start_shopping_prompt" = "ऑर्डर देखने के लिए मार्केटप्लेस से खरीदारी शुरू करें";
+
+/* Profile */
+"settings_view_placeholder" = "सेटिंग्स व्यू";
+"profile_image_updated" = "प्रोफ़ाइल छवि सफलतापूर्वक अपडेट हुई!";
+"done" = "हो गया";
+"product_name_placeholder" = "उत्पाद का नाम";

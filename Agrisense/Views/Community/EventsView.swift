@@ -75,6 +75,12 @@ struct EventsView: View {
                     let title = data["title"] as? String ?? "Untitled"
                     let description = data["description"] as? String ?? ""
                     let timestamp = data["date"] as? TimeInterval ?? Date().timeIntervalSince1970
+                    let regDeadlineTs = data["registrationDeadline"] as? TimeInterval
+                    let isFree = data["isFree"] as? Bool ?? true
+                    let price = data["price"] as? Double
+                    let currency = data["currency"] as? String
+                    let tags = data["tags"] as? [String] ?? []
+                    let speakers = data["speakers"] as? [String] ?? []
                     let location = data["location"] as? String ?? ""
                     let organizer = data["organizer"] as? String ?? ""
                     let organizerId = data["organizerId"] as? String ?? ""
@@ -85,7 +91,7 @@ struct EventsView: View {
                     let type = EventType(rawValue: typeRaw) ?? .webinar
                     let isAttending = Auth.auth().currentUser != nil && attendeesList.contains(Auth.auth().currentUser!.uid)
 
-                    return Event(firestoreId: doc.documentID, title: title, description: description, date: Date(timeIntervalSince1970: timestamp), location: location, organizer: organizer, organizerId: organizerId, attendees: attendees, maxAttendees: maxAttendees, attendeesList: attendeesList, isAttending: isAttending, type: type)
+                    return Event(firestoreId: doc.documentID, title: title, description: description, date: Date(timeIntervalSince1970: timestamp), location: location, organizer: organizer, organizerId: organizerId, attendees: attendees, maxAttendees: maxAttendees, attendeesList: attendeesList, isAttending: isAttending, type: type, registrationDeadline: regDeadlineTs != nil ? Date(timeIntervalSince1970: regDeadlineTs!) : nil, isFree: isFree, price: price, currency: currency, tags: tags, speakers: speakers)
                 }
             }
         }
@@ -97,6 +103,7 @@ struct EventsView: View {
 struct EventCard: View {
     @State var event: Event
     var onChange: ((Event) -> Void)? = nil
+    var onTagTap: ((String) -> Void)? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -124,25 +131,81 @@ struct EventCard: View {
             Text(event.description)
                 .font(.subheadline)
                 .foregroundColor(.secondary)
+
+            // Price / tags / speakers row
+            HStack(spacing: 12) {
+                // Price
+                Text(priceLabel())
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.primary)
+
+                // Speakers
+                if !event.speakers.isEmpty {
+                    Text(event.speakers.prefix(2).joined(separator: ", "))
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+
+                // Deadline badge (if closing soon)
+                if let deadline = event.registrationDeadline {
+                    let now = Date()
+                    let remaining = deadline.timeIntervalSince(now)
+                    if remaining > 0 && remaining <= 72 * 3600 {
+                        Text("Closes in \(timeRemainingString(until: deadline))")
+                            .font(.caption2)
+                            .padding(6)
+                            .background(Color.orange.opacity(0.1))
+                            .foregroundColor(.orange)
+                            .cornerRadius(8)
+                    }
+                }
+
+                Spacer()
+            }
             
             // Details
             VStack(spacing: 8) {
                 DetailRow(icon: "calendar", text: event.date, style: .date)
                 DetailRow(icon: "location", text: event.location)
                 DetailRow(icon: "person", text: "\(event.attendees)/\(event.maxAttendees) attending")
+                // Tags
+                if !event.tags.isEmpty {
+                    HStack {
+                        Image(systemName: "tag.fill")
+                            .foregroundColor(.secondary)
+                            .frame(width: 16)
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 6) {
+                                ForEach(event.tags, id: \.self) { tag in
+                                    Button(action: { onTagTap?(tag) }) {
+                                        Text(tag)
+                                            .font(.caption)
+                                            .padding(.horizontal, 8)
+                                            .padding(.vertical, 4)
+                                            .background(Color.gray.opacity(0.1))
+                                            .cornerRadius(8)
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                        }
+                    }
+                }
             }
             
             // Action Button
             Button(action: { toggleAttendance() }) {
-                Text(event.isAttending ? "Attending" : "Join Event")
+                Text(buttonLabel())
                     .font(.subheadline)
                     .fontWeight(.semibold)
-                    .foregroundColor(event.isAttending ? .green : .white)
+                    .foregroundColor(buttonTextColor())
                     .frame(maxWidth: .infinity)
                     .frame(height: 44)
-                    .background(event.isAttending ? Color.green.opacity(0.1) : Color.green)
+                    .background(buttonBackground())
                     .cornerRadius(12)
             }
+            .disabled(isRegistrationClosed())
         }
         .padding()
         .background(Color(.systemBackground))
@@ -151,6 +214,8 @@ struct EventCard: View {
     }
 
     private func toggleAttendance() {
+    // Prevent actions if registration closed
+    if isRegistrationClosed() { return }
         guard let uid = Auth.auth().currentUser?.uid else { return }
         let db = Firestore.firestore()
         let postRef = db.collection("events").document(event.firestoreId)
@@ -181,6 +246,51 @@ struct EventCard: View {
         }
 
         onChange?(event)
+    }
+
+    // Helpers
+    private func priceLabel() -> String {
+        if event.isFree { return "Free" }
+        if let price = event.price {
+            let formatted = String(format: "%.2f", price)
+            if let c = event.currency { return "\(c) \(formatted)" }
+            return "\(formatted)"
+        }
+        return "Paid"
+    }
+
+    private func isRegistrationClosed() -> Bool {
+        if let deadline = event.registrationDeadline {
+            return Date() > deadline
+        }
+        return false
+    }
+
+    private func buttonLabel() -> String {
+        if event.isAttending { return "Attending" }
+        if isRegistrationClosed() { return "Registration closed" }
+        return "Join Event"
+    }
+
+    private func buttonTextColor() -> Color {
+        if event.isAttending { return .green }
+        if isRegistrationClosed() { return .secondary }
+        return .white
+    }
+
+    private func buttonBackground() -> Color {
+        if event.isAttending { return Color.green.opacity(0.1) }
+        if isRegistrationClosed() { return Color.gray.opacity(0.2) }
+        return Color.green
+    }
+
+    private func timeRemainingString(until date: Date) -> String {
+        let interval = Int(date.timeIntervalSince(Date()))
+        if interval <= 0 { return "0h" }
+        let hours = interval / 3600
+        if hours < 24 { return "\(hours)h" }
+        let days = hours / 24
+        return "\(days)d"
     }
 }
 
@@ -230,6 +340,12 @@ struct NewEventView: View {
     @State private var location = ""
     @State private var maxAttendees = ""
     @State private var type: EventType = .workshop
+    @State private var registrationDeadline = Date()
+    @State private var isFree = true
+    @State private var priceText = ""
+    @State private var currency = "INR"
+    @State private var tagsText = "" // comma separated tags
+    @State private var speakersText = "" // comma separated speaker names
     @EnvironmentObject var userManager: UserManager
     let onCreated: (() -> Void)?
 
@@ -240,6 +356,7 @@ struct NewEventView: View {
                     TextField("Title", text: $title)
                     TextField("Description", text: $description)
                     DatePicker("Date", selection: $date, displayedComponents: [.date, .hourAndMinute])
+                    DatePicker("Registration deadline", selection: $registrationDeadline, displayedComponents: [.date, .hourAndMinute])
                     TextField("Location", text: $location)
                     TextField("Max Attendees (optional)", text: $maxAttendees)
                         .keyboardType(.numberPad)
@@ -247,6 +364,21 @@ struct NewEventView: View {
                         ForEach(EventType.allCases, id: \.self) { t in
                             Text(t.displayName).tag(t)
                         }
+                    }
+
+                    Section("Pricing") {
+                        Toggle("Free event", isOn: $isFree)
+                        if !isFree {
+                            TextField("Price (e.g. 499)", text: $priceText)
+                                .keyboardType(.decimalPad)
+                            TextField("Currency (ISO)", text: $currency)
+                                .keyboardType(.default)
+                        }
+                    }
+
+                    Section("Additional info") {
+                        TextField("Tags (comma separated)", text: $tagsText)
+                        TextField("Speakers (comma separated names)", text: $speakersText)
                     }
                 }
             }
@@ -268,17 +400,44 @@ struct NewEventView: View {
         let db = Firestore.firestore()
         let attendeesInt = Int(maxAttendees) ?? 0
         let docRef = db.collection("events").document()
+        // Validate registration deadline
+        if registrationDeadline > date {
+            print("Registration deadline must be before the event start date")
+            return
+        }
+
+        // Parse pricing
+        var priceValue: Double? = nil
+        if !isFree {
+            priceValue = Double(priceText.replacingOccurrences(of: ",", with: ""))
+            if priceValue == nil {
+                print("Invalid price")
+                return
+            }
+        }
+
+    // Parse tags and speakers
+    let tags = tagsText.split(separator: ",").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
+    let speakerNames = speakersText.split(separator: ",").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
+    let speakers = speakerNames // store as [String]
+
         let data: [String: Any] = [
             "title": title,
             "description": description,
             "date": date.timeIntervalSince1970,
+            "registrationDeadline": registrationDeadline.timeIntervalSince1970,
             "location": location,
             "organizer": user.name,
             "organizerId": user.id,
             "attendees": 0,
             "maxAttendees": attendeesInt,
             "attendeesList": [],
-            "type": type.rawValue
+            "type": type.rawValue,
+            "isFree": isFree,
+            "price": priceValue as Any,
+            "currency": currency,
+            "tags": tags,
+            "speakers": speakers
         ]
 
         docRef.setData(data) { error in

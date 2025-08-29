@@ -16,12 +16,14 @@ struct OrderHistoryView: View {
     @State private var showingOrderDetail = false
     
     enum OrderStatusFilter: String, CaseIterable {
-        case all = "All"
-        case active = "Active"
-        case delivered = "Delivered"
-        case cancelled = "Cancelled"
+        case all = "all"
+        case active = "active"
+        case delivered = "delivered"
+        case cancelled = "cancelled"
         
-        var displayName: String { rawValue }
+        var displayName: String {
+            LocalizationManager.shared.localizedString(for: "order_filter_\(rawValue)")
+        }
     }
     
     var filteredOrders: [Order] {
@@ -63,7 +65,7 @@ struct OrderHistoryView: View {
                     HStack {
                         Image(systemName: "magnifyingglass")
                             .foregroundColor(.gray)
-                        TextField("Search orders...", text: $searchText)
+                        TextField(LocalizationManager.shared.localizedString(for: "search_orders_placeholder"), text: $searchText)
                             .textFieldStyle(.plain)
                     }
                     .padding()
@@ -106,11 +108,11 @@ struct OrderHistoryView: View {
                 
                 Spacer()
             }
-            .navigationTitle("Order History")
+            .navigationTitle(LocalizationManager.shared.localizedString(for: "order_history_title"))
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Close") {
+                    Button(LocalizationManager.shared.localizedString(for: "close")) {
                         dismiss()
                     }
                 }

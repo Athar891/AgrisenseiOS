@@ -13,6 +13,7 @@ struct AddressSelectionView: View {
     @Binding var selectedAddress: DeliveryAddress?
     @Environment(\.dismiss) private var dismiss
     @State private var showingAddAddress = false
+    @EnvironmentObject var localizationManager: LocalizationManager
     
     var body: some View {
         NavigationView {
@@ -35,17 +36,17 @@ struct AddressSelectionView: View {
                     EmptyAddressView()
                 }
             }
-            .navigationTitle("Select Address")
+            .navigationTitle(localizationManager.localizedString(for: "select_address_title"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
+                    Button(localizationManager.localizedString(for: "cancel")) {
                         dismiss()
                     }
                 }
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Add New") {
+                    Button(localizationManager.localizedString(for: "add_new")) {
                         showingAddAddress = true
                     }
                 }
@@ -85,7 +86,7 @@ struct AddressSelectionRow: View {
                             .fontWeight(.semibold)
                         
                         if address.isDefault {
-                            Text("DEFAULT")
+                            Text(LocalizationManager.shared.localizedString(for: "default_label"))
                                 .font(.caption)
                                 .fontWeight(.bold)
                                 .foregroundColor(.white)
@@ -145,11 +146,11 @@ struct EmptyAddressView: View {
                 .foregroundColor(.gray)
             
             VStack(spacing: 8) {
-                Text("No Addresses")
+                Text(LocalizationManager.shared.localizedString(for: "no_addresses"))
                     .font(.title2)
                     .fontWeight(.semibold)
                 
-                Text("Add a delivery address to continue with your order")
+                Text(LocalizationManager.shared.localizedString(for: "add_delivery_address_prompt"))
                     .font(.body)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
@@ -163,6 +164,7 @@ struct EmptyAddressView: View {
 struct AddEditAddressView: View {
     @ObservedObject var addressManager: AddressManager
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var localizationManager: LocalizationManager
     
     let address: DeliveryAddress?
     
@@ -185,7 +187,7 @@ struct AddEditAddressView: View {
     }
     
     private var navigationTitle: String {
-        return isEditing ? "Edit Address" : "Add Address"
+    return isEditing ? LocalizationManager.shared.localizedString(for: "edit_address_title") : LocalizationManager.shared.localizedString(for: "add_address_title")
     }
     
     init(addressManager: AddressManager, address: DeliveryAddress? = nil) {
@@ -196,38 +198,38 @@ struct AddEditAddressView: View {
     var body: some View {
         NavigationView {
             Form {
-                Section(header: Text("Contact Information")) {
-                    TextField("Full Name", text: $fullName)
+                Section(header: Text(LocalizationManager.shared.localizedString(for: "contact_information"))) {
+                    TextField(localizationManager.localizedString(for: "full_name_placeholder"), text: $fullName)
                         .textContentType(.name)
                     
-                    TextField("Phone Number", text: $phoneNumber)
+                    TextField(localizationManager.localizedString(for: "phone_number_placeholder"), text: $phoneNumber)
                         .textContentType(.telephoneNumber)
                         .keyboardType(.phonePad)
                 }
                 
-                Section(header: Text("Address")) {
-                    TextField("Street Address", text: $addressLine1)
+                Section(header: Text(LocalizationManager.shared.localizedString(for: "address_section"))) {
+                    TextField(localizationManager.localizedString(for: "street_address_placeholder"), text: $addressLine1)
                         .textContentType(.streetAddressLine1)
                     
-                    TextField("Apartment, suite, etc. (optional)", text: $addressLine2)
+                    TextField(localizationManager.localizedString(for: "apartment_placeholder"), text: $addressLine2)
                         .textContentType(.streetAddressLine2)
                     
-                    TextField("City", text: $city)
+                    TextField(localizationManager.localizedString(for: "city_placeholder"), text: $city)
                         .textContentType(.addressCity)
                     
                     HStack {
-                        TextField("State/Province", text: $state)
+                        TextField(localizationManager.localizedString(for: "state_placeholder"), text: $state)
                             .textContentType(.addressState)
                         
-                        TextField("ZIP/Postal Code", text: $zipCode)
+                        TextField(localizationManager.localizedString(for: "zip_placeholder"), text: $zipCode)
                             .textContentType(.postalCode)
                     }
                     
-                    TextField("Country", text: $country)
+                    TextField(localizationManager.localizedString(for: "country_placeholder"), text: $country)
                         .textContentType(.countryName)
                 }
                 
-                Section(header: Text("Address Type")) {
+                Section(header: Text(LocalizationManager.shared.localizedString(for: "address_type_section"))) {
                     Picker("Type", selection: $addressType) {
                         ForEach(AddressType.allCases, id: \.self) { type in
                             Image(systemName: type.icon)
@@ -236,20 +238,20 @@ struct AddEditAddressView: View {
                     }
                     .pickerStyle(SegmentedPickerStyle())
                     
-                    Toggle("Set as default address", isOn: $isDefault)
+                    Toggle(LocalizationManager.shared.localizedString(for: "set_as_default"), isOn: $isDefault)
                 }
             }
             .navigationTitle(navigationTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
+                    Button(LocalizationManager.shared.localizedString(for: "cancel")) {
                         dismiss()
                     }
                 }
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Save") {
+                    Button(LocalizationManager.shared.localizedString(for: "save")) {
                         saveAddress()
                     }
                     .fontWeight(.semibold)
@@ -259,8 +261,8 @@ struct AddEditAddressView: View {
         .onAppear {
             loadAddressData()
         }
-        .alert("Validation Error", isPresented: $showingValidationAlert) {
-            Button("OK") { }
+        .alert(LocalizationManager.shared.localizedString(for: "validation_error_title"), isPresented: $showingValidationAlert) {
+            Button(LocalizationManager.shared.localizedString(for: "ok")) { }
         } message: {
             Text(validationErrors.joined(separator: "\n"))
         }
@@ -342,6 +344,7 @@ struct AddEditAddressView: View {
 struct AddressDisplayCard: View {
     let address: DeliveryAddress
     let onEdit: () -> Void
+    @EnvironmentObject var localizationManager: LocalizationManager
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -354,7 +357,7 @@ struct AddressDisplayCard: View {
                     .fontWeight(.semibold)
                 
                 if address.isDefault {
-                    Text("DEFAULT")
+                    Text(localizationManager.localizedString(for: "default_label"))
                         .font(.caption)
                         .fontWeight(.bold)
                         .foregroundColor(.white)
@@ -366,7 +369,7 @@ struct AddressDisplayCard: View {
                 
                 Spacer()
                 
-                Button("Change", action: onEdit)
+                Button(localizationManager.localizedString(for: "change"), action: onEdit)
                     .font(.subheadline)
                     .foregroundColor(.blue)
             }
@@ -403,4 +406,5 @@ struct AddressDisplayCard: View {
         addressManager: AddressManager(userId: "preview"),
         selectedAddress: .constant(nil)
     )
+    .environmentObject(LocalizationManager.shared)
 }

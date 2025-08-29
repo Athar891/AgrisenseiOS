@@ -12,6 +12,7 @@ import FirebaseAuth
 struct SignInView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var userManager: UserManager
+    @EnvironmentObject var localizationManager: LocalizationManager
     @State private var email = ""
     @State private var password = ""
     @State private var showingPassword = false
@@ -30,12 +31,12 @@ struct SignInView: View {
                             .font(.system(size: 60))
                             .foregroundColor(.green)
                         
-                        Text(LocalizationManager.shared.localizedString(for: "welcome_back"))
+                        Text(localizationManager.localizedString(for: "welcome_back"))
                             .font(.largeTitle)
                             .fontWeight(.bold)
                             .foregroundColor(.primary)
                         
-                        Text(LocalizationManager.shared.localizedString(for: "sign_in_to_your_account"))
+                        Text(localizationManager.localizedString(for: "sign_in_to_your_account"))
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                     }
@@ -45,11 +46,11 @@ struct SignInView: View {
                     VStack(spacing: 20) {
                         // Email
                         VStack(alignment: .leading, spacing: 8) {
-                            Text(LocalizationManager.shared.localizedString(for: "email_address_label"))
+                            Text(localizationManager.localizedString(for: "email_address_label"))
                                 .font(.subheadline)
                                 .fontWeight(.medium)
                             
-                            TextField(LocalizationManager.shared.localizedString(for: "enter_email_placeholder"), text: $email)
+                            TextField(localizationManager.localizedString(for: "enter_email_placeholder"), text: $email)
                                 .textFieldStyle(RoundedBorderTextFieldStyle())
                                 .keyboardType(.emailAddress)
                                 .autocapitalization(.none)
@@ -57,15 +58,15 @@ struct SignInView: View {
                         
                         // Password
                         VStack(alignment: .leading, spacing: 8) {
-                            Text(LocalizationManager.shared.localizedString(for: "password_label"))
+                            Text(localizationManager.localizedString(for: "password_label"))
                                 .font(.subheadline)
                                 .fontWeight(.medium)
                             
                             HStack {
                                 if showingPassword {
-                                    TextField(LocalizationManager.shared.localizedString(for: "enter_password_placeholder"), text: $password)
+                                    TextField(localizationManager.localizedString(for: "enter_password_placeholder"), text: $password)
                                 } else {
-                                    SecureField(LocalizationManager.shared.localizedString(for: "enter_password_placeholder"), text: $password)
+                                    SecureField(localizationManager.localizedString(for: "enter_password_placeholder"), text: $password)
                                 }
                                 
                                 Button(action: { showingPassword.toggle() }) {
@@ -80,7 +81,7 @@ struct SignInView: View {
                         HStack {
                             Spacer()
                             
-                            Button(LocalizationManager.shared.localizedString(for: "forgot_password")) {
+                            Button(localizationManager.localizedString(for: "forgot_password")) {
                                 // Handle forgot password
                                 alertMessage = "Password reset link sent to your email"
                                 showingAlert = true
@@ -101,7 +102,7 @@ struct SignInView: View {
                                 Image(systemName: "envelope.fill")
                             }
                             
-                            Text(LocalizationManager.shared.localizedString(for: "sign_in_with_email"))
+                            Text(localizationManager.localizedString(for: "sign_in_with_email"))
                                 .fontWeight(.semibold)
                         }
                         .foregroundColor(.white)
@@ -119,7 +120,7 @@ struct SignInView: View {
                             .frame(height: 1)
                             .foregroundColor(.gray.opacity(0.3))
                         
-                        Text(LocalizationManager.shared.localizedString(for: "or"))
+                        Text(localizationManager.localizedString(for: "or"))
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                             .padding(.horizontal, 16)
@@ -137,7 +138,7 @@ struct SignInView: View {
                                 Image(systemName: "globe")
                                     .foregroundColor(.white)
                                 
-                                Text(LocalizationManager.shared.localizedString(for: "continue_with_google"))
+                                Text(localizationManager.localizedString(for: "continue_with_google"))
                                     .fontWeight(.semibold)
                             }
                             .foregroundColor(.white)
@@ -154,7 +155,7 @@ struct SignInView: View {
                                 Image(systemName: "applelogo")
                                     .foregroundColor(.white)
                                 
-                                Text(LocalizationManager.shared.localizedString(for: "continue_with_apple"))
+                                Text(localizationManager.localizedString(for: "continue_with_apple"))
                                     .fontWeight(.semibold)
                             }
                             .foregroundColor(.white)
@@ -168,10 +169,10 @@ struct SignInView: View {
                     
                     // Sign Up Link
                     HStack {
-                        Text(LocalizationManager.shared.localizedString(for: "dont_have_account"))
+                        Text(localizationManager.localizedString(for: "dont_have_account"))
                             .foregroundColor(.secondary)
                         
-                        Button(LocalizationManager.shared.localizedString(for: "sign_up")) {
+                        Button(localizationManager.localizedString(for: "sign_up")) {
                             showingSignup = true
                         }
                         .foregroundColor(.green)
@@ -187,7 +188,7 @@ struct SignInView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button(LocalizationManager.shared.localizedString(for: "cancel")) {
+                    Button(localizationManager.localizedString(for: "cancel")) {
                         dismiss()
                     }
                     .foregroundColor(.green)

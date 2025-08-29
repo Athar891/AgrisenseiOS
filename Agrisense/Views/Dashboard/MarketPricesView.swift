@@ -2,20 +2,21 @@ import SwiftUI
 
 struct MarketPricesView: View {
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var localizationManager: LocalizationManager
 
     var body: some View {
         NavigationView {
             List {
-                Section(header: Text(LocalizationManager.shared.localizedString(for: "crop_prices"))) {
-                    Text(LocalizationManager.shared.localizedString(for: "wheat_price"))
-                    Text(LocalizationManager.shared.localizedString(for: "corn_price"))
-                    Text(LocalizationManager.shared.localizedString(for: "soybeans_price"))
+                Section(header: Text(localizationManager.localizedString(for: "crop_prices"))) {
+                    Text(localizationManager.localizedString(for: "wheat_price"))
+                    Text(localizationManager.localizedString(for: "corn_price"))
+                    Text(localizationManager.localizedString(for: "soybeans_price"))
                 }
             }
-            .navigationTitle(LocalizationManager.shared.localizedString(for: "market_prices"))
+            .navigationTitle(localizationManager.localizedString(for: "market_prices"))
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(LocalizationManager.shared.localizedString(for: "done")) {
+                    Button(localizationManager.localizedString(for: "done")) {
                         dismiss()
                     }
                 }

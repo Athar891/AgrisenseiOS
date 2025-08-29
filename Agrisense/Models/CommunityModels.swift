@@ -84,8 +84,15 @@ struct Event: Identifiable {
     var attendeesList: [String]
     var isAttending: Bool
     let type: EventType
+    // New optional fields
+    let registrationDeadline: Date?
+    let isFree: Bool
+    let price: Double?
+    let currency: String?
+    let tags: [String]
+    let speakers: [String]
 
-    init(firestoreId: String = "", id: UUID = UUID(), title: String, description: String, date: Date, location: String, organizer: String, organizerId: String = "", attendees: Int = 0, maxAttendees: Int = 0, attendeesList: [String] = [], isAttending: Bool = false, type: EventType) {
+    init(firestoreId: String = "", id: UUID = UUID(), title: String, description: String, date: Date, location: String, organizer: String, organizerId: String = "", attendees: Int = 0, maxAttendees: Int = 0, attendeesList: [String] = [], isAttending: Bool = false, type: EventType, registrationDeadline: Date? = nil, isFree: Bool = true, price: Double? = nil, currency: String? = nil, tags: [String] = [], speakers: [String] = []) {
         self.id = id
         self.firestoreId = firestoreId
         self.title = title
@@ -99,6 +106,12 @@ struct Event: Identifiable {
         self.attendeesList = attendeesList
         self.isAttending = isAttending
         self.type = type
+        self.registrationDeadline = registrationDeadline
+        self.isFree = isFree
+        self.price = price
+        self.currency = currency
+        self.tags = tags
+        self.speakers = speakers
     }
 }
 

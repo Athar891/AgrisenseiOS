@@ -19,6 +19,7 @@ extension View {
 struct MarketplaceView: View {
     @EnvironmentObject var userManager: UserManager
     @EnvironmentObject var appState: AppState
+    @EnvironmentObject private var localizationManager: LocalizationManager
     @StateObject private var cartManager: CartManager
     @State private var searchText = ""
     @State private var selectedCategory: ProductCategory = .all
@@ -65,7 +66,7 @@ struct MarketplaceView: View {
                     )
                 }
             }
-            .navigationTitle(LocalizationManager.shared.localizedString(for: "marketplace_title"))
+            .navigationTitle(localizationManager.localizedString(for: "marketplace_title"))
             .navigationBarTitleDisplayMode(.large)
             .background(
                 // Invisible background to catch taps
@@ -157,6 +158,7 @@ struct SearchFilterBar: View {
     @Binding var showingFilters: Bool
     @Binding var showingAddProduct: Bool
     @EnvironmentObject var userManager: UserManager
+    @EnvironmentObject var localizationManager: LocalizationManager
     @FocusState.Binding var isSearchFieldFocused: Bool
     
     var body: some View {
@@ -166,13 +168,13 @@ struct SearchFilterBar: View {
                     Image(systemName: "magnifyingglass")
                         .foregroundColor(.secondary)
                     
-                                TextField(LocalizationManager.shared.localizedString(for: "Search products..."), text: $searchText)
+                                TextField(localizationManager.localizedString(for: "search_products_placeholder"), text: $searchText)
                         .textFieldStyle(PlainTextFieldStyle())
                         .focused($isSearchFieldFocused)
                         .toolbar {
                             ToolbarItemGroup(placement: .keyboard) {
                                 Spacer()
-                                Button("Done") {
+                                Button(localizationManager.localizedString(for: "done")) {
                                     isSearchFieldFocused = false
                                 }
                                 .foregroundColor(.green)
@@ -233,10 +235,13 @@ struct CategoryPill: View {
     let category: ProductCategory
     let isSelected: Bool
     let action: () -> Void
+    @EnvironmentObject var localizationManager: LocalizationManager
     
     var body: some View {
         Button(action: action) {
-            Text(category.displayName)
+            // Prefer localized category name, fall back to displayName
+            let title = localizationManager.localizedString(for: category.localizationKey)
+            Text(title.isEmpty ? category.displayName : title)
                 .font(.subheadline)
                 .fontWeight(.medium)
                 .foregroundColor(isSelected ? .white : .primary)
@@ -253,6 +258,7 @@ struct ProductCard: View {
     let product: Product
     let cartManager: CartManager
     @State private var showingProductDetail = false
+    @EnvironmentObject var localizationManager: LocalizationManager
     
     var body: some View {
         Button(action: { showingProductDetail = true }) {
@@ -297,7 +303,6 @@ struct ProductCard: View {
                             Image(systemName: "star.fill")
                                 .font(.caption)
                                 .foregroundColor(.orange)
-                            
                             Text(String(format: "%.1f", product.rating))
                                 .font(.caption)
                                 .foregroundColor(.secondary)
@@ -347,6 +352,19 @@ enum ProductCategory: String, CaseIterable {
             return "Equipment"
         case .seeds:
             return "Seeds"
+        }
+    }
+
+    var localizationKey: String {
+        switch self {
+        case .all: return "category_all"
+        case .vegetables: return "category_vegetables"
+        case .fruits: return "category_fruits"
+        case .grains: return "category_grains"
+        case .dairy: return "category_dairy"
+        case .meat: return "category_meat"
+        case .equipment: return "category_equipment"
+        case .seeds: return "category_seeds"
         }
     }
     
@@ -538,6 +556,7 @@ let sampleProducts = [
 struct ProductDetailView: View {
     let product: Product
     let cartManager: CartManager
+    @EnvironmentObject var localizationManager: LocalizationManager
     @Environment(\.dismiss) private var dismiss
     @State private var quantity = 1
     @State private var addedQuantity = 1 // Store the quantity that was actually added
@@ -565,7 +584,7 @@ struct ProductDetailView: View {
                                 .font(.title2)
                                 .fontWeight(.bold)
                             
-                            Text("by \(product.seller)")
+                            Text(String(format: localizationManager.localizedString(for: "by_seller"), product.seller))
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
                             
@@ -576,7 +595,7 @@ struct ProductDetailView: View {
                                         .fontWeight(.bold)
                                         .foregroundColor(.green)
                                     
-                                    Text("per \(product.unit)")
+                                    Text(String(format: localizationManager.localizedString(for: "per_unit"), product.unit))
                                         .font(.caption)
                                         .fontWeight(.medium)
                                         .foregroundColor(.secondary)
@@ -606,14 +625,14 @@ struct ProductDetailView: View {
                             
                             Spacer()
                             
-                            Text("\(product.stock) in stock")
+                            Text(String(format: localizationManager.localizedString(for: "in_stock"), product.stock))
                                 .font(.subheadline)
                                 .foregroundColor(.green)
                         }
                         
                         // Quantity Selector
                         HStack {
-                            Text("Quantity:")
+                            Text(localizationManager.localizedString(for: "quantity_label"))
                                 .font(.subheadline)
                                 .fontWeight(.medium)
                             
@@ -638,7 +657,7 @@ struct ProductDetailView: View {
                         
                         // Add to Cart Button
                         Button(action: addToCart) {
-                            Text("Add to Cart - ₹\(String(format: "%.2f", product.price * Double(quantity)))")
+                            Text(String(format: localizationManager.localizedString(for: "add_to_cart_with_price"), String(format: "%.2f", product.price * Double(quantity))))
                                 .font(.headline)
                                 .fontWeight(.semibold)
                                 .foregroundColor(.white)
@@ -652,24 +671,24 @@ struct ProductDetailView: View {
                     .padding()
                 }
             }
-            .navigationTitle("Product Details")
+            .navigationTitle(localizationManager.localizedString(for: "product_details_title"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
+                    Button(localizationManager.localizedString(for: "done")) {
                         dismiss()
                     }
                 }
             }
-            .alert(addedQuantity == 1 ? "Item Added to Cart!" : "Items Added to Cart!", isPresented: $showingAddedToCartAlert) {
-                Button("OK") { }
+            .alert(addedQuantity == 1 ? localizationManager.localizedString(for: "item_added_single") : localizationManager.localizedString(for: "item_added_plural"), isPresented: $showingAddedToCartAlert) {
+                Button(localizationManager.localizedString(for: "ok")) { }
             } message: {
-                Text("\(addedQuantity) \(product.unit) of \(product.name) \(addedQuantity == 1 ? "has" : "have") been added to your cart.")
+                Text(String(format: localizationManager.localizedString(for: "items_added_message"), addedQuantity, product.unit, product.name, addedQuantity == 1 ? localizationManager.localizedString(for: "has") : localizationManager.localizedString(for: "have")))
             }
-            .alert("Cannot Add to Cart", isPresented: $showingStockAlert) {
-                Button("OK") { }
+            .alert(localizationManager.localizedString(for: "cannot_add_to_cart"), isPresented: $showingStockAlert) {
+                Button(localizationManager.localizedString(for: "ok")) { }
             } message: {
-                Text("Not enough stock available. Only \(product.stock - cartManager.getItemQuantity(for: product.id)) items remaining.")
+                Text(String(format: localizationManager.localizedString(for: "not_enough_stock"), product.stock - cartManager.getItemQuantity(for: product.id)))
             }
         }
     }
@@ -786,6 +805,7 @@ struct ImagePicker: UIViewControllerRepresentable {
 
 struct AddProductView: View {
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var localizationManager: LocalizationManager
     @State private var productName = ""
     @State private var description = ""
     @State private var price = ""
@@ -796,42 +816,42 @@ struct AddProductView: View {
     var body: some View {
         NavigationView {
             Form {
-                Section("Product Images") {
+                Section(localizationManager.localizedString(for: "product_images_section")) {
                     ImagePickerView(images: $productImages)
                         .frame(height: 120)
                 }
                 
-                Section("Product Information") {
-                    TextField("Product Name", text: $productName)
-                    TextField("Description", text: $description, axis: .vertical)
+                Section(localizationManager.localizedString(for: "product_information_section")) {
+                    TextField(localizationManager.localizedString(for: "product_name_placeholder"), text: $productName)
+                    TextField(localizationManager.localizedString(for: "description_placeholder"), text: $description, axis: .vertical)
                         .lineLimit(3...6)
                     
-                    Picker("Category", selection: $selectedCategory) {
+                    Picker(localizationManager.localizedString(for: "category_picker"), selection: $selectedCategory) {
                         ForEach(ProductCategory.allCases.filter { $0 != .all }, id: \.self) { category in
                             Text(category.displayName).tag(category)
                         }
                     }
                 }
                 
-                Section("Pricing & Stock") {
-                    TextField("Price", text: $price)
+                Section(localizationManager.localizedString(for: "pricing_stock_section")) {
+                    TextField(localizationManager.localizedString(for: "price_placeholder"), text: $price)
                         .keyboardType(.decimalPad)
                     
-                    TextField("Stock Quantity", text: $stock)
+                    TextField(localizationManager.localizedString(for: "stock_quantity_placeholder"), text: $stock)
                         .keyboardType(.numberPad)
                 }
             }
-            .navigationTitle("Add Product")
+            .navigationTitle(localizationManager.localizedString(for: "add_product_title"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
+                    Button(localizationManager.localizedString(for: "cancel")) {
                         dismiss()
                     }
                 }
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Save") {
+                    Button(localizationManager.localizedString(for: "save")) {
                         // Save product logic here
                         dismiss()
                     }
@@ -844,5 +864,6 @@ struct AddProductView: View {
 
 #Preview {
     MarketplaceView()
-        .environmentObject(UserManager())
+    .environmentObject(UserManager())
+    .environmentObject(LocalizationManager.shared)
 }

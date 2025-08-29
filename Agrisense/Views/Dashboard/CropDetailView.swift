@@ -12,6 +12,7 @@ struct CropDetailView: View {
     let crop: Crop
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var userManager: UserManager
+    @EnvironmentObject var localizationManager: LocalizationManager
     @State private var showingEditView = false
     
     var body: some View {
@@ -55,6 +56,7 @@ struct CropDetailView: View {
 
 struct CropImageHeader: View {
     let crop: Crop
+    @EnvironmentObject var localizationManager: LocalizationManager
     
     var body: some View {
         VStack(spacing: 16) {
@@ -86,7 +88,7 @@ struct CropImageHeader: View {
                             Image(systemName: "leaf.fill")
                                 .font(.system(size: 40))
                                 .foregroundColor(.green)
-                            Text(LocalizationManager.shared.localizedString(for: "no_image"))
+                            Text(localizationManager.localizedString(for: "no_image"))
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
@@ -99,23 +101,24 @@ struct CropImageHeader: View {
 
 struct CropBasicInfoSection: View {
     let crop: Crop
+    @EnvironmentObject var localizationManager: LocalizationManager
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text(LocalizationManager.shared.localizedString(for: "basic_information"))
+            Text(localizationManager.localizedString(for: "basic_information"))
                 .font(.headline)
                 .fontWeight(.semibold)
             
             VStack(spacing: 12) {
-                InfoRow(title: LocalizationManager.shared.localizedString(for: "field_location"), value: crop.fieldLocation, icon: "location.fill")
-                InfoRow(title: LocalizationManager.shared.localizedString(for: "planted"), value: crop.plantingDate.formatted(date: .abbreviated, time: .omitted), icon: "calendar")
-                InfoRow(title: LocalizationManager.shared.localizedString(for: "expected_harvest"), value: crop.expectedHarvestDate.formatted(date: .abbreviated, time: .omitted), icon: "calendar.badge.clock")
-                InfoRow(title: LocalizationManager.shared.localizedString(for: "days_since_planting"), value: "\(crop.daysSincePlanting) \(LocalizationManager.shared.localizedString(for: "days"))", icon: "clock.fill")
+                InfoRow(title: localizationManager.localizedString(for: "field_location"), value: crop.fieldLocation, icon: "location.fill")
+                InfoRow(title: localizationManager.localizedString(for: "planted"), value: crop.plantingDate.formatted(date: .abbreviated, time: .omitted), icon: "calendar")
+                InfoRow(title: localizationManager.localizedString(for: "expected_harvest"), value: crop.expectedHarvestDate.formatted(date: .abbreviated, time: .omitted), icon: "calendar.badge.clock")
+                InfoRow(title: localizationManager.localizedString(for: "days_since_planting"), value: "\(crop.daysSincePlanting) \(localizationManager.localizedString(for: "days"))", icon: "clock.fill")
                 
                 if crop.daysUntilHarvest > 0 {
-                    InfoRow(title: LocalizationManager.shared.localizedString(for: "days_until_harvest"), value: "\(crop.daysUntilHarvest) \(LocalizationManager.shared.localizedString(for: "days"))", icon: "timer")
+                    InfoRow(title: localizationManager.localizedString(for: "days_until_harvest"), value: "\(crop.daysUntilHarvest) \(localizationManager.localizedString(for: "days"))", icon: "timer")
                 } else if crop.isOverdue {
-                    InfoRow(title: LocalizationManager.shared.localizedString(for: "status"), value: LocalizationManager.shared.localizedString(for: "overdue_for_harvest"), icon: "exclamationmark.triangle.fill")
+                    InfoRow(title: localizationManager.localizedString(for: "status"), value: localizationManager.localizedString(for: "overdue_for_harvest"), icon: "exclamationmark.triangle.fill")
                 }
             }
         }
@@ -127,10 +130,11 @@ struct CropBasicInfoSection: View {
 
 struct CropStatusSection: View {
     let crop: Crop
+    @EnvironmentObject var localizationManager: LocalizationManager
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text(LocalizationManager.shared.localizedString(for: "current_status"))
+            Text(localizationManager.localizedString(for: "current_status"))
                 .font(.headline)
                 .fontWeight(.semibold)
             
@@ -138,7 +142,7 @@ struct CropStatusSection: View {
                 // Growth Stage
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(LocalizationManager.shared.localizedString(for: "growth_stage"))
+                        Text(localizationManager.localizedString(for: "growth_stage"))
                             .font(.subheadline)
                             .fontWeight(.medium)
                         
@@ -159,7 +163,7 @@ struct CropStatusSection: View {
                 // Health Status
                 HStack {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text(LocalizationManager.shared.localizedString(for: "health_status"))
+                        Text(localizationManager.localizedString(for: "health_status"))
                             .font(.subheadline)
                             .fontWeight(.medium)
                         
@@ -192,10 +196,11 @@ struct CropStatusSection: View {
 
 struct CropTimelineSection: View {
     let crop: Crop
+    @EnvironmentObject var localizationManager: LocalizationManager
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text(LocalizationManager.shared.localizedString(for: "progress_timeline"))
+            Text(localizationManager.localizedString(for: "progress_timeline"))
                 .font(.headline)
                 .fontWeight(.semibold)
             
@@ -205,13 +210,13 @@ struct CropTimelineSection: View {
                     .tint(.green)
                 
                 HStack {
-                    Text(LocalizationManager.shared.localizedString(for: "planted"))
+                    Text(localizationManager.localizedString(for: "planted"))
                         .font(.caption)
                         .foregroundColor(.secondary)
                     
                     Spacer()
                     
-                    Text(String(format: LocalizationManager.shared.localizedString(for: "percent_complete"), Int(crop.progressPercentage * 100)))
+                    Text(String(format: localizationManager.localizedString(for: "percent_complete"), Int(crop.progressPercentage * 100)))
                         .font(.caption)
                         .fontWeight(.medium)
                         .foregroundColor(.primary)
@@ -232,10 +237,11 @@ struct CropTimelineSection: View {
 
 struct CropNotesSection: View {
     let notes: String
+    @EnvironmentObject var localizationManager: LocalizationManager
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text(LocalizationManager.shared.localizedString(for: "notes"))
+            Text(localizationManager.localizedString(for: "notes"))
                 .font(.headline)
                 .fontWeight(.semibold)
             
@@ -279,6 +285,7 @@ struct EditCropView: View {
     let crop: Crop
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var userManager: UserManager
+    @EnvironmentObject var localizationManager: LocalizationManager
     @StateObject private var cropManager = CropManager()
     
     @State private var cropName: String
@@ -371,37 +378,37 @@ struct EditCropView: View {
                         } else {
                             HStack {
                                 Image(systemName: "photo")
-                                Text(LocalizationManager.shared.localizedString(for: "select_crop_image"))
+                                Text(localizationManager.localizedString(for: "select_crop_image"))
                             }
                             .foregroundColor(.blue)
                         }
                     }
                 }
                 
-                Section(header: Text(LocalizationManager.shared.localizedString(for: "notes"))) {
-                    TextField(LocalizationManager.shared.localizedString(for: "additional_notes_placeholder"), text: $notes, axis: .vertical)
+                Section(header: Text(localizationManager.localizedString(for: "notes"))) {
+                    TextField(localizationManager.localizedString(for: "additional_notes_placeholder"), text: $notes, axis: .vertical)
                         .lineLimit(3...6)
                 }
                 
                 Section {
-                    Button(LocalizationManager.shared.localizedString(for: "save_changes")) {
+                    Button(localizationManager.localizedString(for: "save_changes")) {
                         Task {
                             await updateCrop()
                         }
                     }
                     .disabled(cropName.isEmpty || fieldLocation.isEmpty || isLoading)
                     
-                    Button(LocalizationManager.shared.localizedString(for: "delete_crop"), role: .destructive) {
+                    Button(localizationManager.localizedString(for: "delete_crop"), role: .destructive) {
                         showingDeleteAlert = true
                     }
                     .disabled(isLoading)
                 }
             }
-            .navigationTitle(String(format: LocalizationManager.shared.localizedString(for: "edit_x"), crop.name))
+            .navigationTitle(String(format: localizationManager.localizedString(for: "edit_x"), crop.name))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(LocalizationManager.shared.localizedString(for: "cancel")) {
+                    Button(localizationManager.localizedString(for: "cancel")) {
                         dismiss()
                     }
                 }
@@ -415,20 +422,20 @@ struct EditCropView: View {
                     }
                 }
             }
-            .alert(LocalizationManager.shared.localizedString(for: "error"), isPresented: $showingAlert) {
-                Button(LocalizationManager.shared.localizedString(for: "ok")) { }
+            .alert(localizationManager.localizedString(for: "error"), isPresented: $showingAlert) {
+                Button(localizationManager.localizedString(for: "ok")) { }
             } message: {
                 Text(alertMessage)
             }
             .alert("Delete Crop", isPresented: $showingDeleteAlert) {
-                Button(LocalizationManager.shared.localizedString(for: "delete"), role: .destructive) {
+                Button(localizationManager.localizedString(for: "delete"), role: .destructive) {
                     Task {
                         await deleteCrop()
                     }
                 }
-                Button(LocalizationManager.shared.localizedString(for: "cancel"), role: .cancel) { }
+                Button(localizationManager.localizedString(for: "cancel"), role: .cancel) { }
             } message: {
-                Text(LocalizationManager.shared.localizedString(for: "delete_crop_confirmation"))
+                Text(localizationManager.localizedString(for: "delete_crop_confirmation"))
             }
             .overlay {
                 if isLoading {
@@ -446,7 +453,7 @@ struct EditCropView: View {
     
     private func updateCrop() async {
         guard let userId = userManager.currentUser?.id else {
-                    alertMessage = LocalizationManager.shared.localizedString(for: "user_not_found_try_login")
+                    alertMessage = localizationManager.localizedString(for: "user_not_found_try_login")
             showingAlert = true
             return
         }
@@ -499,7 +506,7 @@ struct EditCropView: View {
             
             dismiss()
             } catch {
-            alertMessage = String(format: LocalizationManager.shared.localizedString(for: "failed_update_crop"), error.localizedDescription)
+            alertMessage = String(format: localizationManager.localizedString(for: "failed_update_crop"), error.localizedDescription)
             showingAlert = true
         }
         
@@ -541,7 +548,7 @@ struct EditCropView: View {
             
             dismiss()
             } catch {
-            alertMessage = String(format: LocalizationManager.shared.localizedString(for: "failed_delete_crop"), error.localizedDescription)
+            alertMessage = String(format: localizationManager.localizedString(for: "failed_delete_crop"), error.localizedDescription)
             showingAlert = true
         }
         
@@ -562,4 +569,5 @@ struct EditCropView: View {
         ))
     }
     .environmentObject(UserManager())
+    .environmentObject(LocalizationManager.shared)
 }

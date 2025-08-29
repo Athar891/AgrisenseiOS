@@ -3,14 +3,15 @@ import SwiftUI
 struct RoleSelectionView: View {
     @State private var showFarmerAuth = false
     @State private var showSellerAuth = false
+    @EnvironmentObject var localizationManager: LocalizationManager
 
     var body: some View {
         VStack(spacing: 32) {
-            Text("Choose Your Role")
+            Text(localizationManager.localizedString(for: "choose_role"))
                 .font(.title)
                 .fontWeight(.bold)
             
-            Button("I'm a Farmer") {
+            Button(localizationManager.localizedString(for: "role_farmer")) {
                 showFarmerAuth = true
             }
             .frame(maxWidth: .infinity)
@@ -19,7 +20,7 @@ struct RoleSelectionView: View {
             .foregroundColor(.white)
             .cornerRadius(12)
             
-            Button("I'm a Seller") {
+            Button(localizationManager.localizedString(for: "role_seller")) {
                 showSellerAuth = true
             }
             .frame(maxWidth: .infinity)

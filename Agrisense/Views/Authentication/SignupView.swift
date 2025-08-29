@@ -10,6 +10,7 @@ import SwiftUI
 struct SignupView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var userManager: UserManager
+    @EnvironmentObject var localizationManager: LocalizationManager
     @State private var selectedRole: UserType
 
     init(role: UserType = .farmer) {
@@ -37,12 +38,12 @@ struct SignupView: View {
                             .font(.system(size: 60))
                             .foregroundColor(.green)
                         
-                        Text(LocalizationManager.shared.localizedString(for: "create_account"))
+                        Text(localizationManager.localizedString(for: "create_account"))
                             .font(.largeTitle)
                             .fontWeight(.bold)
                             .foregroundColor(.primary)
                         
-                        Text(LocalizationManager.shared.localizedString(for: "join_community"))
+                        Text(localizationManager.localizedString(for: "join_community"))
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                     }
@@ -50,7 +51,7 @@ struct SignupView: View {
                     
                     // Role Selection
                     VStack(alignment: .leading, spacing: 16) {
-                        Text(LocalizationManager.shared.localizedString(for: "i_am_a"))
+                        Text(localizationManager.localizedString(for: "i_am_a"))
                             .font(.headline)
                             .fontWeight(.semibold)
                         
@@ -73,22 +74,22 @@ struct SignupView: View {
                     VStack(spacing: 20) {
                         // Full Name
                         VStack(alignment: .leading, spacing: 8) {
-                            Text(LocalizationManager.shared.localizedString(for: "full_name"))
+                            Text(localizationManager.localizedString(for: "full_name"))
                                 .font(.subheadline)
                                 .fontWeight(.medium)
                             
-                            TextField(LocalizationManager.shared.localizedString(for: "enter_full_name_placeholder"), text: $fullName)
+                            TextField(localizationManager.localizedString(for: "enter_full_name_placeholder"), text: $fullName)
                                 .textFieldStyle(RoundedBorderTextFieldStyle())
                                 .autocapitalization(.words)
                         }
                         
                         // Email
                         VStack(alignment: .leading, spacing: 8) {
-                            Text(LocalizationManager.shared.localizedString(for: "email_address_label"))
+                            Text(localizationManager.localizedString(for: "email_address_label"))
                                 .font(.subheadline)
                                 .fontWeight(.medium)
                             
-                            TextField(LocalizationManager.shared.localizedString(for: "enter_email_placeholder"), text: $email)
+                            TextField(localizationManager.localizedString(for: "enter_email_placeholder"), text: $email)
                                 .textFieldStyle(RoundedBorderTextFieldStyle())
                                 .keyboardType(.emailAddress)
                                 .autocapitalization(.none)
@@ -96,26 +97,26 @@ struct SignupView: View {
                         
                         // Phone Number
                         VStack(alignment: .leading, spacing: 8) {
-                            Text(LocalizationManager.shared.localizedString(for: "phone_number_label"))
+                            Text(localizationManager.localizedString(for: "phone_number_label"))
                                 .font(.subheadline)
                                 .fontWeight(.medium)
                             
-                            TextField(LocalizationManager.shared.localizedString(for: "enter_phone_placeholder"), text: $phoneNumber)
+                            TextField(localizationManager.localizedString(for: "enter_phone_placeholder"), text: $phoneNumber)
                                 .textFieldStyle(RoundedBorderTextFieldStyle())
                                 .keyboardType(.phonePad)
                         }
                         
                         // Password
                         VStack(alignment: .leading, spacing: 8) {
-                            Text(LocalizationManager.shared.localizedString(for: "password_label"))
+                            Text(localizationManager.localizedString(for: "password_label"))
                                 .font(.subheadline)
                                 .fontWeight(.medium)
                             
                             HStack {
                                 if showingPassword {
-                                    TextField(LocalizationManager.shared.localizedString(for: "enter_password_placeholder"), text: $password)
+                                    TextField(localizationManager.localizedString(for: "enter_password_placeholder"), text: $password)
                                 } else {
-                                    SecureField(LocalizationManager.shared.localizedString(for: "enter_password_placeholder"), text: $password)
+                                    SecureField(localizationManager.localizedString(for: "enter_password_placeholder"), text: $password)
                                 }
                                 
                                 Button(action: { showingPassword.toggle() }) {
@@ -128,15 +129,15 @@ struct SignupView: View {
                         
                         // Confirm Password
                         VStack(alignment: .leading, spacing: 8) {
-                            Text(LocalizationManager.shared.localizedString(for: "confirm_password"))
+                            Text(localizationManager.localizedString(for: "confirm_password"))
                                 .font(.subheadline)
                                 .fontWeight(.medium)
                             
                             HStack {
                                 if showingConfirmPassword {
-                                    TextField(LocalizationManager.shared.localizedString(for: "confirm_password_placeholder"), text: $confirmPassword)
+                                    TextField(localizationManager.localizedString(for: "confirm_password_placeholder"), text: $confirmPassword)
                                 } else {
-                                    SecureField(LocalizationManager.shared.localizedString(for: "confirm_password_placeholder"), text: $confirmPassword)
+                                    SecureField(localizationManager.localizedString(for: "confirm_password_placeholder"), text: $confirmPassword)
                                 }
                                 
                                 Button(action: { showingConfirmPassword.toggle() }) {
@@ -159,7 +160,7 @@ struct SignupView: View {
                                 Image(systemName: "envelope.fill")
                             }
                             
-                            Text(LocalizationManager.shared.localizedString(for: "sign_up_with_email"))
+                            Text(localizationManager.localizedString(for: "sign_up_with_email"))
                                 .fontWeight(.semibold)
                         }
                         .foregroundColor(.white)
@@ -177,7 +178,7 @@ struct SignupView: View {
                             .frame(height: 1)
                             .foregroundColor(.gray.opacity(0.3))
                         
-                        Text(LocalizationManager.shared.localizedString(for: "or"))
+                        Text(localizationManager.localizedString(for: "or"))
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                             .padding(.horizontal, 16)
@@ -195,7 +196,7 @@ struct SignupView: View {
                                 Image(systemName: "globe")
                                     .foregroundColor(.white)
                                 
-                                Text(LocalizationManager.shared.localizedString(for: "continue_with_google"))
+                                Text(localizationManager.localizedString(for: "continue_with_google"))
                                     .fontWeight(.semibold)
                             }
                             .foregroundColor(.white)
@@ -212,7 +213,7 @@ struct SignupView: View {
                                 Image(systemName: "applelogo")
                                     .foregroundColor(.white)
                                 
-                                Text(LocalizationManager.shared.localizedString(for: "continue_with_apple"))
+                                Text(localizationManager.localizedString(for: "continue_with_apple"))
                                     .fontWeight(.semibold)
                             }
                             .foregroundColor(.white)
@@ -226,10 +227,10 @@ struct SignupView: View {
                     
                     // Login Link
                     HStack {
-                        Text(LocalizationManager.shared.localizedString(for: "already_have_account"))
+                        Text(localizationManager.localizedString(for: "already_have_account"))
                             .foregroundColor(.secondary)
                         
-                        Button(LocalizationManager.shared.localizedString(for: "sign_in")) {
+                        Button(localizationManager.localizedString(for: "sign_in")) {
                             showingSignIn = true
                         }
                         .foregroundColor(.green)
@@ -245,7 +246,7 @@ struct SignupView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button(LocalizationManager.shared.localizedString(for: "cancel")) {
+                    Button(localizationManager.localizedString(for: "cancel")) {
                         dismiss()
                     }
                     .foregroundColor(.green)

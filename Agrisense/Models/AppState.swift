@@ -54,15 +54,15 @@ public final class AppState: ObservableObject {
         var title: String {
             switch self {
             case .home:
-                return "Home"
+                return LocalizationManager.shared.localizedString(for: "tab_home")
             case .market:
-                return "Market"
+                return LocalizationManager.shared.localizedString(for: "tab_market")
             case .community:
-                return "Community"
+                return LocalizationManager.shared.localizedString(for: "tab_community")
             case .assistant:
-                return "Assistant"
+                return LocalizationManager.shared.localizedString(for: "tab_assistant")
             case .profile:
-                return "Profile"
+                return LocalizationManager.shared.localizedString(for: "tab_profile")
             }
         }
         

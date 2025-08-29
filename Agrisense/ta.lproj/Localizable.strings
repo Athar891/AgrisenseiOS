@@ -9,6 +9,31 @@
 "upload_photo" = "புகைப்படத்தை பதிவேற்றவும்";
 "uploading" = "பதிவேற்றப்படுகிறது...";
 
+/* Tab Titles */
+"tab_home" = "முகப்பு";
+"tab_market" = "சந்தை";
+"tab_community" = "சமுதாயம்";
+"tab_assistant" = "உதவியாளர்";
+"tab_profile" = "சுயவிவரம்";
+
+/* Navigation Titles */
+"community_title" = "சமுதாயம்";
+"ai_assistant_title" = "AI உதவியாளர்";
+"order_history_title" = "ஆர்டர் வரலாறு";
+
+/* Community Tabs */
+"community_discussions" = "விவாதங்கள்";
+"community_events" = "நிகழ்வுகள்";
+"community_experts" = "நிபுணர்கள்";
+"community_groups" = "குழுக்கள்";
+
+/* Search & UI Elements */
+"search_community" = "சமுதாயத்தை தேடுங்கள்...";
+"dark_mode" = "டார்க் மோட்";
+"view_past_orders" = "உங்கள் கடந்த ஆர்டர்களைப் பார்க்கவும்";
+"orders_spent" = "%d ஆர்டர்கள் • %@ செலவழித்தது";
+"sign_out" = "சைன் அவுட்";
+
 /* Authentication / Onboarding */
 "app_name" = "AgriSense";
 "app_tagline" = "தொழில்நுட்ப மூலமாக வேளாண்மை திறன் மேம்படுத்துதல்";

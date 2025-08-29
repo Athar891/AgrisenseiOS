@@ -10,6 +10,7 @@ import SwiftUI
 struct DashboardView: View {
     @EnvironmentObject var userManager: UserManager
     @EnvironmentObject var appState: AppState
+    @EnvironmentObject var localizationManager: LocalizationManager
     @StateObject private var marketPriceManager = MarketPriceManager()
     @State private var showingNotifications = false
     
@@ -35,7 +36,7 @@ struct DashboardView: View {
                 }
                 .padding()
             }
-            .navigationTitle(LocalizationManager.shared.localizedString(for: "dashboard_title"))
+            .navigationTitle(localizationManager.localizedString(for: "dashboard_title"))
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -54,12 +55,13 @@ struct DashboardView: View {
 
 struct DashboardHeader: View {
     @EnvironmentObject var userManager: UserManager
+    @EnvironmentObject var localizationManager: LocalizationManager
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(LocalizationManager.shared.localizedString(for: "welcome_back_greeting"))
+                    Text(localizationManager.localizedString(for: "welcome_back_greeting"))
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                     
@@ -75,7 +77,7 @@ struct DashboardHeader: View {
                 WeatherWidget()
             }
             
-            Text(String(format: LocalizationManager.shared.localizedString(for: "dashboard_whats_happening"), userManager.currentUser?.userType == .farmer ? LocalizationManager.shared.localizedString(for: "farm") : LocalizationManager.shared.localizedString(for: "business")))
+            Text(String(format: localizationManager.localizedString(for: "dashboard_whats_happening"), userManager.currentUser?.userType == .farmer ? localizationManager.localizedString(for: "farm") : localizationManager.localizedString(for: "business")))
                 .font(.subheadline)
                 .foregroundColor(.secondary)
         }
@@ -87,6 +89,7 @@ struct DashboardHeader: View {
 }
 
 struct WeatherWidget: View {
+    @EnvironmentObject var localizationManager: LocalizationManager
     @StateObject private var locationManager = LocationManager()
     @StateObject private var viewModel = WeatherViewModel()
 
@@ -96,13 +99,13 @@ struct WeatherWidget: View {
             case .authorizedWhenInUse, .authorizedAlways:
                 weatherContent
             case .notDetermined:
-                Button(LocalizationManager.shared.localizedString(for: "enable_location_for_weather")) {
+                Button(localizationManager.localizedString(for: "enable_location_for_weather")) {
                     locationManager.requestLocationPermission()
                 }
                 .font(.caption)
                 .foregroundColor(.accentColor)
             case .denied, .restricted:
-                Text(LocalizationManager.shared.localizedString(for: "location_access_denied_settings"))
+                Text(localizationManager.localizedString(for: "location_access_denied_settings"))
                     .font(.caption)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
@@ -139,7 +142,7 @@ struct WeatherWidget: View {
             } else if viewModel.isLoading {
                 ProgressView()
             } else {
-                Text(LocalizationManager.shared.localizedString(for: "dash_placeholder"))
+                Text(localizationManager.localizedString(for: "dash_placeholder"))
             }
         }
     }
@@ -160,6 +163,7 @@ struct WeatherWidget: View {
 
 struct DashboardQuickStatsSection: View {
     @EnvironmentObject var userManager: UserManager
+    @EnvironmentObject var localizationManager: LocalizationManager
     @ObservedObject var marketPriceManager: MarketPriceManager
 
     private var activeCropsCount: Int {
@@ -173,15 +177,15 @@ struct DashboardQuickStatsSection: View {
     var body: some View {
         LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 16) {
             if userManager.currentUser?.userType == .farmer {
-                StatCard(title: LocalizationManager.shared.localizedString(for: "active_crops"), value: "\(activeCropsCount)", icon: "leaf.fill", color: .green)
-                StatCard(title: LocalizationManager.shared.localizedString(for: "harvest_ready"), value: "\(harvestReadyCount)", icon: "scissors", color: .orange)
-                StatCard(title: LocalizationManager.shared.localizedString(for: "soil_health"), value: "85%", icon: "drop.fill", color: .blue)
+                StatCard(title: localizationManager.localizedString(for: "active_crops"), value: "\(activeCropsCount)", icon: "leaf.fill", color: .green)
+                StatCard(title: localizationManager.localizedString(for: "harvest_ready"), value: "\(harvestReadyCount)", icon: "scissors", color: .orange)
+                StatCard(title: localizationManager.localizedString(for: "soil_health"), value: "85%", icon: "drop.fill", color: .blue)
                 StatCard(title: marketPriceManager.currentCropName, value: marketPriceManager.currentMarketPrice, icon: "indianrupeesign.circle.fill", color: .purple)
             } else {
-                StatCard(title: LocalizationManager.shared.localizedString(for: "active_listings"), value: "8", icon: "tag.fill", color: .green)
-                StatCard(title: LocalizationManager.shared.localizedString(for: "orders_today"), value: "5", icon: "cart.fill", color: .blue)
-                StatCard(title: LocalizationManager.shared.localizedString(for: "revenue"), value: "₹1,250", icon: "indianrupeesign.circle.fill", color: .purple)
-                StatCard(title: LocalizationManager.shared.localizedString(for: "rating"), value: "4.8★", icon: "star.fill", color: .orange)
+                StatCard(title: localizationManager.localizedString(for: "active_listings"), value: "8", icon: "tag.fill", color: .green)
+                StatCard(title: localizationManager.localizedString(for: "orders_today"), value: "5", icon: "cart.fill", color: .blue)
+                StatCard(title: localizationManager.localizedString(for: "revenue"), value: "₹1,250", icon: "indianrupeesign.circle.fill", color: .purple)
+                StatCard(title: localizationManager.localizedString(for: "rating"), value: "4.8★", icon: "star.fill", color: .orange)
             }
         }
     }
@@ -261,11 +265,12 @@ struct SellerDashboardContent: View {
 
 struct CropHealthSection: View {
     @EnvironmentObject var userManager: UserManager
+    @EnvironmentObject var localizationManager: LocalizationManager
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
-                Text(LocalizationManager.shared.localizedString(for: "active_crops"))
+                Text(localizationManager.localizedString(for: "active_crops"))
                     .font(.headline)
                     .fontWeight(.semibold)
                 
@@ -294,12 +299,12 @@ struct CropHealthSection: View {
                         .font(.system(size: 40))
                         .foregroundColor(.green.opacity(0.6))
                     
-                    Text(LocalizationManager.shared.localizedString(for: "no_active_crops"))
+                    Text(localizationManager.localizedString(for: "no_active_crops"))
                         .font(.subheadline)
                         .fontWeight(.medium)
                         .foregroundColor(.primary)
                     
-                    Text(LocalizationManager.shared.localizedString(for: "add_first_crop_prompt"))
+                    Text(localizationManager.localizedString(for: "add_first_crop_prompt"))
                         .font(.caption)
                         .foregroundColor(.secondary)
                         .multilineTextAlignment(.center)
@@ -352,6 +357,7 @@ struct CropHealthRow: View {
 }
 
 struct QuickActionsSection: View {
+    @EnvironmentObject var localizationManager: LocalizationManager
     @Binding var showingAddCrop: Bool
     @Binding var showingWeather: Bool
     @Binding var showingMarketPrices: Bool
@@ -359,15 +365,15 @@ struct QuickActionsSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text(LocalizationManager.shared.localizedString(for: "quick_actions"))
+            Text(localizationManager.localizedString(for: "quick_actions"))
                 .font(.headline)
                 .fontWeight(.semibold)
             
             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 12) {
-                DashboardQuickActionButton(title: LocalizationManager.shared.localizedString(for: "add_crop"), icon: "plus.circle.fill", color: .green) { showingAddCrop = true }
-                DashboardQuickActionButton(title: LocalizationManager.shared.localizedString(for: "check_weather"), icon: "cloud.sun.fill", color: .blue) { showingWeather = true }
-                DashboardQuickActionButton(title: LocalizationManager.shared.localizedString(for: "market_prices"), icon: "chart.line.uptrend.xyaxis", color: .orange) { showingMarketPrices = true }
-                DashboardQuickActionButton(title: LocalizationManager.shared.localizedString(for: "soil_test"), icon: "drop.fill", color: .purple) { showingSoilTest = true }
+                DashboardQuickActionButton(title: localizationManager.localizedString(for: "add_crop"), icon: "plus.circle.fill", color: .green) { showingAddCrop = true }
+                DashboardQuickActionButton(title: localizationManager.localizedString(for: "check_weather"), icon: "cloud.sun.fill", color: .blue) { showingWeather = true }
+                DashboardQuickActionButton(title: localizationManager.localizedString(for: "market_prices"), icon: "chart.line.uptrend.xyaxis", color: .orange) { showingMarketPrices = true }
+                DashboardQuickActionButton(title: localizationManager.localizedString(for: "soil_test"), icon: "drop.fill", color: .purple) { showingSoilTest = true }
             }
         }
         .padding()
@@ -405,9 +411,11 @@ struct DashboardQuickActionButton: View {
 }
 
 struct SalesOverviewSection: View {
+    @EnvironmentObject var localizationManager: LocalizationManager
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text(LocalizationManager.shared.localizedString(for: "sales_overview"))
+            Text(localizationManager.localizedString(for: "sales_overview"))
                 .font(.headline)
                 .fontWeight(.semibold)
             
@@ -418,7 +426,7 @@ struct SalesOverviewSection: View {
                         .fontWeight(.bold)
                         .foregroundColor(.green)
                     
-                    Text(LocalizationManager.shared.localizedString(for: "todays_sales"))
+                    Text(localizationManager.localizedString(for: "todays_sales"))
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -431,7 +439,7 @@ struct SalesOverviewSection: View {
                         .fontWeight(.semibold)
                         .foregroundColor(.green)
                     
-                    Text(LocalizationManager.shared.localizedString(for: "vs_yesterday"))
+                    Text(localizationManager.localizedString(for: "vs_yesterday"))
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -445,9 +453,11 @@ struct SalesOverviewSection: View {
 }
 
 struct InventoryAlertsSection: View {
+    @EnvironmentObject var localizationManager: LocalizationManager
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text(LocalizationManager.shared.localizedString(for: "inventory_alerts"))
+            Text(localizationManager.localizedString(for: "inventory_alerts"))
                 .font(.headline)
                 .fontWeight(.semibold)
             
@@ -491,16 +501,18 @@ struct AlertRow: View {
 }
 
 struct RecentActivitySection: View {
+    @EnvironmentObject var localizationManager: LocalizationManager
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text(LocalizationManager.shared.localizedString(for: "recent_activity"))
+            Text(localizationManager.localizedString(for: "recent_activity"))
                 .font(.headline)
                 .fontWeight(.semibold)
             
             VStack(spacing: 12) {
-                ActivityRow(icon: "leaf.fill", title: LocalizationManager.shared.localizedString(for: "activity_crop_watered"), time: LocalizationManager.shared.localizedString(for: "activity_2_hours_ago"), color: .blue)
-                ActivityRow(icon: "cart.fill", title: LocalizationManager.shared.localizedString(for: "activity_order_completed"), time: LocalizationManager.shared.localizedString(for: "activity_4_hours_ago"), color: .green)
-                ActivityRow(icon: "chart.line.uptrend.xyaxis", title: LocalizationManager.shared.localizedString(for: "activity_price_updated"), time: LocalizationManager.shared.localizedString(for: "activity_6_hours_ago"), color: .orange)
+                ActivityRow(icon: "leaf.fill", title: localizationManager.localizedString(for: "activity_crop_watered"), time: localizationManager.localizedString(for: "activity_2_hours_ago"), color: .blue)
+                ActivityRow(icon: "cart.fill", title: localizationManager.localizedString(for: "activity_order_completed"), time: localizationManager.localizedString(for: "activity_4_hours_ago"), color: .green)
+                ActivityRow(icon: "chart.line.uptrend.xyaxis", title: localizationManager.localizedString(for: "activity_price_updated"), time: localizationManager.localizedString(for: "activity_6_hours_ago"), color: .orange)
             }
         }
         .padding()
@@ -537,6 +549,7 @@ struct ActivityRow: View {
 struct NotificationsView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var appState: AppState
+    @EnvironmentObject var localizationManager: LocalizationManager
     
     var body: some View {
         NavigationView {
@@ -545,7 +558,7 @@ struct NotificationsView: View {
                     NotificationRow(notification: notification)
                 }
             }
-            .navigationTitle(LocalizationManager.shared.localizedString(for: "notifications_title"))
+            .navigationTitle(localizationManager.localizedString(for: "notifications_title"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -591,4 +604,5 @@ struct NotificationRow: View {
     DashboardView()
         .environmentObject(UserManager())
         .environmentObject(AppState())
+    .environmentObject(LocalizationManager.shared)
 }

@@ -1,10 +1,12 @@
 import SwiftUI
 import PhotosUI
+import UIKit
 
 @MainActor
 struct AddCropView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var userManager: UserManager
+    @EnvironmentObject var localizationManager: LocalizationManager
     @StateObject private var cropManager = CropManager()
     
     @State private var cropName = ""
@@ -24,15 +26,15 @@ struct AddCropView: View {
     var body: some View {
         NavigationView {
             Form {
-                Section(header: Text(LocalizationManager.shared.localizedString(for: "basic_information"))) {
-                    TextField(LocalizationManager.shared.localizedString(for: "crop_name"), text: $cropName)
-                    TextField(LocalizationManager.shared.localizedString(for: "field_location"), text: $fieldLocation)
-                    DatePicker(LocalizationManager.shared.localizedString(for: "planting_date"), selection: $plantingDate, displayedComponents: .date)
-                    DatePicker(LocalizationManager.shared.localizedString(for: "expected_harvest"), selection: $harvestDate, displayedComponents: .date)
+                Section(header: Text(localizationManager.localizedString(for: "basic_information"))) {
+                    TextField(localizationManager.localizedString(for: "crop_name"), text: $cropName)
+                    TextField(localizationManager.localizedString(for: "field_location"), text: $fieldLocation)
+                    DatePicker(localizationManager.localizedString(for: "planting_date"), selection: $plantingDate, displayedComponents: .date)
+                    DatePicker(localizationManager.localizedString(for: "expected_harvest"), selection: $harvestDate, displayedComponents: .date)
                 }
 
-                Section(header: Text(LocalizationManager.shared.localizedString(for: "current_status"))) {
-                    Picker(LocalizationManager.shared.localizedString(for: "growth_stage"), selection: $currentGrowthStage) {
+                Section(header: Text(localizationManager.localizedString(for: "current_status"))) {
+                    Picker(localizationManager.localizedString(for: "growth_stage"), selection: $currentGrowthStage) {
                         ForEach(GrowthStage.allCases, id: \.self) { stage in
                             HStack {
                                 Image(systemName: stage.icon)
@@ -51,7 +53,7 @@ struct AddCropView: View {
                 }
                 
                 // Crop Image (Optional)
-                Section(header: Text(LocalizationManager.shared.localizedString(for: "crop_image_optional"))) {
+                Section(header: Text(localizationManager.localizedString(for: "crop_image_optional"))) {
                     PhotosPicker(
                         selection: $selectedImage,
                         matching: .images,
@@ -67,20 +69,20 @@ struct AddCropView: View {
                         } else {
                             HStack {
                                 Image(systemName: "photo")
-                                Text(LocalizationManager.shared.localizedString(for: "select_crop_image"))
+                                Text(localizationManager.localizedString(for: "select_crop_image"))
                             }
                             .foregroundColor(.blue)
                         }
                     }
                 }
                 
-                Section(header: Text(LocalizationManager.shared.localizedString(for: "notes_optional"))) {
-                    TextField(LocalizationManager.shared.localizedString(for: "additional_notes_placeholder"), text: $notes, axis: .vertical)
+                Section(header: Text(localizationManager.localizedString(for: "notes_optional"))) {
+                    TextField(localizationManager.localizedString(for: "additional_notes_placeholder"), text: $notes, axis: .vertical)
                         .lineLimit(3...6)
                 }
 
                 Section {
-                    Button(LocalizationManager.shared.localizedString(for: "add_crop")) {
+                    Button(localizationManager.localizedString(for: "add_crop")) {
                         Task {
                             await addCrop()
                         }
@@ -88,11 +90,11 @@ struct AddCropView: View {
                     .disabled(cropName.isEmpty || fieldLocation.isEmpty || isLoading)
                 }
             }
-            .navigationTitle(LocalizationManager.shared.localizedString(for: "add_new_crop"))
+            .navigationTitle(localizationManager.localizedString(for: "add_new_crop"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(LocalizationManager.shared.localizedString(for: "cancel")) {
+                    Button(localizationManager.localizedString(for: "cancel")) {
                         dismiss()
                     }
                 }

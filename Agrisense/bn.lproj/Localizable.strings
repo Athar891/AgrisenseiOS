@@ -9,6 +9,31 @@
 "upload_photo" = "ফটো আপলোড করুন";
 "uploading" = "আপলোড হচ্ছে...";
 
+/* Tab Titles */
+"tab_home" = "হোম";
+"tab_market" = "মার্কেট";
+"tab_community" = "কমিউনিটি";
+"tab_assistant" = "সহায়ক";
+"tab_profile" = "প্রোফাইল";
+
+/* Navigation Titles */
+"community_title" = "কমিউনিটি";
+"ai_assistant_title" = "AI সহায়ক";
+"order_history_title" = "অর্ডার ইতিহাস";
+
+/* Community Tabs */
+"community_discussions" = "আলোচনা";
+"community_events" = "ইভেন্ট";
+"community_experts" = "বিশেষজ্ঞ";
+"community_groups" = "গ্রুপ";
+
+/* Search & UI Elements */
+"search_community" = "কমিউনিটি অনুসন্ধান...";
+"dark_mode" = "ডার্ক মোড";
+"view_past_orders" = "আপনার পূর্ববর্তী অর্ডার দেখুন";
+"orders_spent" = "%d অর্ডার • %@ খরচ";
+"sign_out" = "সাইন আউট";
+
 /* Authentication / Onboarding */
 "app_name" = "AgriSense";
 "app_tagline" = "প্রযুক্তির মাধ্যমে কৃষিকে সমর্থন করা";

@@ -17,6 +17,7 @@ extension View {
 struct AssistantView: View {
     @EnvironmentObject var userManager: UserManager
     @EnvironmentObject var appState: AppState
+    @EnvironmentObject var localizationManager: LocalizationManager
     @State private var messageText = ""
     @State private var messages: [ChatMessage] = []
     @State private var showingQuickActions = false
@@ -71,7 +72,7 @@ struct AssistantView: View {
                     onQuickActions: { showingQuickActions.toggle() }
                 )
             }
-            .navigationTitle("AI Assistant")
+            .navigationTitle(localizationManager.localizedString(for: "ai_assistant_title"))
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {

@@ -10,6 +10,7 @@ import SwiftUI
 struct CartView: View {
     @ObservedObject var cartManager: CartManager
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var localizationManager: LocalizationManager
     @State private var showingCheckout = false
     
     var body: some View {
@@ -21,18 +22,18 @@ struct CartView: View {
                     CartContentView(cartManager: cartManager, showingCheckout: $showingCheckout)
                 }
             }
-        .navigationTitle(LocalizationManager.shared.localizedString(for: "my_cart"))
+        .navigationTitle(localizationManager.localizedString(for: "my_cart"))
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-            Button(LocalizationManager.shared.localizedString(for: "close")) {
+            Button(localizationManager.localizedString(for: "close")) {
                         dismiss()
                     }
                 }
                 
                 if !cartManager.currentCart.isEmpty {
                     ToolbarItem(placement: .navigationBarTrailing) {
-            Button(LocalizationManager.shared.localizedString(for: "clear")) {
+            Button(localizationManager.localizedString(for: "clear")) {
                             cartManager.clearCart()
                         }
                         .foregroundColor(.red)
@@ -47,6 +48,8 @@ struct CartView: View {
 }
 
 struct EmptyCartView: View {
+    @EnvironmentObject var localizationManager: LocalizationManager
+    
     var body: some View {
         VStack(spacing: 24) {
             Image(systemName: "cart")
@@ -54,11 +57,11 @@ struct EmptyCartView: View {
                 .foregroundColor(.gray)
             
             VStack(spacing: 8) {
-                Text(LocalizationManager.shared.localizedString(for: "your_cart_empty"))
+                Text(localizationManager.localizedString(for: "your_cart_empty"))
                     .font(.title2)
                     .fontWeight(.semibold)
                 
-                Text(LocalizationManager.shared.localizedString(for: "add_products_prompt"))
+                Text(localizationManager.localizedString(for: "add_products_prompt"))
                     .font(.body)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
@@ -94,6 +97,7 @@ struct CartItemRow: View {
     let item: CartItem
     @ObservedObject var cartManager: CartManager
     @State private var showingRemoveAlert = false
+    @EnvironmentObject var localizationManager: LocalizationManager
     
     var body: some View {
         HStack(spacing: 12) {
@@ -130,11 +134,11 @@ struct CartItemRow: View {
                     .fontWeight(.semibold)
                     .lineLimit(2)
                 
-                Text("by \(item.seller)")
+                Text(String(format: localizationManager.localizedString(for: "by_seller"), item.seller))
                     .font(.caption)
                     .foregroundColor(.secondary)
                 
-                Text(item.formattedPrice + " per \(item.unit)")
+                Text(String(format: localizationManager.localizedString(for: "per_unit_price"), item.formattedPrice, item.unit))
                     .font(.caption)
                     .foregroundColor(.green)
                     .fontWeight(.medium)
@@ -186,13 +190,13 @@ struct CartItemRow: View {
         .background(Color(.systemBackground))
         .cornerRadius(12)
         .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
-        .alert("Remove Item", isPresented: $showingRemoveAlert) {
-            Button("Cancel", role: .cancel) { }
-            Button("Remove", role: .destructive) {
+                .alert(localizationManager.localizedString(for: "remove_item_title"), isPresented: $showingRemoveAlert) {
+            Button(localizationManager.localizedString(for: "cancel"), role: .cancel) { }
+            Button(localizationManager.localizedString(for: "remove"), role: .destructive) {
                 cartManager.removeFromCart(itemId: item.id)
             }
         } message: {
-            Text("Are you sure you want to remove \(item.productName) from your cart?")
+            Text(String(format: localizationManager.localizedString(for: "remove_item_message"), item.productName))
         }
     }
     
@@ -208,6 +212,7 @@ struct CartItemRow: View {
 struct CartSummaryView: View {
     @ObservedObject var cartManager: CartManager
     @Binding var showingCheckout: Bool
+    @EnvironmentObject var localizationManager: LocalizationManager
     
     var body: some View {
         VStack(spacing: 16) {
@@ -216,7 +221,7 @@ struct CartSummaryView: View {
             // Summary Details
             VStack(spacing: 8) {
                 HStack {
-                    Text("Total Items:")
+                    Text(localizationManager.localizedString(for: "total_items_label"))
                         .font(.subheadline)
                     Spacer()
                     Text("\(cartManager.currentCart.totalItems)")
@@ -225,7 +230,7 @@ struct CartSummaryView: View {
                 }
                 
                 HStack {
-                    Text("Total Amount:")
+                    Text(localizationManager.localizedString(for: "total_amount_label"))
                         .font(.headline)
                         .fontWeight(.semibold)
                     Spacer()
@@ -238,8 +243,8 @@ struct CartSummaryView: View {
             .padding(.horizontal)
             
             // Checkout Button
-            Button(action: { showingCheckout = true }) {
-                Text("Proceed to Checkout")
+                Button(action: { showingCheckout = true }) {
+                Text(localizationManager.localizedString(for: "proceed_to_checkout"))
                     .font(.headline)
                     .fontWeight(.semibold)
                     .foregroundColor(.white)
@@ -258,6 +263,7 @@ struct CartSummaryView: View {
 struct CheckoutView: View {
     @ObservedObject var cartManager: CartManager
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var localizationManager: LocalizationManager
     @State private var showingOrderConfirmation = false
     @State private var showingAddressSelection = false
     @State private var selectedAddress: DeliveryAddress?
@@ -277,7 +283,7 @@ struct CheckoutView: View {
                 VStack(alignment: .leading, spacing: 24) {
                     // Order Summary
                     VStack(alignment: .leading, spacing: 16) {
-                        Text("Order Summary")
+                        Text(localizationManager.localizedString(for: "order_summary"))
                             .font(.title2)
                             .fontWeight(.bold)
                         
@@ -295,7 +301,7 @@ struct CheckoutView: View {
                         Divider()
                         
                         HStack {
-                            Text("Total:")
+                            Text(localizationManager.localizedString(for: "total_label"))
                                 .font(.headline)
                                 .fontWeight(.bold)
                             Spacer()
@@ -311,7 +317,7 @@ struct CheckoutView: View {
                     
                     // Delivery Address Section
                     VStack(alignment: .leading, spacing: 16) {
-                        Text("Delivery Address")
+                        Text(localizationManager.localizedString(for: "delivery_address_title"))
                             .font(.title2)
                             .fontWeight(.bold)
                         
@@ -324,7 +330,7 @@ struct CheckoutView: View {
                                 HStack {
                                     Image(systemName: "plus.circle.fill")
                                         .foregroundColor(.green)
-                                    Text("Select Delivery Address")
+                                    Text(localizationManager.localizedString(for: "select_delivery_address"))
                                         .foregroundColor(.primary)
                                     Spacer()
                                     Image(systemName: "chevron.right")
@@ -342,7 +348,7 @@ struct CheckoutView: View {
                     
                     // Place Order Button
                     Button(action: { placeOrder() }) {
-                        Text("Place Order")
+                        Text(localizationManager.localizedString(for: "place_order"))
                             .font(.headline)
                             .fontWeight(.semibold)
                             .foregroundColor(.white)
@@ -355,11 +361,11 @@ struct CheckoutView: View {
                 }
                 .padding()
             }
-            .navigationTitle("Checkout")
+            .navigationTitle(localizationManager.localizedString(for: "checkout_title"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Back") {
+                    Button(localizationManager.localizedString(for: "back")) {
                         dismiss()
                     }
                 }
@@ -374,16 +380,17 @@ struct CheckoutView: View {
         .sheet(isPresented: $showingAddressSelection) {
             AddressSelectionView(addressManager: addressManager, selectedAddress: $selectedAddress)
         }
-        .alert("Order Placed!", isPresented: $showingOrderConfirmation) {
-            Button("OK") {
+        .alert(localizationManager.localizedString(for: "order_placed_title"), isPresented: $showingOrderConfirmation) {
+            Button(localizationManager.localizedString(for: "ok")) {
                 cartManager.clearCart()
                 dismiss()
             }
         } message: {
             if let order = placedOrder {
-                Text("Your order #\(order.orderNumber) has been placed successfully! You can track it in your profile.")
+                Text(localizationManager.localizedString(for: "order_placed_with_number"))
+                    .fixedSize(horizontal: false, vertical: true)
             } else {
-                Text("Your order has been placed successfully! You will receive a confirmation shortly.")
+                Text(localizationManager.localizedString(for: "order_placed_message"))
             }
         }
     }
@@ -403,4 +410,5 @@ struct CheckoutView: View {
 
 #Preview {
     CartView(cartManager: CartManager(userId: "preview"))
+        .environmentObject(LocalizationManager.shared)
 }
