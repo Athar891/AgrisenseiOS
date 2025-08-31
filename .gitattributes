@@ -1,0 +1,11 @@
+*.xcframework filter=lfs diff=lfs merge=lfs -text
+build/** filter=lfs diff=lfs merge=lfs -text
+SourcePackages/** filter=lfs diff=lfs merge=lfs -text
+Carthage/** filter=lfs diff=lfs merge=lfs -text
+*.a filter=lfs diff=lfs merge=lfs -text
+*.pack filter=lfs diff=lfs merge=lfs -text
+*.framework filter=lfs diff=lfs merge=lfs -text
+Pods/** filter=lfs diff=lfs merge=lfs -text
+*.dylib filter=lfs diff=lfs merge=lfs -text
+*.so filter=lfs diff=lfs merge=lfs -text
+*.xcarchive filter=lfs diff=lfs merge=lfs -text
