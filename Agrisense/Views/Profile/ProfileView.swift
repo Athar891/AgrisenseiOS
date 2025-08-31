@@ -43,7 +43,7 @@ struct ProfileView: View {
                         isUpdatingProfile: $isUpdatingProfile
                     )
                     
-                    // Order History Section - hide for sellers
+                    // Order History Section (only show for farmers, not sellers)
                     if userManager.currentUser?.userType != .seller {
                         Button(action: { showingOrderHistory = true }) {
                             HStack {
@@ -114,8 +114,11 @@ struct ProfileView: View {
                     .environmentObject(localizationManager)
                     .environmentObject(appState)
             }
+            // Only show order history sheet for farmers, not sellers
             .sheet(isPresented: $showingOrderHistory) {
-                OrderHistoryView(orderManager: orderManager)
+                if userManager.currentUser?.userType != .seller {
+                    OrderHistoryView(orderManager: orderManager)
+                }
             }
             .sheet(isPresented: $showingPreviewSheet) {
                 ProfileImagePreviewSheet(
@@ -140,7 +143,7 @@ struct ProfileView: View {
                 handleEditModeChange(from: oldValue, to: newValue)
             }
             .onChange(of: userManager.currentUser?.id) { newValue in
-                if let userId = newValue {
+                if let userId = newValue, userManager.currentUser?.userType != .seller {
                     orderManager.switchUser(to: userId)
                 }
             }
@@ -167,8 +170,10 @@ struct ProfileView: View {
             name = user.name
             phoneNumber = user.phoneNumber ?? ""
             location = user.location ?? ""
-            // Initialize OrderManager with current user ID
-            orderManager.switchUser(to: user.id)
+            // Initialize OrderManager with current user ID only for farmers
+            if user.userType != .seller {
+                orderManager.switchUser(to: user.id)
+            }
         }
     }
     
