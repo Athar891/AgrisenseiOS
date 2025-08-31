@@ -43,20 +43,20 @@ struct ProfileView: View {
                         isUpdatingProfile: $isUpdatingProfile
                     )
                     
-                    // Order History Section (hidden for sellers)
+                    // Order History Section - hide for sellers
                     if userManager.currentUser?.userType != .seller {
                         Button(action: { showingOrderHistory = true }) {
                             HStack {
                                 Image(systemName: "bag")
                                     .foregroundColor(.green)
                                     .font(.title2)
-
+                                
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(localizationManager.localizedString(for: "order_history_title"))
                                         .font(.subheadline)
                                         .fontWeight(.medium)
                                         .foregroundColor(.primary)
-
+                                    
                                     if let summary = orderManager.orderSummary {
                                         Text("\(summary.totalOrders) orders • \(summary.formattedTotalSpent) spent")
                                             .font(.caption)
@@ -67,19 +67,15 @@ struct ProfileView: View {
                                             .foregroundColor(.secondary)
                                     }
                                 }
-
+                                
                                 Spacer()
-
+                                
                                 Image(systemName: "chevron.right")
                                     .foregroundColor(.gray)
                             }
                             .padding()
                             .background(Color(.secondarySystemBackground))
                             .cornerRadius(12)
-                        }
-                        // Attach the OrderHistory sheet only when the section is visible
-                        .sheet(isPresented: $showingOrderHistory) {
-                            OrderHistoryView(orderManager: orderManager)
                         }
                     }
                     
@@ -118,7 +114,9 @@ struct ProfileView: View {
                     .environmentObject(localizationManager)
                     .environmentObject(appState)
             }
-            // Order history sheet is attached to the Order History button above when visible
+            .sheet(isPresented: $showingOrderHistory) {
+                OrderHistoryView(orderManager: orderManager)
+            }
             .sheet(isPresented: $showingPreviewSheet) {
                 ProfileImagePreviewSheet(
                     compressedPreviewImage: $compressedPreviewImage,
