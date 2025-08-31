@@ -40,6 +40,32 @@
 "get_started" = "ప్రారంభించండి";
 "learn_more" = "మరింత తెలుసుకోండి";
 
+/* Onboarding Pages */
+"onboarding_page1_title" = "AgriSenseలో మీకు స్వాగతం";
+"onboarding_page1_subtitle" = "మీ సమగ్ర వ్యవసాయ సహచరుడు";
+"onboarding_page1_description" = "వ్యవసాయ సమాజంతో కనెక్ట్ అవ్వండి, మీ పంటలను నిర్వహించండి, మరియు మార్కెట్‌ప్లేస్‌ను ఒకే చోట యాక్సెస్ చేయండి.";
+
+"onboarding_page2_title" = "స్మార్ట్ డాష్‌బోర్డ్";
+"onboarding_page2_subtitle" = "ఒక نظرలో మీ ферము ని మానిటర్ చేయండి";
+"onboarding_page2_description" = "మా ఇంటెలిజెంట్ డాష్బోర్డ్‌తో పంట ఆరోగ్యం, వాతావరణ శ్రేణులు, మరియు మార్కెట్ ధరలను ట్రాక్ చేయండి.";
+
+"onboarding_page3_title" = "మార్కెట్ప్లేస్";
+"onboarding_page3_subtitle" = "విశ్వాసంతో కొనండి మరియు అమ్మండి";
+"onboarding_page3_description" = "కొనుగోలుదారులు మరియు అమ్మకదారులతో నేరుగా కనెక్ట్ అవ్వండి. సరైన ధరలు పొందండి మరియు నిలకడ ఉన్న సంబంధాలు నిర్మించండి.";
+
+"onboarding_page4_title" = "కమ్యూనిటీ";
+"onboarding_page4_subtitle" = "అన్నీ రైతుల నుండి నేర్చుకోండి";
+"onboarding_page4_description" = "అనుభవాలను పంచుకోండి, ప్రశ్నలు అడగండి, మరియు తాజా వ్యవసాయ సాంకేతికతలతో అప్డేట్ కలిగించుకోండి.";
+
+"onboarding_page5_title" = "AI సహాయకుడు";
+"onboarding_page5_subtitle" = "ఎప్పుడైనా నిపుణుల సలహా పొందండి";
+"onboarding_page5_description" = "మా AI సహాయకుడు పంటల, వాతావరణం, మరియు మార్కెట్ ట్రెండ్స్ గురించి తెలివైన నిర్ణయాలు తీసుకోవడంలో మీకు సహాయపడుతుంది.";
+
+/* Onboarding Controls */
+"next" = "తర్వాత";
+"back" = "వెనుక";
+"skip" = "వదిలివేయి";
+
 /* Sign In / Sign Up */
 "welcome_back" = "మళ్లీ స్వాగతం";
 "sign_in_to_your_account" = "మీ ఖాతాలో సైన్ ఇన్ చేయండి";

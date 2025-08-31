@@ -21,3 +21,10 @@ Pods/
 # Carthage
 Carthage/
 
+
+
+# Ignore common project file types requested by user
+*.md
+*.sh
+*.rules
+

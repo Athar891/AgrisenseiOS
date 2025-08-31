@@ -231,6 +231,32 @@
 "role_farmer" = "मैं एक किसान हूँ";
 "role_seller" = "मैं एक विक्रेता हूँ";
 
+/* Onboarding Pages */
+"onboarding_page1_title" = "AgriSense में आपका स्वागत है";
+"onboarding_page1_subtitle" = "आपका समग्र कृषि सहायक";
+"onboarding_page1_description" = "कृषि समुदाय से जुड़ें, अपनी फसलों का प्रबंधन करें, और सभी कुछ एक ही जगह पर मार्केटप्लेस तक पहुँचें।";
+
+"onboarding_page2_title" = "स्मार्ट डैशबोर्ड";
+"onboarding_page2_subtitle" = "एक नज़र में अपने खेत की निगरानी करें";
+"onboarding_page2_description" = "हमारे बुद्धिमान डैशबोर्ड के साथ फसल स्वास्थ्य, मौसम की स्थिति, और बाजार भाव ट्रैक करें।";
+
+"onboarding_page3_title" = "मार्केटप्लेस";
+"onboarding_page3_subtitle" = "आत्मविश्वास के साथ खरीदें और बेचें";
+"onboarding_page3_description" = "खरीदारों और विक्रेताओं से सीधे जुड़ें। उचित कीमतें पाएं और स्थायी संबंध बनाएं।";
+
+"onboarding_page4_title" = "समुदाय";
+"onboarding_page4_subtitle" = "अन्य किसानों से सीखें";
+"onboarding_page4_description" = "अनुभव साझा करें, प्रश्न पूछें, और नवीनतम खेती तकनीकों से अपडेट रहें।";
+
+"onboarding_page5_title" = "AI सहायक";
+"onboarding_page5_subtitle" = "किसी भी समय विशेषज्ञ सलाह पाएं";
+"onboarding_page5_description" = "हमारा AI सहायक फसलों, मौसम, और बाजार रुझानों के बारे में सूचित निर्णय लेने में मदद करता है।";
+
+/* Onboarding Controls */
+"next" = "अगला";
+"back" = "वापस";
+"skip" = "स्किप";
+
 /* Order History */
 "search_orders_placeholder" = "ऑर्डर खोजें...";
 "order_history_title" = "ऑर्डर इतिहास";

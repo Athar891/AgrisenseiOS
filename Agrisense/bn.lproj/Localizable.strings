@@ -55,6 +55,32 @@
 "dont_have_account" = "অ্যাকাউন্ট নেই?";
 "sign_up" = "সাইন আপ";
 
+/* Onboarding Pages */
+"onboarding_page1_title" = "AgriSense-এ আপনাকে স্বাগতম";
+"onboarding_page1_subtitle" = "আপনার সর্বাঙ্গীন কৃষি সহচর";
+"onboarding_page1_description" = "কৃষি সম্প্রদায়ের সাথে সংযুক্ত হোন, আপনার ফসল পরিচালনা করুন, এবং সবকিছু এক জায়গায় মার্কেটপ্লেসে অ্যাক্সেস করুন।";
+
+"onboarding_page2_title" = "স্মার্ট ড্যাশবোর্ড";
+"onboarding_page2_subtitle" = "এক নজরে আপনার খামারের মনিটরিং";
+"onboarding_page2_description" = "আমাদের বুদ্ধিমান ড্যাশবোর্ড দিয়ে ফসলের স্বাস্থ্য, আবহাওয়ার অবস্থা, এবং বাজারের দাম ট্র্যাক করুন।";
+
+"onboarding_page3_title" = "মার্কেটপ্লেস";
+"onboarding_page3_subtitle" = "আত্মবিশ্বাসের সাথে কিনুন এবং বিক্রয় করুন";
+"onboarding_page3_description" = "ক্রেতা এবং বিক্রেতাদের সাথে সরাসরি সংযোগ করুন। সঠিক দাম পান এবং টেকসই সম্পর্ক তৈরি করুন।";
+
+"onboarding_page4_title" = "কমিউনিটি";
+"onboarding_page4_subtitle" = "সহকর্মী কৃষকদের কাছ থেকে শিখুন";
+"onboarding_page4_description" = "অভিজ্ঞতা শেয়ার করুন, প্রশ্ন করুন, এবং সাম্প্রতিক চাষ প্রযুক্তিগুলি সম্পর্কে আপডেট থাকুন।";
+
+"onboarding_page5_title" = "AI সহকারী";
+"onboarding_page5_subtitle" = "যেকোনো সময় দক্ষ পরামর্শ পান";
+"onboarding_page5_description" = "আমাদের AI সহকারী ফসল, আবহাওয়া, এবং বাজার প্রবণতা সম্পর্কে অবগত সিদ্ধান্ত নেওয়ায় সহায়তা করে।";
+
+/* Onboarding Controls */
+"next" = "পরবর্তী";
+"back" = "পেছনে";
+"skip" = "এড়িয়ে যান";
+
 /* Signup */
 "create_account" = "আপনার অ্যাকাউন্ট তৈরি করুন";
 "join_community" = "কৃষি সম্প্রদায়ে যোগ দিন";

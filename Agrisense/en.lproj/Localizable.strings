@@ -232,6 +232,32 @@
 "role_farmer" = "I'm a Farmer";
 "role_seller" = "I'm a Seller";
 
+/* Onboarding Pages */
+"onboarding_page1_title" = "Welcome to AgriSense";
+"onboarding_page1_subtitle" = "Your comprehensive agriculture companion";
+"onboarding_page1_description" = "Connect with the farming community, manage your crops, and access the marketplace all in one place.";
+
+"onboarding_page2_title" = "Smart Dashboard";
+"onboarding_page2_subtitle" = "Monitor your farm at a glance";
+"onboarding_page2_description" = "Track crop health, weather conditions, and market prices with our intelligent dashboard.";
+
+"onboarding_page3_title" = "Marketplace";
+"onboarding_page3_subtitle" = "Buy and sell with confidence";
+"onboarding_page3_description" = "Connect directly with buyers and sellers. Get fair prices and build lasting relationships.";
+
+"onboarding_page4_title" = "Community";
+"onboarding_page4_subtitle" = "Learn from fellow farmers";
+"onboarding_page4_description" = "Share experiences, ask questions, and stay updated with the latest farming techniques.";
+
+"onboarding_page5_title" = "AI Assistant";
+"onboarding_page5_subtitle" = "Get expert advice anytime";
+"onboarding_page5_description" = "Our AI assistant helps you make informed decisions about crops, weather, and market trends.";
+
+/* Onboarding Controls */
+"next" = "Next";
+"back" = "Back";
+"skip" = "Skip";
+
 /* Order History */
 "search_orders_placeholder" = "Search orders...";
 "order_history_title" = "Order History";
