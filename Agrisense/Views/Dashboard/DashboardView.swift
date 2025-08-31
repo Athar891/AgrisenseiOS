@@ -27,12 +27,12 @@ struct DashboardView: View {
                     // Main Content based on User Type
                     if userManager.currentUser?.userType == .farmer {
                         FarmerDashboardContent()
+                        
+                        // Recent Activity (only for farmers)
+                        RecentActivitySection()
                     } else {
                         SellerDashboardContent()
                     }
-                    
-                    // Recent Activity
-                    RecentActivitySection()
                 }
                 .padding()
             }

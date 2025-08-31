@@ -31,10 +31,10 @@ struct RoleSelectionView: View {
         }
         .padding()
         .sheet(isPresented: $showFarmerAuth) {
-            SignInView()
+            SignInView(selectedRole: .farmer)
         }
         .sheet(isPresented: $showSellerAuth) {
-            SignInView()
+            SignInView(selectedRole: .seller)
         }
     }
 }

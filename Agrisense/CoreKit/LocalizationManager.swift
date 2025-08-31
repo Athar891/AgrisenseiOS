@@ -13,7 +13,10 @@ public final class LocalizationManager: ObservableObject {
     private init() {
         if let code = UserDefaults.standard.string(forKey: userDefaultsKey) {
             currentLanguageCode = code
-            currentLocale = Locale(identifier: Locale.identifier(fromComponents: [NSLocale.Key.countryCode.rawValue: code]))
+            // Use the language identifier directly (e.g. "bn", "hi").
+            // Previous code used the countryCode key which produced invalid locale identifiers
+            // and could prevent the correct .lproj bundle from being loaded.
+            currentLocale = Locale(identifier: code)
             updateBundle(for: code)
         } else {
             currentLanguageCode = nil
@@ -33,7 +36,16 @@ public final class LocalizationManager: ObservableObject {
     }
 
     public func localizedString(for key: String) -> String {
-        bundle.localizedString(forKey: key, value: nil, table: nil)
+        // Prefer explicitly using the Localizable.strings table and fall back to main bundle
+        // if the lookup fails. This prevents returning the raw key when a translation exists
+        // in the app bundle but the selected language bundle wasn't resolved correctly.
+        let localized = bundle.localizedString(forKey: key, value: nil, table: "Localizable")
+        if localized == key {
+            // try main bundle as fallback
+            let mainLocalized = Bundle.main.localizedString(forKey: key, value: nil, table: "Localizable")
+            return mainLocalized
+        }
+        return localized
     }
 
     // Formatter helpers
@@ -74,11 +86,20 @@ public final class LocalizationManager: ObservableObject {
     }
 
     private func updateBundle(for code: String) {
+        // Try exact code (e.g. "bn"), then try language component (e.g. from "bn-IN" -> "bn")
         if let path = Bundle.main.path(forResource: code, ofType: "lproj"), let b = Bundle(path: path) {
             bundle = b
-        } else {
-            bundle = .main
+            return
         }
+
+        let langComponent = code.split(separator: "-").first.map(String.init) ?? code
+        if let path = Bundle.main.path(forResource: langComponent, ofType: "lproj"), let b = Bundle(path: path) {
+            bundle = b
+            return
+        }
+
+        // final fallback
+        bundle = .main
     }
 }
 

@@ -21,6 +21,7 @@ struct MarketplaceView: View {
     @EnvironmentObject var appState: AppState
     @EnvironmentObject private var localizationManager: LocalizationManager
     @StateObject private var cartManager: CartManager
+    @StateObject private var productManager = ProductManager()
     @State private var searchText = ""
     @State private var selectedCategory: ProductCategory = .all
     @State private var showingFilters = false
@@ -117,7 +118,7 @@ struct MarketplaceView: View {
                 }
             }
             .sheet(isPresented: $showingAddProduct) {
-                AddProductView()
+                AddProductView(productManager: productManager)
             }
             .sheet(isPresented: $showingCart) {
                 CartView(cartManager: cartManager)
@@ -711,8 +712,13 @@ struct ProductDetailView: View {
 
 struct ImagePickerView: View {
     @Binding var images: [UIImage]
+    @Binding var imageUrls: [String] // New binding for uploaded URLs
     @State private var showingImagePicker = false
     @State private var selectedImage: UIImage?
+    @State private var isUploading = false
+    @State private var uploadError: String?
+    @State private var showingAlert = false
+    let productManager: ProductManager
     
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
@@ -723,29 +729,58 @@ struct ImagePickerView: View {
                             .fill(Color(.systemGray6))
                             .frame(width: 100, height: 100)
                         
-                        Image(systemName: "plus")
-                            .font(.system(size: 30))
-                            .foregroundColor(.green)
+                        if isUploading {
+                            ProgressView()
+                                .scaleEffect(0.8)
+                                .foregroundColor(.green)
+                        } else {
+                            Image(systemName: "plus")
+                                .font(.system(size: 30))
+                                .foregroundColor(.green)
+                        }
                     }
                 }
+                .disabled(isUploading)
                 
                 ForEach(images.indices, id: \.self) { index in
-                    Image(uiImage: images[index])
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(width: 100, height: 100)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                        .overlay(
-                            Button(action: { removeImage(at: index) }) {
-                                Image(systemName: "xmark.circle.fill")
-                                    .foregroundColor(.white)
-                                    .padding(4)
+                    ZStack {
+                        Image(uiImage: images[index])
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(width: 100, height: 100)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                        
+                        // Show upload status indicator
+                        if index < imageUrls.count && !imageUrls[index].isEmpty {
+                            // Successfully uploaded
+                            VStack {
+                                Spacer()
+                                HStack {
+                                    Spacer()
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundColor(.green)
+                                        .background(Color.white)
+                                        .clipShape(Circle())
+                                        .padding(4)
+                                }
                             }
-                            .background(Color.black.opacity(0.6))
-                            .clipShape(Circle())
-                            .padding(4),
-                            alignment: .topTrailing
-                        )
+                        }
+                        
+                        // Remove button
+                        VStack {
+                            HStack {
+                                Spacer()
+                                Button(action: { removeImage(at: index) }) {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .foregroundColor(.white)
+                                        .background(Color.black.opacity(0.6))
+                                        .clipShape(Circle())
+                                        .padding(4)
+                                }
+                            }
+                            Spacer()
+                        }
+                    }
                 }
             }
             .padding(.horizontal)
@@ -754,15 +789,56 @@ struct ImagePickerView: View {
             ImagePicker(image: $selectedImage)
                 .onChange(of: selectedImage) { newImage in
                     if let image = newImage {
-                        images.append(image)
+                        addImageAndUpload(image)
                         selectedImage = nil  // Reset for next selection
                     }
                 }
+        }
+        .alert("Upload Error", isPresented: $showingAlert) {
+            Button("OK") { }
+        } message: {
+            Text(uploadError ?? "Failed to upload image")
+        }
+    }
+    
+    private func addImageAndUpload(_ image: UIImage) {
+        images.append(image)
+        let imageIndex = images.count - 1
+        
+        // Ensure imageUrls array is the same size as images array
+        while imageUrls.count <= imageIndex {
+            imageUrls.append("")
+        }
+        
+        // Upload to Cloudinary
+        Task {
+            isUploading = true
+            do {
+                let imageUrl = try await productManager.uploadProductImage(image)
+                await MainActor.run {
+                    imageUrls[imageIndex] = imageUrl
+                }
+                print("✅ Product image uploaded successfully: \(imageUrl)")
+            } catch {
+                await MainActor.run {
+                    uploadError = error.localizedDescription
+                    showingAlert = true
+                    // Remove the image that failed to upload
+                    removeImage(at: imageIndex)
+                }
+                print("❌ Failed to upload product image: \(error)")
+            }
+            await MainActor.run {
+                isUploading = false
+            }
         }
     }
     
     private func removeImage(at index: Int) {
         images.remove(at: index)
+        if index < imageUrls.count {
+            imageUrls.remove(at: index)
+        }
     }
 }
 
@@ -809,16 +885,34 @@ struct AddProductView: View {
     @State private var productName = ""
     @State private var description = ""
     @State private var price = ""
+    @State private var unit = ""
     @State private var selectedCategory: ProductCategory = .vegetables
     @State private var stock = ""
+    @State private var location = ""
     @State private var productImages: [UIImage] = []
+    @State private var productImageUrls: [String] = []
+    @State private var isSaving = false
+    @State private var saveError: String?
+    @State private var showingAlert = false
+    
+    let productManager: ProductManager
     
     var body: some View {
         NavigationView {
             Form {
                 Section(localizationManager.localizedString(for: "product_images_section")) {
-                    ImagePickerView(images: $productImages)
-                        .frame(height: 120)
+                    ImagePickerView(
+                        images: $productImages,
+                        imageUrls: $productImageUrls,
+                        productManager: productManager
+                    )
+                    .frame(height: 120)
+                    
+                    if !productImages.isEmpty {
+                        Text("^[\(productImages.count) image](inflect: true) selected")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
                 }
                 
                 Section(localizationManager.localizedString(for: "product_information_section")) {
@@ -834,11 +928,32 @@ struct AddProductView: View {
                 }
                 
                 Section(localizationManager.localizedString(for: "pricing_stock_section")) {
-                    TextField(localizationManager.localizedString(for: "price_placeholder"), text: $price)
-                        .keyboardType(.decimalPad)
+                    HStack {
+                        TextField(localizationManager.localizedString(for: "price_placeholder"), text: $price)
+                            .keyboardType(.decimalPad)
+                        
+                        Text("per")
+                            .foregroundColor(.secondary)
+                        
+                        TextField("unit (kg, dozen, etc.)", text: $unit)
+                            .textCase(.lowercase)
+                    }
                     
                     TextField(localizationManager.localizedString(for: "stock_quantity_placeholder"), text: $stock)
                         .keyboardType(.numberPad)
+                    
+                    TextField("Location (city, state)", text: $location)
+                }
+                
+                if isSaving {
+                    Section {
+                        HStack {
+                            ProgressView()
+                                .scaleEffect(0.8)
+                            Text("Saving product...")
+                                .foregroundColor(.secondary)
+                        }
+                    }
                 }
             }
             .navigationTitle(localizationManager.localizedString(for: "add_product_title"))
@@ -848,14 +963,66 @@ struct AddProductView: View {
                     Button(localizationManager.localizedString(for: "cancel")) {
                         dismiss()
                     }
+                    .disabled(isSaving)
                 }
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(localizationManager.localizedString(for: "save")) {
-                        // Save product logic here
-                        dismiss()
+                        saveProduct()
                     }
-                    .disabled(productName.isEmpty || price.isEmpty || stock.isEmpty)
+                    .disabled(productName.isEmpty || price.isEmpty || stock.isEmpty || unit.isEmpty || location.isEmpty || isSaving)
+                }
+            }
+            .alert("Error", isPresented: $showingAlert) {
+                Button("OK") { }
+            } message: {
+                Text(saveError ?? "Failed to save product")
+            }
+        }
+    }
+    
+    private func saveProduct() {
+        // Validate that all uploaded images have URLs
+        guard productImageUrls.filter({ !$0.isEmpty }).count == productImages.count else {
+            saveError = "Please wait for all images to finish uploading before saving."
+            showingAlert = true
+            return
+        }
+        
+        // TODO: Here you would typically save the product to your backend/Firebase
+        // For now, we'll just simulate a save operation
+        
+        isSaving = true
+        
+        Task {
+            do {
+                // Simulate API call delay
+                try await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds
+                
+                // Create product object with uploaded image URLs
+                let newProduct = [
+                    "name": productName,
+                    "description": description,
+                    "price": Double(price) ?? 0.0,
+                    "unit": unit,
+                    "category": selectedCategory.rawValue,
+                    "stock": Int(stock) ?? 0,
+                    "location": location,
+                    "imageUrls": productImageUrls.filter { !$0.isEmpty },
+                    "createdAt": Date().timeIntervalSince1970
+                ] as [String : Any]
+                
+                print("✅ Product saved successfully: \(newProduct)")
+                
+                await MainActor.run {
+                    isSaving = false
+                    dismiss()
+                }
+            } catch {
+                await MainActor.run {
+                    isSaving = false
+                    saveError = "Failed to save product: \(error.localizedDescription)"
+                    showingAlert = true
                 }
             }
         }

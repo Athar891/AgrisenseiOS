@@ -21,6 +21,13 @@ struct SignInView: View {
     @State private var alertMessage = ""
     @State private var showingSignup = false
     
+    // Role selection passed from RoleSelectionView
+    private let selectedRole: UserType
+    
+    init(selectedRole: UserType = .farmer) {
+        self.selectedRole = selectedRole
+    }
+    
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -201,7 +208,7 @@ struct SignInView: View {
             Text(alertMessage)
         }
         .sheet(isPresented: $showingSignup) {
-            SignupView()
+            SignupView(role: selectedRole)
         }
     }
     
@@ -362,12 +369,12 @@ struct SignInView: View {
                             id: result.user.uid,
                             name: fullName,
                             email: email,
-                            userType: .farmer, // Default to farmer, can be updated later
+                            userType: selectedRole, // Use the selected role from RoleSelectionView
                             phoneNumber: ""
                         )
                         self.userManager.isAuthenticated = true
                         self.isLoading = false
-                        print("✅ UserManager updated successfully")
+                        print("✅ UserManager updated successfully with role: \(selectedRole.displayName)")
                     }
                 } else {
                     print("❌ No current user after authentication")
