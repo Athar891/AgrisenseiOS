@@ -276,3 +276,12 @@
 "profile_image_updated" = "Profile image updated successfully!";
 "done" = "Done";
 "product_name_placeholder" = "Product Name";
+
+/* Marketplace */
+"my_products_title" = "My Products";
+"marketplace_title" = "Marketplace";
+"search_products_placeholder" = "Search products...";
+"by_seller" = "by %@";
+"per_unit" = "per %@";
+"in_stock" = "%d in stock";
+"quantity_label" = "Quantity";

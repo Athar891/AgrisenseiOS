@@ -65,7 +65,7 @@ class CartManager: ObservableObject {
         saveCart()
     }
     
-    func getItemQuantity(for productId: UUID) -> Int {
+    func getItemQuantity(for productId: String) -> Int {
         return currentCart.items.first(where: { $0.productId == productId })?.quantity ?? 0
     }
     

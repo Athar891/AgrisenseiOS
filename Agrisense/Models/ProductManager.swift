@@ -157,6 +157,211 @@ class ProductManager: ObservableObject {
         return imageUrls
     }
     
+    // MARK: - Product Management
+    
+    /// Save a new product to Firestore
+    func saveProduct(
+        name: String,
+        description: String,
+        price: Double,
+        unit: String,
+        category: String,
+        stock: Int,
+        location: String,
+        imageUrls: [String],
+        sellerId: String,
+        sellerName: String
+    ) async throws -> String {
+        let productData: [String: Any] = [
+            "name": name,
+            "description": description,
+            "price": price,
+            "unit": unit,
+            "category": category,
+            "stock": stock,
+            "location": location,
+            "imageUrls": imageUrls,
+            "sellerId": sellerId,
+            "sellerName": sellerName,
+            "rating": 0.0,
+            "reviewCount": 0,
+            "createdAt": Timestamp(),
+            "updatedAt": Timestamp(),
+            "isActive": true
+        ]
+        
+        let docRef = try await db.collection("products").addDocument(data: productData)
+        
+        #if DEBUG
+        print("[ProductManager] Product saved with ID: \(docRef.documentID)")
+        #endif
+        
+        return docRef.documentID
+    }
+    
+    /// Update an existing product in Firestore
+    func updateProduct(
+        productId: String,
+        name: String,
+        description: String,
+        price: Double,
+        unit: String,
+        category: String,
+        stock: Int,
+        location: String,
+        imageUrls: [String]? = nil
+    ) async throws {
+        var updateData: [String: Any] = [
+            "name": name,
+            "description": description,
+            "price": price,
+            "unit": unit,
+            "category": category,
+            "stock": stock,
+            "location": location,
+            "updatedAt": Timestamp()
+        ]
+        
+        // Only update imageUrls if provided
+        if let imageUrls = imageUrls {
+            updateData["imageUrls"] = imageUrls
+        }
+        
+        try await db.collection("products").document(productId).updateData(updateData)
+        
+        #if DEBUG
+        print("[ProductManager] Product updated: \(productId)")
+        #endif
+    }
+    
+    /// Delete a product from Firestore
+    func deleteProduct(productId: String) async throws {
+        try await db.collection("products").document(productId).updateData([
+            "isActive": false,
+            "updatedAt": Timestamp()
+        ])
+        
+        #if DEBUG
+        print("[ProductManager] Product deactivated: \(productId)")
+        #endif
+    }
+    
+    /// Fetch products from Firestore
+    func fetchProducts() async throws {
+        let snapshot = try await db.collection("products")
+            .order(by: "createdAt", descending: true)
+            .getDocuments()
+        
+        let fetchedProducts = snapshot.documents.compactMap { doc -> Product? in
+            let data = doc.data()
+            
+            // Filter out inactive products in the app since we can't do compound query without index
+            let isActive = data["isActive"] as? Bool ?? true
+            guard isActive else { return nil }
+            
+            guard let name = data["name"] as? String,
+                  let description = data["description"] as? String,
+                  let price = data["price"] as? Double,
+                  let unit = data["unit"] as? String,
+                  let categoryString = data["category"] as? String,
+                  let category = ProductCategory(rawValue: categoryString),
+                  let stock = data["stock"] as? Int,
+                  let location = data["location"] as? String,
+                  let sellerId = data["sellerId"] as? String,
+                  let sellerName = data["sellerName"] as? String else {
+                return nil
+            }
+            
+            let rating = data["rating"] as? Double ?? 0.0
+            let imageUrls = data["imageUrls"] as? [String] ?? []
+            
+            // Convert image URLs to ProductImage objects
+            let productImages = imageUrls.map { url in
+                ProductImage(url: url, description: nil)
+            }
+            
+            return Product(
+                id: doc.documentID,
+                name: name,
+                description: description,
+                price: price,
+                unit: unit,
+                category: category,
+                seller: sellerName,
+                sellerId: sellerId,
+                rating: rating,
+                stock: stock,
+                location: location,
+                images: productImages,
+                mainImage: productImages.first
+            )
+        }
+        
+        await MainActor.run {
+            self.products = fetchedProducts
+        }
+        
+        #if DEBUG
+        print("[ProductManager] Fetched \(fetchedProducts.count) products")
+        #endif
+    }
+    
+    /// Fetch products by seller
+    func fetchProductsBySeller(sellerId: String) async throws -> [Product] {
+        let snapshot = try await db.collection("products")
+            .whereField("sellerId", isEqualTo: sellerId)
+            .whereField("isActive", isEqualTo: true)
+            .order(by: "createdAt", descending: true)
+            .getDocuments()
+        
+        let sellerProducts = snapshot.documents.compactMap { doc -> Product? in
+            let data = doc.data()
+            
+            guard let name = data["name"] as? String,
+                  let description = data["description"] as? String,
+                  let price = data["price"] as? Double,
+                  let unit = data["unit"] as? String,
+                  let categoryString = data["category"] as? String,
+                  let category = ProductCategory(rawValue: categoryString),
+                  let stock = data["stock"] as? Int,
+                  let location = data["location"] as? String,
+                  let sellerId = data["sellerId"] as? String,
+                  let sellerName = data["sellerName"] as? String else {
+                return nil
+            }
+            
+            let rating = data["rating"] as? Double ?? 0.0
+            let imageUrls = data["imageUrls"] as? [String] ?? []
+            
+            // Convert image URLs to ProductImage objects
+            let productImages = imageUrls.map { url in
+                ProductImage(url: url, description: nil)
+            }
+            
+            return Product(
+                id: doc.documentID,
+                name: name,
+                description: description,
+                price: price,
+                unit: unit,
+                category: category,
+                seller: sellerName,
+                sellerId: sellerId,
+                rating: rating,
+                stock: stock,
+                location: location,
+                images: productImages,
+                mainImage: productImages.first
+            )
+        }
+        
+        #if DEBUG
+        print("[ProductManager] Fetched \(sellerProducts.count) products for seller: \(sellerId)")
+        #endif
+        
+        return sellerProducts
+    }
+
     // MARK: - Image Processing Helpers
     
     private func compressImage(_ image: UIImage, maxSizeKB: Int) -> UIImage? {

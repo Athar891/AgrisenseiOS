@@ -7,10 +7,16 @@ service cloud.firestore {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
     
-    // Marketplace products are readable by all, writable by admins only
+    // Marketplace products are readable by all, writable by authenticated users
     match /products/{productId} {
       allow read: if true;
-      allow write: if request.auth != null && request.auth.token.admin == true;
+      // Allow authenticated users to create products
+      allow create: if request.auth != null && validateProductData(request.resource.data);
+      // Allow users to update/delete their own products or admins to manage any product
+      allow update, delete: if request.auth != null && (
+        request.auth.uid == resource.data.sellerId ||
+        request.auth.token.admin == true
+      );
     }
     
     // Community posts - authenticated users can create, everyone can read
@@ -77,5 +83,25 @@ service cloud.firestore {
       && data.content is string && data.content.size() > 0 && data.content.size() <= 1000
       && data.timestamp is number
       && data.userId is string && data.userId == request.auth.uid;
+  }
+  
+  function validateProductData(data) {
+    return data.keys().hasAll(['name', 'description', 'price', 'unit', 'category', 'stock', 'location', 'sellerId', 'sellerName', 'createdAt'])
+      && data.name is string && data.name.size() > 0 && data.name.size() <= 100
+      && data.description is string && data.description.size() > 0 && data.description.size() <= 1000
+      && data.price is number && data.price > 0
+      && data.unit is string && data.unit.size() > 0
+      && data.category is string
+      && data.stock is number && data.stock >= 0
+      && data.location is string && data.location.size() > 0
+      && data.sellerId is string && data.sellerId == request.auth.uid
+      && data.sellerName is string && data.sellerName.size() > 0
+      && data.createdAt is timestamp
+      // Optional fields
+      && (!('imageUrls' in data) || data.imageUrls is list)
+      && (!('updatedAt' in data) || data.updatedAt is timestamp)
+      && (!('rating' in data) || data.rating is number)
+      && (!('reviewCount' in data) || data.reviewCount is number)
+      && (!('isActive' in data) || data.isActive is bool);
   }
 }

@@ -54,7 +54,7 @@ enum OrderStatus: String, CaseIterable, Codable {
 // MARK: - Order Item Model
 struct OrderItem: Identifiable, Codable, Equatable {
     let id: UUID
-    let productId: UUID
+    let productId: String  // Changed from UUID to String
     let productName: String
     let productDescription: String
     let price: Double

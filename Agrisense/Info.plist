@@ -4,6 +4,10 @@
 <dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>We need your location to provide you with accurate weather forecasts for your area.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>This app needs access to your photo library to select product images for your listings.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>This app needs access to save product images to your photo library.</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>

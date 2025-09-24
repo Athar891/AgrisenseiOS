@@ -10,7 +10,7 @@ import Foundation
 // MARK: - Cart Item Model
 struct CartItem: Identifiable, Codable, Equatable {
     let id = UUID()
-    let productId: UUID
+    let productId: String  // Changed from UUID to String
     let productName: String
     let productDescription: String
     let price: Double
@@ -46,7 +46,7 @@ struct CartItem: Identifiable, Codable, Equatable {
     }
     
     // Custom initializer for decoding
-    init(productId: UUID, productName: String, productDescription: String, price: Double, unit: String, seller: String, productImageURL: String?, quantity: Int, maxStock: Int) {
+    init(productId: String, productName: String, productDescription: String, price: Double, unit: String, seller: String, productImageURL: String?, quantity: Int, maxStock: Int) {
         self.productId = productId
         self.productName = productName
         self.productDescription = productDescription
