@@ -11,20 +11,14 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         guard let path = Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist"),
               let plist = NSDictionary(contentsOfFile: path),
               let clientId = plist["CLIENT_ID"] as? String else {
-            print("❌ Failed to get Google Sign-In client ID from GoogleService-Info.plist")
             return true
         }
         
         GIDSignIn.sharedInstance.configuration = GIDConfiguration(clientID: clientId)
-        print("✅ Google Sign-In configured with client ID: \(clientId)")
         
         // Initialize Google Sign-In
         GIDSignIn.sharedInstance.restorePreviousSignIn { user, error in
-            if let error = error {
-                print("Error restoring previous sign-in: \(error.localizedDescription)")
-            } else if let user = user {
-                print("✅ Previous Google Sign-In restored for: \(user.profile?.email ?? "unknown")")
-            }
+            // Silent restoration - no need for logging in production
         }
         return true
     }
@@ -55,17 +49,11 @@ struct AgrisenseApp: App {
                 .environmentObject(appState)
                 .environmentObject(localizationManager)
                 .preferredColorScheme(colorScheme)
-                .onChange(of: appState.isDarkMode) { _, newValue in
-                    print("App color scheme changed to: \(newValue ? "dark" : "light")")
-                }
                 .onAppear {
                     configureAppearance()
-                    print("App appeared with dark mode: \(appState.isDarkMode)")
                 }
                 .onOpenURL { url in
-                    print("🔗 App received URL: \(url)")
-                    let handled = GIDSignIn.sharedInstance.handle(url)
-                    print("🔗 Google Sign-In handled URL: \(handled)")
+                    GIDSignIn.sharedInstance.handle(url)
                 }
         }
     }
@@ -93,8 +81,6 @@ struct AgrisenseApp: App {
         // Apply the appearance
         UITabBar.appearance().standardAppearance = tabBarAppearance
         UITabBar.appearance().scrollEdgeAppearance = tabBarAppearance
-        
-        print("✅ Tab bar appearance configured for adaptive dark/light mode support")
     }
 }
 
