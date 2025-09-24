@@ -14,9 +14,32 @@ xcuserdata/
 # Swift Package Manager
 SourcePackages/
 .build/
+.swiftpm/
 
 # CocoaPods
 Pods/
+
+# macOS specific
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Backup files
+*.backup
+*.old
+*.tmp
+
+# Log files
+*.log
+
+# Documentation/Implementation notes
+*SUMMARY.md
+*FIX*.md
+FINAL_SOLUTION.md
 
 # Carthage
 Carthage/

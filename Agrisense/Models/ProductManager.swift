@@ -30,11 +30,7 @@ class ProductManager: ObservableObject {
             throw NSError(domain: "ImageProcessingError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Failed to process image for upload."])
         }
 
-        #if DEBUG
-        print("[ProductManager] Uploading product image to Cloudinary")
-        print("[ProductManager] Cloud: \(cloudinaryCloudName), Preset: \(cloudinaryProductImagesPreset)")
-        print("[ProductManager] Image size: \(imageData.count / 1024)KB")
-        #endif
+        // Upload product image to Cloudinary
 
         let url = URL(string: "https://api.cloudinary.com/v1_1/\(cloudinaryCloudName)/image/upload")!
         var request = URLRequest(url: url)
@@ -89,9 +85,7 @@ class ProductManager: ObservableObject {
                     uploadProgress = 1.0
                     isUploading = false
                     
-                    #if DEBUG
-                    print("[ProductManager] Upload successful: \(secureUrl)")
-                    #endif
+                    // Upload successful
                     
                     return secureUrl
                 } else {
@@ -192,9 +186,7 @@ class ProductManager: ObservableObject {
         
         let docRef = try await db.collection("products").addDocument(data: productData)
         
-        #if DEBUG
-        print("[ProductManager] Product saved with ID: \(docRef.documentID)")
-        #endif
+        // Product saved successfully
         
         return docRef.documentID
     }
@@ -229,9 +221,7 @@ class ProductManager: ObservableObject {
         
         try await db.collection("products").document(productId).updateData(updateData)
         
-        #if DEBUG
-        print("[ProductManager] Product updated: \(productId)")
-        #endif
+        // Product updated successfully
     }
     
     /// Delete a product from Firestore
@@ -241,9 +231,7 @@ class ProductManager: ObservableObject {
             "updatedAt": Timestamp()
         ])
         
-        #if DEBUG
-        print("[ProductManager] Product deactivated: \(productId)")
-        #endif
+        // Product deactivated successfully
     }
     
     /// Fetch products from Firestore
@@ -301,9 +289,7 @@ class ProductManager: ObservableObject {
             self.products = fetchedProducts
         }
         
-        #if DEBUG
-        print("[ProductManager] Fetched \(fetchedProducts.count) products")
-        #endif
+        // Products fetched successfully
     }
     
     /// Fetch products by seller
@@ -355,9 +341,7 @@ class ProductManager: ObservableObject {
             )
         }
         
-        #if DEBUG
-        print("[ProductManager] Fetched \(sellerProducts.count) products for seller: \(sellerId)")
-        #endif
+        // Seller products fetched successfully
         
         return sellerProducts
     }

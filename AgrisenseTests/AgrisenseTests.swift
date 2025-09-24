@@ -9,9 +9,15 @@ import Testing
 @testable import Agrisense
 
 struct AgrisenseTests {
-
-    @Test func example() async throws {
-        // Write your test here and use APIs like `#expect(...)` to check expected conditions.
+    
+    @Test func testUserManagerInitialization() async throws {
+        let userManager = UserManager()
+        #expect(userManager.currentUser == nil)
+        #expect(!userManager.isAuthenticated)
     }
-
+    
+    @Test func testAppStateInitialization() async throws {
+        let appState = AppState()
+        #expect(!appState.isDarkMode)
+    }
 }

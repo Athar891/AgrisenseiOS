@@ -38,21 +38,11 @@ struct NewPostView: View {
             return
         }
         
-        // Debug: Check authentication state
-        print("🔍 Debug Info:")
-        print("User ID: \(userId)")
-        print("User Name: \(userManager.currentUser?.name ?? "Unknown")")
-        print("Is Authenticated: \(userManager.isAuthenticated)")
-        
         // Check if user is authenticated with Firebase Auth
         guard let firebaseUser = Auth.auth().currentUser else {
-            print("❌ No Firebase Auth user found!")
             saveError = "Authentication required. Please sign in again."
             return
         }
-        
-        print("Firebase Auth User: \(firebaseUser.uid)")
-        print("Firebase Auth Email: \(firebaseUser.email ?? "No email")")
         
         // Validate post data
         guard !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
@@ -104,18 +94,12 @@ struct NewPostView: View {
         
         let db = FirebaseFirestore.Firestore.firestore()
         
-        print("📝 Attempting to save post to community_posts collection...")
-        print("Post data: \(post)")
+        // Save post to community_posts collection
         
         db.collection("community_posts").addDocument(data: post) { error in
             DispatchQueue.main.async {
                 isSaving = false
                 if let error = error {
-                    print("❌ Error saving post: \(error)")
-                    print("Error code: \((error as NSError).code)")
-                    print("Error domain: \((error as NSError).domain)")
-                    print("Error description: \(error.localizedDescription)")
-                    
                     // Provide specific error messages based on error type
                     if error.localizedDescription.contains("permission") || error.localizedDescription.contains("PERMISSION_DENIED") {
                         saveError = "Permission denied. Please check your internet connection and try again. If the problem persists, contact support."
@@ -125,7 +109,6 @@ struct NewPostView: View {
                         saveError = "Failed to save post: \(error.localizedDescription)"
                     }
                 } else {
-                    print("✅ Post saved successfully!")
                     onPostCreated?()
                     dismiss()
                 }

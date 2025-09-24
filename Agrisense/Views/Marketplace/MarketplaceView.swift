@@ -177,7 +177,7 @@ struct MarketplaceView: View {
             do {
                 try await productManager.fetchProducts()
             } catch {
-                print("❌ Failed to load products: \(error)")
+                // Failed to load products
             }
         }
     }
@@ -318,6 +318,8 @@ struct ProductCard: View {
     let productManager: ProductManager
     @State private var showingProductDetail = false
     @State private var showingEditProduct = false
+    @State private var showingDeleteAlert = false
+    @State private var isDeleting = false
     @EnvironmentObject var userManager: UserManager
     @EnvironmentObject var localizationManager: LocalizationManager
     
@@ -333,26 +335,59 @@ struct ProductCard: View {
                 if let mainImage = product.mainImage {
                     ProductImageView(url: mainImage.url, size: CGSize(width: UIScreen.main.bounds.width/2 - 32, height: 120))
                         .cornerRadius(12)
+                        .overlay(
+                            // Loading overlay when deleting
+                            isDeleting ? Color.black.opacity(0.5) : Color.clear
+                        )
+                        .overlay(
+                            isDeleting ? 
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                .scaleEffect(1.2)
+                            : nil
+                        )
                 } else {
                     ZStack {
                         RoundedRectangle(cornerRadius: 12)
                             .fill(Color(.systemGray6))
                             .frame(height: 120)
+                            .overlay(
+                                // Loading overlay when deleting
+                                isDeleting ? Color.black.opacity(0.5) : Color.clear
+                            )
                         
-                        Image(systemName: product.category.icon)
-                            .font(.system(size: 40))
-                            .foregroundColor(.green)
+                        if isDeleting {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                .scaleEffect(1.2)
+                        } else {
+                            Image(systemName: product.category.icon)
+                                .font(.system(size: 40))
+                                .foregroundColor(.green)
+                        }
                     }
                 }
                 
-                // Edit button for sellers on their own products
+                // Edit and Delete buttons for sellers on their own products
                 if isOwnProduct {
-                    Button(action: { showingEditProduct = true }) {
-                        Image(systemName: "pencil.circle.fill")
-                            .font(.title2)
-                            .foregroundColor(.white)
-                            .background(Color.green)
-                            .clipShape(Circle())
+                    HStack(spacing: 8) {
+                        Button(action: { showingDeleteAlert = true }) {
+                            Image(systemName: "trash.circle.fill")
+                                .font(.title2)
+                                .foregroundColor(.white)
+                                .background(Color.red)
+                                .clipShape(Circle())
+                        }
+                        .disabled(isDeleting)
+                        
+                        Button(action: { showingEditProduct = true }) {
+                            Image(systemName: "pencil.circle.fill")
+                                .font(.title2)
+                                .foregroundColor(.white)
+                                .background(Color.green)
+                                .clipShape(Circle())
+                        }
+                        .disabled(isDeleting)
                     }
                     .padding(8)
                 }
@@ -360,21 +395,26 @@ struct ProductCard: View {
             
             // Product Info
             VStack(alignment: .leading, spacing: 4) {
-                Text(product.name)
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.primary)
-                    .lineLimit(2)
+                HStack {
+                    Text(product.name)
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.primary)
+                        .lineLimit(2)
+                    
+                    if isOwnProduct {
+                        Spacer()
+                        Text("Stock: \(product.stock)")
+                            .font(.caption)
+                            .foregroundColor(.green)
+                            .fontWeight(.medium)
+                    }
+                }
                 
                 if !isOwnProduct {
                     Text(product.seller)
                         .font(.caption)
                         .foregroundColor(.secondary)
-                } else {
-                    Text("Your Product")
-                        .font(.caption)
-                        .foregroundColor(.green)
-                        .fontWeight(.medium)
                 }
                 
                 HStack {
@@ -394,10 +434,6 @@ struct ProductCard: View {
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
-                    } else {
-                        Text("Stock: \(product.stock)")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
                     }
                 }
             }
@@ -418,6 +454,39 @@ struct ProductCard: View {
         }
         .sheet(isPresented: $showingEditProduct) {
             EditProductView(product: product, productManager: productManager)
+        }
+        .alert("Delete Product", isPresented: $showingDeleteAlert) {
+            Button("Cancel", role: .cancel) { }
+            Button("Delete", role: .destructive) {
+                deleteProduct()
+            }
+        } message: {
+            Text("Are you sure you want to delete '\(product.name)'? This action cannot be undone.")
+        }
+    }
+    
+    private func deleteProduct() {
+        isDeleting = true
+        
+        Task {
+            do {
+                try await productManager.deleteProduct(productId: product.id)
+                
+                // Refresh products list
+                try await productManager.fetchProducts()
+                
+                await MainActor.run {
+                    isDeleting = false
+                }
+                
+                // Product deleted successfully
+            } catch {
+                await MainActor.run {
+                    isDeleting = false
+                }
+                
+                // Failed to delete product
+            }
         }
     }
 }
@@ -849,7 +918,7 @@ struct ImagePickerView: View {
                 // Add button - only show if less than 5 images
                 if images.count < 5 {
                     Button(action: { 
-                        print("📸 Add image button tapped")
+                        // Add image button tapped
                         showingImagePicker = true 
                     }) {
                         ZStack {
@@ -1032,19 +1101,14 @@ struct ImagePicker: UIViewControllerRepresentable {
         }
         
         func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
-            print("🎯 Image picker finished with info: \(info.keys)")
             if let selectedImage = info[.originalImage] as? UIImage {
-                print("🖼️ Selected image size: \(selectedImage.size)")
                 parent.image = selectedImage
                 parent.onImageSelected?(selectedImage)
-            } else {
-                print("❌ No image found in picker info")
             }
             parent.dismiss()
         }
         
         func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-            print("🚫 Image picker cancelled")
             parent.dismiss()
         }
     }
