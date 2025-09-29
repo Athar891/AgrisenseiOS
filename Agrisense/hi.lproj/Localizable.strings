@@ -275,3 +275,60 @@
 "profile_image_updated" = "प्रोफ़ाइल छवि सफलतापूर्वक अपडेट हुई!";
 "done" = "हो गया";
 "product_name_placeholder" = "उत्पाद का नाम";
+/* Error Messages */
+"error_network_unavailable" = "इंटरनेट कनेक्शन उपलब्ध नहीं है";
+"error_auth_failed" = "प्रमाणीकरण असफल";
+"error_data_corrupted" = "डेटा दूषित प्रतीत होता है";
+"error_insufficient_permissions" = "इस कार्य को करने के लिए अपर्याप्त अनुमतियां";
+"error_server_error" = "सर्वर त्रुटि हुई (कोड: %d)";
+"error_sync_conflict" = "सिंक संघर्ष का पता चला: %@";
+"error_image_processing" = "छवि प्रसंस्करण में असफल";
+"error_location_permission" = "स्थान अनुमति आवश्यक है";
+"error_camera_permission" = "कैमरा अनुमति आवश्यक है";
+"error_storage" = "भंडारण त्रुटि हुई";
+"error_invalid_input" = "%@ के लिए अमान्य इनपुट";
+"error_operation_timeout" = "ऑपरेशन समय समाप्त";
+"error_unknown" = "एक अप्रत्याशित त्रुटि हुई: %@";
+
+/* Error Recovery Suggestions */
+"error_check_connection" = "कृपया अपना इंटरनेट कनेक्शन जांचें और पुनः प्रयास करें";
+"error_try_sign_in_again" = "कृपया फिर से साइन इन करने का प्रयास करें";
+"error_restart_app" = "कृपया ऐप को पुनः आरंभ करें और पुनः प्रयास करें";
+"error_contact_support" = "कृपया सहायता के लिए समर्थन से संपर्क करें";
+"error_try_again_later" = "कृपया बाद में पुनः प्रयास करें";
+"error_check_input" = "कृपया अपना इनपुट जांचें और पुनः प्रयास करें";
+"error_resolve_conflict" = "कृपया संघर्ष को हल करें और पुनः प्रयास करें";
+"error_try_different_image" = "कृपया एक अलग छवि का प्रयास करें";
+"error_enable_location_settings" = "कृपया सेटिंग्स में स्थान पहुंच सक्षम करें";
+"error_enable_camera_settings" = "कृपया सेटिंग्स में कैमरा पहुंच सक्षम करें";
+"error_free_up_space" = "कृपया भंडारण स्थान खाली करें और पुनः प्रयास करें";
+"error_try_again" = "कृपया पुनः प्रयास करें";
+
+/* Error UI */
+"retry" = "पुनः प्रयास करें";
+"dismiss" = "खारिज करें";
+"error_occurred" = "त्रुटि हुई";
+
+/* Network Status */
+"network_connected" = "जुड़ा हुआ";
+"network_disconnected" = "कोई कनेक्शन नहीं";
+"network_slow" = "धीमा कनेक्शन";
+"network_unknown" = "अज्ञात";
+"network_offline" = "ऑफ़लाइन";
+"network_expensive" = "महंगा";
+"network_limited" = "सीमित";
+
+/* Connection Quality */
+"connection_none" = "कोई कनेक्शन नहीं";
+"connection_poor" = "खराब कनेक्शन";
+"connection_fair" = "ठीक कनेक्शन";
+"connection_good" = "अच्छा कनेक्शन";
+
+/* Offline Messages */
+"offline_mode" = "ऑफ़लाइन मोड";
+"offline_message" = "आप वर्तमान में ऑफ़लाइन हैं। कुछ सुविधाएं सीमित हो सकती हैं।";
+"offline_cached_data" = "कैश्ड डेटा दिखाया जा रहा है";
+"offline_retry_when_online" = "कनेक्शन बहाल होने पर पुनः प्रयास करेगा";
+"go_online" = "ऑनलाइन जाएं";
+"connection_restored" = "कनेक्शन बहाल";
+"working_offline" = "ऑफ़लाइन काम कर रहा है";

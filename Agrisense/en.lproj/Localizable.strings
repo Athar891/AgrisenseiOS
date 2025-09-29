@@ -285,3 +285,61 @@
 "per_unit" = "per %@";
 "in_stock" = "%d in stock";
 "quantity_label" = "Quantity";
+
+/* Error Messages */
+"error_network_unavailable" = "No internet connection available";
+"error_auth_failed" = "Authentication failed";
+"error_data_corrupted" = "Data appears to be corrupted";
+"error_insufficient_permissions" = "Insufficient permissions to perform this action";
+"error_server_error" = "Server error occurred (Code: %d)";
+"error_sync_conflict" = "Sync conflict detected: %@";
+"error_image_processing" = "Failed to process image";
+"error_location_permission" = "Location permission is required";
+"error_camera_permission" = "Camera permission is required";
+"error_storage" = "Storage error occurred";
+"error_invalid_input" = "Invalid input for %@";
+"error_operation_timeout" = "Operation timed out";
+"error_unknown" = "An unexpected error occurred: %@";
+
+/* Error Recovery Suggestions */
+"error_check_connection" = "Please check your internet connection and try again";
+"error_try_sign_in_again" = "Please try signing in again";
+"error_restart_app" = "Please restart the app and try again";
+"error_contact_support" = "Please contact support for assistance";
+"error_try_again_later" = "Please try again later";
+"error_check_input" = "Please check your input and try again";
+"error_resolve_conflict" = "Please resolve the conflict and try again";
+"error_try_different_image" = "Please try a different image";
+"error_enable_location_settings" = "Please enable location access in Settings";
+"error_enable_camera_settings" = "Please enable camera access in Settings";
+"error_free_up_space" = "Please free up storage space and try again";
+"error_try_again" = "Please try again";
+
+/* Error UI */
+"retry" = "Retry";
+"dismiss" = "Dismiss";
+"error_occurred" = "Error Occurred";
+
+/* Network Status */
+"network_connected" = "Connected";
+"network_disconnected" = "No Connection";
+"network_slow" = "Slow Connection";
+"network_unknown" = "Unknown";
+"network_offline" = "Offline";
+"network_expensive" = "Expensive";
+"network_limited" = "Limited";
+
+/* Connection Quality */
+"connection_none" = "No Connection";
+"connection_poor" = "Poor Connection";
+"connection_fair" = "Fair Connection";
+"connection_good" = "Good Connection";
+
+/* Offline Messages */
+"offline_mode" = "Offline Mode";
+"offline_message" = "You're currently offline. Some features may be limited.";
+"offline_cached_data" = "Showing cached data";
+"offline_retry_when_online" = "Will retry when connection is restored";
+"go_online" = "Go Online";
+"connection_restored" = "Connection restored";
+"working_offline" = "Working offline";

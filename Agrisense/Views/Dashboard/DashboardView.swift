@@ -177,21 +177,21 @@ struct DashboardQuickStatsSection: View {
     var body: some View {
         LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 16) {
             if userManager.currentUser?.userType == .farmer {
-                StatCard(title: localizationManager.localizedString(for: "active_crops"), value: "\(activeCropsCount)", icon: "leaf.fill", color: .green)
-                StatCard(title: localizationManager.localizedString(for: "harvest_ready"), value: "\(harvestReadyCount)", icon: "scissors", color: .orange)
-                StatCard(title: localizationManager.localizedString(for: "soil_health"), value: "85%", icon: "drop.fill", color: .blue)
-                StatCard(title: marketPriceManager.currentCropName, value: marketPriceManager.currentMarketPrice, icon: "indianrupeesign.circle.fill", color: .purple)
+                DashboardStatCard(title: localizationManager.localizedString(for: "active_crops"), value: "\(activeCropsCount)", icon: "leaf.fill", color: .green)
+                DashboardStatCard(title: localizationManager.localizedString(for: "harvest_ready"), value: "\(harvestReadyCount)", icon: "scissors", color: .orange)
+                DashboardStatCard(title: localizationManager.localizedString(for: "soil_health"), value: "85%", icon: "drop.fill", color: .blue)
+                DashboardStatCard(title: marketPriceManager.currentCropName, value: marketPriceManager.currentMarketPrice, icon: "indianrupeesign.circle.fill", color: .purple)
             } else {
-                StatCard(title: localizationManager.localizedString(for: "active_listings"), value: "8", icon: "tag.fill", color: .green)
-                StatCard(title: localizationManager.localizedString(for: "orders_today"), value: "5", icon: "cart.fill", color: .blue)
-                StatCard(title: localizationManager.localizedString(for: "revenue"), value: "₹1,250", icon: "indianrupeesign.circle.fill", color: .purple)
-                StatCard(title: localizationManager.localizedString(for: "rating"), value: "4.8★", icon: "star.fill", color: .orange)
+                DashboardStatCard(title: localizationManager.localizedString(for: "active_listings"), value: "8", icon: "tag.fill", color: .green)
+                DashboardStatCard(title: localizationManager.localizedString(for: "orders_today"), value: "5", icon: "cart.fill", color: .blue)
+                DashboardStatCard(title: localizationManager.localizedString(for: "revenue"), value: "₹1,250", icon: "indianrupeesign.circle.fill", color: .purple)
+                DashboardStatCard(title: localizationManager.localizedString(for: "rating"), value: "4.8★", icon: "star.fill", color: .orange)
             }
         }
     }
 }
 
-struct StatCard: View {
+struct DashboardStatCard: View {
     let title: String
     let value: String
     let icon: String

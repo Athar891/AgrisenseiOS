@@ -42,6 +42,7 @@ struct AssistantView: View {
                         }
                         .padding()
                     }
+                    .background(Color(.systemBackground))
                     .onTapGesture {
                         // Dismiss keyboard when tapping in chat area
                         dismissKeyboard()
@@ -72,13 +73,22 @@ struct AssistantView: View {
                     onQuickActions: { showingQuickActions.toggle() }
                 )
             }
-            .navigationTitle(localizationManager.localizedString(for: "ai_assistant_title"))
+            .background(Color(.systemBackground))
+            .navigationTitle("Ask Krishi AI")
             .navigationBarTitleDisplayMode(.large)
+            .toolbarBackground(Color(.systemBackground), for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: { showingQuickActions.toggle() }) {
-                        Image(systemName: "bolt.fill")
-                            .foregroundColor(.green)
+                    Menu {
+                        Button("Clear Chat") {
+                            messages.removeAll()
+                        }
+                        Button("Voice Settings") {
+                            // Handle voice settings
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                            .foregroundColor(.primary)
                     }
                 }
             }
@@ -202,7 +212,7 @@ struct WelcomeMessage: View {
                 .foregroundColor(.green)
         }
         .padding()
-        .background(Color(.systemGray6))
+        .background(Color(.secondarySystemBackground))
         .cornerRadius(16)
     }
 }
@@ -263,7 +273,7 @@ struct ChatBubble: View {
                         .foregroundColor(.primary)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 12)
-                        .background(Color(.systemGray6))
+                        .background(Color(.secondarySystemBackground))
                         .cornerRadius(18)
                     
                     Text(message.timestamp, style: .time)
@@ -292,7 +302,7 @@ struct QuickActionsView: View {
             .padding(.horizontal)
         }
         .padding(.vertical, 8)
-        .background(Color(.systemGray6))
+        .background(Color(.systemBackground))
     }
 }
 
@@ -386,44 +396,104 @@ struct MessageInputView: View {
     @FocusState.Binding var isTextFieldFocused: Bool
     let onSend: (String) -> Void
     let onQuickActions: () -> Void
+    @State private var showingVoiceInput = false
     
     var body: some View {
-        HStack(spacing: 12) {
-            Button(action: onQuickActions) {
-                Image(systemName: "bolt.fill")
-                    .foregroundColor(.green)
-                    .padding(8)
-                    .background(Color(.systemGray6))
-                    .cornerRadius(8)
-            }
-            
-            HStack {
-                TextField("Ask me anything...", text: $text, axis: .vertical)
-                    .textFieldStyle(PlainTextFieldStyle())
-                    .lineLimit(1...4)
-                    .focused($isTextFieldFocused)
-                
-                Button(action: {
-                    if !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                        onSend(text)
-                        // Additional keyboard dismissal for safety
-                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-                        isTextFieldFocused = false
+        VStack(spacing: 0) {
+            // Main input container
+            HStack(spacing: 12) {
+                // Integrated search bar with all controls
+                HStack(spacing: 12) {
+                    // Plus button inside search bar
+                    Button(action: {
+                        // Handle attachment or additional options
+                    }) {
+                        Image(systemName: "plus")
+                            .font(.system(size: 18, weight: .medium))
+                            .foregroundColor(.secondary)
+                            .frame(width: 28, height: 28)
                     }
-                }) {
-                    Image(systemName: "arrow.up.circle.fill")
-                        .font(.title2)
-                        .foregroundColor(text.isEmpty ? .secondary : .green)
+                    
+                    // Tools button
+                    Button(action: onQuickActions) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "slider.horizontal.3")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.green)
+                            
+                            Text("Tools")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.green)
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(Color.green.opacity(0.1))
+                        .cornerRadius(16)
+                    }
+                    
+                    // Text input area
+                    TextField("Ask me anything...", text: $text, axis: .vertical)
+                        .textFieldStyle(PlainTextFieldStyle())
+                        .foregroundColor(.primary)
+                        .lineLimit(1...4)
+                        .focused($isTextFieldFocused)
+                        .frame(minHeight: 20)
+                    
+                    Spacer(minLength: 0)
+                    
+                    // Right side controls
+                    HStack(spacing: 8) {
+                        // Voice input button
+                        Button(action: {
+                            showingVoiceInput.toggle()
+                        }) {
+                            Image(systemName: "mic.fill")
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundColor(.secondary)
+                                .frame(width: 28, height: 28)
+                        }
+                        
+                        // Send button
+                        Button(action: {
+                            if !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                                onSend(text)
+                                UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                                isTextFieldFocused = false
+                            }
+                        }) {
+                            Image(systemName: text.isEmpty ? "waveform" : "arrow.up")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(.white)
+                                .frame(width: 32, height: 32)
+                                .background(text.isEmpty ? Color(.systemGray4) : Color.green)
+                                .clipShape(Circle())
+                        }
+                        .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        .animation(.easeInOut(duration: 0.2), value: text.isEmpty)
+                    }
                 }
-                .disabled(text.isEmpty)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .background(Color(.secondarySystemBackground))
+                .cornerRadius(25)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 25)
+                        .stroke(Color(.separator), lineWidth: 0.5)
+                )
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(Color(.systemGray6))
-            .cornerRadius(20)
+            .padding(.horizontal, 16)
+            .padding(.top, 12)
+            .padding(.bottom, 8)
+            
+            // Bottom safe area spacer
+            Rectangle()
+                .fill(Color.clear)
+                .frame(height: 8)
         }
-        .padding()
-        .background(Color(.systemBackground))
+        .background(
+            Color(.systemBackground)
+                .ignoresSafeArea(edges: .bottom)
+        )
     }
 }
 

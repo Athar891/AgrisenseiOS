@@ -402,30 +402,8 @@ struct ProductCard: View {
                         .foregroundColor(.primary)
                         .lineLimit(2)
                     
-                    if isOwnProduct {
-                        Spacer()
-                        Text("Stock: \(product.stock)")
-                            .font(.caption)
-                            .foregroundColor(.green)
-                            .fontWeight(.medium)
-                    }
-                }
-                
-                if !isOwnProduct {
-                    Text(product.seller)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-                
-                HStack {
-                    Text(product.formattedPrice)
-                        .font(.headline)
-                        .fontWeight(.bold)
-                        .foregroundColor(.green)
-                    
-                    Spacer()
-                    
                     if !isOwnProduct {
+                        Spacer()
                         HStack(spacing: 2) {
                             Image(systemName: "star.fill")
                                 .font(.caption)
@@ -434,7 +412,27 @@ struct ProductCard: View {
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
+                    } else {
+                        Spacer()
+                        Text("Stock: \(product.stock)")
+                            .font(.caption)
+                            .foregroundColor(.green)
+                            .fontWeight(.medium)
                     }
+                }
+                
+                HStack {
+                    HStack(spacing: 4) {
+                        Text(product.formattedPrice)
+                            .font(.headline)
+                            .fontWeight(.bold)
+                            .foregroundColor(.green)
+                        Text("/ \(product.unit)")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    Spacer()
                 }
             }
         }
