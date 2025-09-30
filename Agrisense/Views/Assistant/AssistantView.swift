@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 // Extension to handle keyboard dismissal
 extension View {
@@ -18,9 +19,12 @@ struct AssistantView: View {
     @EnvironmentObject var userManager: UserManager
     @EnvironmentObject var appState: AppState
     @EnvironmentObject var localizationManager: LocalizationManager
+    @StateObject private var aiServiceManager = AIServiceManager.shared
     @State private var messageText = ""
     @State private var messages: [ChatMessage] = []
     @State private var showingQuickActions = false
+    @State private var isWaitingForResponse = false
+    @State private var isTyping = false
     @FocusState private var isTextFieldFocused: Bool
     
     var body: some View {
@@ -38,6 +42,11 @@ struct AssistantView: View {
                             // Chat Messages
                             ForEach(messages) { message in
                                 ChatBubble(message: message)
+                            }
+                            
+                            // Loading indicator
+                            if isWaitingForResponse {
+                                AIThinkingIndicator()
                             }
                         }
                         .padding()
@@ -114,6 +123,9 @@ struct AssistantView: View {
                 dismissKeyboard()
                 isTextFieldFocused = false
             }
+            .onAppear {
+                configureAIService()
+            }
         }
     }
     
@@ -127,50 +139,97 @@ struct AssistantView: View {
         
         messages.append(userMessage)
         messageText = ""
+        isWaitingForResponse = true
         
         // Dismiss keyboard after sending message
         dismissKeyboard()
         isTextFieldFocused = false
         
-        // Simulate AI response
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-            let aiResponse = generateAIResponse(to: text)
-            let aiMessage = ChatMessage(
-                id: UUID(),
-                content: aiResponse,
-                isUser: false,
-                timestamp: Date()
-            )
-            messages.append(aiMessage)
+        // Send message to AI service
+        Task {
+            do {
+                let response = try await aiServiceManager.sendMessage(text, conversationHistory: messages)
+                
+                await MainActor.run {
+                    // Clean and format the response content
+                    let cleanedContent = cleanResponseContent(response.content)
+                    
+                    let aiMessage = ChatMessage(
+                        id: UUID(),
+                        content: cleanedContent,
+                        isUser: false,
+                        timestamp: Date()
+                    )
+                    messages.append(aiMessage)
+                    isWaitingForResponse = false
+                    
+                    // Start typing effect for the AI response
+                    if !messages.isEmpty {
+                        isTyping = true
+                        // Typing will be handled by TypingText component
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            isTyping = false
+                        }
+                    }
+                }
+                
+            } catch {
+                await MainActor.run {
+                    let errorMessage = ChatMessage(
+                        id: UUID(),
+                        content: "I'm sorry, I encountered an error: \(error.localizedDescription). Please try again.",
+                        isUser: false,
+                        timestamp: Date()
+                    )
+                    messages.append(errorMessage)
+                    isWaitingForResponse = false
+                }
+            }
         }
     }
     
-    private func generateAIResponse(to message: String) -> String {
-        let lowercased = message.lowercased()
+    private func configureAIService() {
+        // For now, we'll configure with available managers
+        // In a future update, we can integrate with the existing DI system
         
-        if lowercased.contains("weather") {
-            return "Based on current forecasts, you can expect sunny conditions for the next 3 days with temperatures ranging from 18-24°C. This is ideal for most crops, but consider irrigation if you're in a dry area."
-        } else if lowercased.contains("pest") || lowercased.contains("disease") {
-            return "For pest and disease management, I recommend regular monitoring of your crops. Look for early signs like yellowing leaves or unusual spots. Consider integrated pest management (IPM) approaches for sustainable control."
-        } else if lowercased.contains("soil") {
-            return "Soil health is crucial for crop success. I recommend testing your soil pH and nutrient levels every 2-3 years. For most crops, a pH between 6.0-7.0 is ideal. Consider adding organic matter to improve soil structure."
-        } else if lowercased.contains("market") || lowercased.contains("price") {
-            return "Current market prices are showing strong demand for organic produce. Local markets are paying premium prices for fresh, locally-grown vegetables. Consider direct-to-consumer sales for better margins."
-        } else if lowercased.contains("irrigation") {
-            return "Smart irrigation systems can save up to 30% of water usage. Consider soil moisture sensors and automated systems. Drip irrigation is particularly effective for row crops and can reduce water waste."
-        } else {
-            return "I'm here to help with your agricultural questions! You can ask me about weather, pests, soil health, market prices, irrigation, crop management, or any other farming-related topics. What would you like to know more about?"
-        }
+        // Create temporary instances for now - this will be improved in future tasks
+        let cropManager = CropManager()
+        let weatherService = WeatherService()
+        
+        aiServiceManager.configure(
+            userManager: userManager,
+            cropManager: cropManager,
+            weatherService: weatherService,
+            appState: appState
+        )
+    }
+    
+    private func cleanResponseContent(_ content: String) -> String {
+        var cleaned = content
+        
+        // Remove excessive asterisks and markdown formatting
+        cleaned = cleaned.replacingOccurrences(of: "**", with: "")
+        cleaned = cleaned.replacingOccurrences(of: "*", with: "")
+        
+        // Remove excessive newlines
+        cleaned = cleaned.replacingOccurrences(of: "\n\n\n+", with: "\n\n", options: .regularExpression)
+        
+        // Clean up bullet points and formatting
+        cleaned = cleaned.replacingOccurrences(of: "• ", with: "• ")
+        cleaned = cleaned.replacingOccurrences(of: "- ", with: "• ")
+        
+        // Remove any leading/trailing whitespace
+        cleaned = cleaned.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        // Ensure proper sentence spacing
+        cleaned = cleaned.replacingOccurrences(of: ".  ", with: ". ")
+        cleaned = cleaned.replacingOccurrences(of: ".   ", with: ". ")
+        
+        return cleaned
     }
 }
 
-struct ChatMessage: Identifiable {
-    let id: UUID
-    let content: String
-    let isUser: Bool
-    let timestamp: Date
-}
-
+// WelcomeMessage and other supporting views remain unchanged
 struct WelcomeMessage: View {
     @EnvironmentObject var userManager: UserManager
     
@@ -236,6 +295,7 @@ struct FeatureRow: View {
 
 struct ChatBubble: View {
     let message: ChatMessage
+    @State private var hasAppeared = false
     
     var body: some View {
         HStack {
@@ -262,19 +322,27 @@ struct ChatBubble: View {
                             .font(.caption)
                             .foregroundColor(.green)
                         
-                        Text("AgriSense AI")
+                        Text("Krishi AI")
                             .font(.caption)
                             .fontWeight(.medium)
                             .foregroundColor(.secondary)
                     }
                     
-                    Text(message.content)
-                        .font(.subheadline)
-                        .foregroundColor(.primary)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 12)
-                        .background(Color(.secondarySystemBackground))
-                        .cornerRadius(18)
+                    // Use TypingText for AI responses
+                    TypingText(
+                        text: message.content,
+                        font: .subheadline,
+                        color: .primary,
+                        typingSpeed: 0.03,
+                        startTyping: hasAppeared
+                    )
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .background(Color(.secondarySystemBackground))
+                    .cornerRadius(18)
+                    .onAppear {
+                        hasAppeared = true
+                    }
                     
                     Text(message.timestamp, style: .time)
                         .font(.caption2)
@@ -289,11 +357,12 @@ struct ChatBubble: View {
 
 struct QuickActionsView: View {
     let onAction: (QuickAction) -> Void
+    @StateObject private var aiServiceManager = AIServiceManager.shared
     
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 12) {
-                ForEach(QuickAction.allCases, id: \.self) { action in
+                ForEach(aiServiceManager.getContextualQuickActions(), id: \.id) { action in
                     AssistantQuickActionButton(action: action) {
                         onAction(action)
                     }
@@ -306,65 +375,7 @@ struct QuickActionsView: View {
     }
 }
 
-enum QuickAction: String, CaseIterable {
-    case weather = "weather"
-    case pestControl = "pest_control"
-    case soilHealth = "soil_health"
-    case marketPrices = "market_prices"
-    case irrigation = "irrigation"
-    case cropPlanning = "crop_planning"
-    
-    var title: String {
-        switch self {
-        case .weather:
-            return "Weather"
-        case .pestControl:
-            return "Pest Control"
-        case .soilHealth:
-            return "Soil Health"
-        case .marketPrices:
-            return "Market Prices"
-        case .irrigation:
-            return "Irrigation"
-        case .cropPlanning:
-            return "Crop Planning"
-        }
-    }
-    
-    var icon: String {
-        switch self {
-        case .weather:
-            return "cloud.sun.fill"
-        case .pestControl:
-            return "ant.fill"
-        case .soilHealth:
-            return "drop.fill"
-        case .marketPrices:
-            return "chart.line.uptrend.xyaxis"
-        case .irrigation:
-            return "drop.degreesign"
-        case .cropPlanning:
-            return "calendar"
-        }
-    }
-    
-    var prompt: String {
-        switch self {
-        case .weather:
-            return "What's the weather forecast for this week and how should I plan my farming activities?"
-        case .pestControl:
-            return "I'm seeing some pests on my crops. What are the best organic pest control methods?"
-        case .soilHealth:
-            return "How can I improve my soil health and what tests should I run?"
-        case .marketPrices:
-            return "What are the current market prices for vegetables and when is the best time to sell?"
-        case .irrigation:
-            return "What's the most efficient irrigation system for my farm?"
-        case .cropPlanning:
-            return "Help me plan my crop rotation for next season."
-        }
-    }
-}
+
 
 struct AssistantQuickActionButton: View {
     let action: QuickAction
@@ -494,6 +505,112 @@ struct MessageInputView: View {
             Color(.systemBackground)
                 .ignoresSafeArea(edges: .bottom)
         )
+    }
+}
+
+// MARK: - Typing Text Component
+
+struct TypingText: View {
+    let text: String
+    let font: Font
+    let color: Color
+    let typingSpeed: Double
+    let startTyping: Bool
+    
+    @State private var displayedText = ""
+    @State private var currentIndex = 0
+    @State private var timer: Timer?
+    
+    init(text: String, font: Font = .body, color: Color = .primary, typingSpeed: Double = 0.05, startTyping: Bool = true) {
+        self.text = text
+        self.font = font
+        self.color = color
+        self.typingSpeed = typingSpeed
+        self.startTyping = startTyping
+    }
+    
+    var body: some View {
+        Text(displayedText)
+            .font(font)
+            .foregroundColor(color)
+            .multilineTextAlignment(.leading)
+            .onAppear {
+                if startTyping {
+                    startTypingAnimation()
+                }
+            }
+            .onChange(of: startTyping) { _, newValue in
+                if newValue {
+                    startTypingAnimation()
+                }
+            }
+            .onDisappear {
+                stopTypingAnimation()
+            }
+    }
+    
+    private func startTypingAnimation() {
+        // Reset states
+        displayedText = ""
+        currentIndex = 0
+        stopTypingAnimation()
+        
+        // Start typing animation
+        timer = Timer.scheduledTimer(withTimeInterval: typingSpeed, repeats: true) { _ in
+            if currentIndex < text.count {
+                let index = text.index(text.startIndex, offsetBy: currentIndex)
+                displayedText = String(text[..<text.index(after: index)])
+                currentIndex += 1
+            } else {
+                stopTypingAnimation()
+            }
+        }
+    }
+    
+    private func stopTypingAnimation() {
+        timer?.invalidate()
+        timer = nil
+    }
+}
+
+struct AIThinkingIndicator: View {
+    @State private var animationPhase = 0
+    
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Image(systemName: "brain.head.profile")
+                        .font(.caption)
+                        .foregroundColor(.green)
+                    
+                    Text("Krishi AI is thinking...")
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .foregroundColor(.secondary)
+                }
+                
+                HStack(spacing: 4) {
+                    ForEach(0..<3) { index in
+                        Circle()
+                            .fill(Color.green.opacity(animationPhase == index ? 1.0 : 0.3))
+                            .frame(width: 8, height: 8)
+                            .animation(.easeInOut(duration: 0.6).repeatForever().delay(Double(index) * 0.2), value: animationPhase)
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .background(Color(.secondarySystemBackground))
+                .cornerRadius(18)
+            }
+            
+            Spacer()
+        }
+        .onAppear {
+            withAnimation(.easeInOut(duration: 0.6).repeatForever()) {
+                animationPhase = (animationPhase + 1) % 3
+            }
+        }
     }
 }
 
