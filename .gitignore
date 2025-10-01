@@ -48,6 +48,10 @@ Carthage/
 # Temp files
 *.temp
 
+# Local test scripts (not for commit)
+test_gemini_api.py
+test_gemini_api.sh
+
 
 # Security: Secrets and credentials (DO NOT COMMIT)
 # Environment files
