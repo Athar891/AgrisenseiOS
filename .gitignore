@@ -66,11 +66,14 @@ test_gemini_api.sh
 *.secrets
 *.secret
 secrets.*
+.env.example
 
 # Allow example templates
 !**/Secrets.example.swift
 !**/*.example
 !**/*.example.*
+# But ignore .env.example specifically
+.env.example
 
 # Firebase/Google configs
 **/GoogleService-Info.plist
