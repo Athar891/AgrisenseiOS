@@ -8,6 +8,12 @@
 	<string>This app needs access to your photo library to select product images for your listings.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>This app needs access to save product images to your photo library.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>This app needs microphone access to enable voice input for AI assistance.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>This app uses speech recognition to convert your voice input to text for AI assistance.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>This app needs camera access to capture images for AI analysis and assistance.</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>

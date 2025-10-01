@@ -129,12 +129,21 @@ public final class AppState: ObservableObject {
 
 // MARK: - Supporting Models (preserved and enhanced)
 struct AppNotification: Identifiable, Codable {
-    let id = UUID()
+    let id: UUID
     let title: String
     let message: String
     let type: NotificationType
     let timestamp: Date
     var isRead: Bool = false
+    
+    init(title: String, message: String, type: NotificationType, timestamp: Date = Date(), isRead: Bool = false) {
+        self.id = UUID()
+        self.title = title
+        self.message = message
+        self.type = type
+        self.timestamp = timestamp
+        self.isRead = isRead
+    }
     
     enum NotificationType: String, Codable {
         case info = "info"

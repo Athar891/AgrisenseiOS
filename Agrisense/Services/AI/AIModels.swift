@@ -17,12 +17,14 @@ struct ChatMessage: Identifiable, Codable {
     let content: String
     let isUser: Bool
     let timestamp: Date
+    let attachments: [MessageAttachment]?
     
-    init(id: UUID = UUID(), content: String, isUser: Bool, timestamp: Date = Date()) {
+    init(id: UUID = UUID(), content: String, isUser: Bool, timestamp: Date = Date(), attachments: [MessageAttachment]? = nil) {
         self.id = id
         self.content = content
         self.isUser = isUser
         self.timestamp = timestamp
+        self.attachments = attachments
     }
 }
 
@@ -276,18 +278,58 @@ struct MessageAttachment: Identifiable, Codable {
     let id: UUID
     let type: AttachmentType
     let url: String
+    let fileName: String
+    let fileSize: Int64
+    let mimeType: String
+    let thumbnailData: Data? // For images
+    let extractedText: String? // For documents or OCR from images
     let metadata: [String: String]
     
-    enum AttachmentType: String, Codable {
-        case image
-        case audio
-        case document
+    enum AttachmentType: String, Codable, CaseIterable {
+        case image = "image"
+        case audio = "audio"
+        case document = "document"
+        case pdf = "pdf"
+        
+        var icon: String {
+            switch self {
+            case .image:
+                return "photo"
+            case .audio:
+                return "waveform"
+            case .document:
+                return "doc.text"
+            case .pdf:
+                return "doc.richtext"
+            }
+        }
+        
+        var supportedMimeTypes: [String] {
+            switch self {
+            case .image:
+                return ["image/jpeg", "image/png", "image/heic", "image/heif", "image/gif"]
+            case .audio:
+                return ["audio/mpeg", "audio/wav", "audio/m4a"]
+            case .document:
+                return ["application/vnd.openxmlformats-officedocument.wordprocessingml.document", 
+                       "application/msword", 
+                       "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                       "application/vnd.ms-powerpoint"]
+            case .pdf:
+                return ["application/pdf"]
+            }
+        }
     }
     
-    init(type: AttachmentType, url: String, metadata: [String: String] = [:]) {
+    init(type: AttachmentType, url: String, fileName: String, fileSize: Int64, mimeType: String, thumbnailData: Data? = nil, extractedText: String? = nil, metadata: [String: String] = [:]) {
         self.id = UUID()
         self.type = type
         self.url = url
+        self.fileName = fileName
+        self.fileSize = fileSize
+        self.mimeType = mimeType
+        self.thumbnailData = thumbnailData
+        self.extractedText = extractedText
         self.metadata = metadata
     }
 }

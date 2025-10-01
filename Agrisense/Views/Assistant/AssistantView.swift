@@ -6,25 +6,39 @@
 //
 
 import SwiftUI
+import Vision
+#if canImport(UIKit)
 import UIKit
+#endif
 
 // Extension to handle keyboard dismissal
 extension View {
     func dismissKeyboard() {
+        #if canImport(UIKit)
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        #endif
+    }
+}
+
+// Basic message model for the assistant
+struct SimpleMessage: Identifiable {
+    let id = UUID()
+    let content: String
+    let isUser: Bool
+    let timestamp: Date
+    
+    init(content: String, isUser: Bool) {
+        self.content = content
+        self.isUser = isUser
+        self.timestamp = Date()
     }
 }
 
 struct AssistantView: View {
-    @EnvironmentObject var userManager: UserManager
-    @EnvironmentObject var appState: AppState
-    @EnvironmentObject var localizationManager: LocalizationManager
-    @StateObject private var aiServiceManager = AIServiceManager.shared
     @State private var messageText = ""
-    @State private var messages: [ChatMessage] = []
+    @State private var messages: [SimpleMessage] = []
     @State private var showingQuickActions = false
     @State private var isWaitingForResponse = false
-    @State private var isTyping = false
     @FocusState private var isTextFieldFocused: Bool
     
     var body: some View {
@@ -69,7 +83,7 @@ struct AssistantView: View {
                 // Quick Actions
                 if showingQuickActions {
                     QuickActionsView { action in
-                        sendMessage(action.prompt)
+                        sendMessage(action)
                         showingQuickActions = false
                     }
                 }
@@ -79,7 +93,9 @@ struct AssistantView: View {
                     text: $messageText,
                     isTextFieldFocused: $isTextFieldFocused,
                     onSend: sendMessage,
-                    onQuickActions: { showingQuickActions.toggle() }
+                    onQuickActions: { showingQuickActions.toggle() },
+                    onAttachment: { },
+                    onVoiceRecord: { }
                 )
             }
             .background(Color(.systemBackground))
@@ -106,37 +122,11 @@ struct AssistantView: View {
                 dismissKeyboard()
                 isTextFieldFocused = false
             }
-            .onDisappear {
-                // Dismiss keyboard when leaving the view
-                dismissKeyboard()
-                isTextFieldFocused = false
-            }
-            .onChange(of: appState.selectedTab) { _, newTab in
-                // Dismiss keyboard when switching away from assistant tab
-                if newTab != AppState.Tab.assistant {
-                    dismissKeyboard()
-                    isTextFieldFocused = false
-                }
-            }
-            .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
-                // Dismiss keyboard when app goes to background
-                dismissKeyboard()
-                isTextFieldFocused = false
-            }
-            .onAppear {
-                configureAIService()
-            }
         }
     }
     
     private func sendMessage(_ text: String) {
-        let userMessage = ChatMessage(
-            id: UUID(),
-            content: text,
-            isUser: true,
-            timestamp: Date()
-        )
-        
+        let userMessage = SimpleMessage(content: text, isUser: true)
         messages.append(userMessage)
         messageText = ""
         isWaitingForResponse = true
@@ -145,269 +135,173 @@ struct AssistantView: View {
         dismissKeyboard()
         isTextFieldFocused = false
         
-        // Send message to AI service
-        Task {
-            do {
-                let response = try await aiServiceManager.sendMessage(text, conversationHistory: messages)
-                
-                await MainActor.run {
-                    // Clean and format the response content
-                    let cleanedContent = cleanResponseContent(response.content)
-                    
-                    let aiMessage = ChatMessage(
-                        id: UUID(),
-                        content: cleanedContent,
-                        isUser: false,
-                        timestamp: Date()
-                    )
-                    messages.append(aiMessage)
-                    isWaitingForResponse = false
-                    
-                    // Start typing effect for the AI response
-                    if !messages.isEmpty {
-                        isTyping = true
-                        // Typing will be handled by TypingText component
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                            isTyping = false
-                        }
-                    }
-                }
-                
-            } catch {
-                await MainActor.run {
-                    let errorMessage = ChatMessage(
-                        id: UUID(),
-                        content: "I'm sorry, I encountered an error: \(error.localizedDescription). Please try again.",
-                        isUser: false,
-                        timestamp: Date()
-                    )
-                    messages.append(errorMessage)
-                    isWaitingForResponse = false
-                }
-            }
+        // Simulate AI response
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            let aiResponse = SimpleMessage(
+                content: "Thank you for your question: '\(text)'. I'm here to help with your agricultural needs! I can provide advice on weather, crops, market trends, and more.",
+                isUser: false
+            )
+            messages.append(aiResponse)
+            isWaitingForResponse = false
         }
-    }
-    
-    private func configureAIService() {
-        // For now, we'll configure with available managers
-        // In a future update, we can integrate with the existing DI system
-        
-        // Create temporary instances for now - this will be improved in future tasks
-        let cropManager = CropManager()
-        let weatherService = WeatherService()
-        
-        aiServiceManager.configure(
-            userManager: userManager,
-            cropManager: cropManager,
-            weatherService: weatherService,
-            appState: appState
-        )
-    }
-    
-    private func cleanResponseContent(_ content: String) -> String {
-        var cleaned = content
-        
-        // Remove excessive asterisks and markdown formatting
-        cleaned = cleaned.replacingOccurrences(of: "**", with: "")
-        cleaned = cleaned.replacingOccurrences(of: "*", with: "")
-        
-        // Remove excessive newlines
-        cleaned = cleaned.replacingOccurrences(of: "\n\n\n+", with: "\n\n", options: .regularExpression)
-        
-        // Clean up bullet points and formatting
-        cleaned = cleaned.replacingOccurrences(of: "• ", with: "• ")
-        cleaned = cleaned.replacingOccurrences(of: "- ", with: "• ")
-        
-        // Remove any leading/trailing whitespace
-        cleaned = cleaned.trimmingCharacters(in: .whitespacesAndNewlines)
-        
-        // Ensure proper sentence spacing
-        cleaned = cleaned.replacingOccurrences(of: ".  ", with: ". ")
-        cleaned = cleaned.replacingOccurrences(of: ".   ", with: ". ")
-        
-        return cleaned
     }
 }
 
-// WelcomeMessage and other supporting views remain unchanged
+// MARK: - Supporting Views
+
 struct WelcomeMessage: View {
-    @EnvironmentObject var userManager: UserManager
-    
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                Image(systemName: "brain.head.profile")
-                    .font(.title2)
-                    .foregroundColor(.green)
-                
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("AgriSense AI")
-                        .font(.headline)
-                        .fontWeight(.semibold)
-                    
-                    Text("Your agricultural assistant")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-                
-                Spacer()
-            }
+        VStack(spacing: 20) {
+            Image(systemName: "brain.head.profile")
+                .font(.system(size: 60))
+                .foregroundColor(.green)
             
-            Text("Hello! I'm your AI assistant, here to help with your \(userManager.currentUser?.userType == .farmer ? "farming" : "business") needs. I can provide advice on:")
+            Text("AgriSense AI")
+                .font(.title2)
+                .fontWeight(.bold)
+            
+            Text("Your agricultural assistant")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
             
+            Text("Hello! I'm your AI assistant, here to help with your farming needs. I can provide advice on:")
+                .font(.body)
+                .multilineTextAlignment(.leading)
+                .padding(.horizontal)
+            
             VStack(alignment: .leading, spacing: 8) {
-                FeatureRow(icon: "cloud.sun.fill", text: "Weather forecasts and crop planning")
-                FeatureRow(icon: "leaf.fill", text: "Pest and disease identification")
-                FeatureRow(icon: "drop.fill", text: "Soil health and irrigation advice")
-                FeatureRow(icon: "chart.line.uptrend.xyaxis", text: "Market trends and pricing")
-                FeatureRow(icon: "gear", text: "Equipment and technology recommendations")
+                HStack {
+                    Image(systemName: "cloud.sun")
+                        .foregroundColor(.blue)
+                    Text("Weather forecasts and crop planning")
+                }
+                
+                HStack {
+                    Image(systemName: "leaf")
+                        .foregroundColor(.green)
+                    Text("Pest and disease identification")
+                }
+                
+                HStack {
+                    Image(systemName: "drop")
+                        .foregroundColor(.blue)
+                    Text("Soil health and irrigation advice")
+                }
+                
+                HStack {
+                    Image(systemName: "chart.line.uptrend.xyaxis")
+                        .foregroundColor(.orange)
+                    Text("Market trends and pricing")
+                }
+                
+                HStack {
+                    Image(systemName: "gear")
+                        .foregroundColor(.gray)
+                    Text("Equipment and technology recommendations")
+                }
             }
+            .padding(.horizontal)
             
             Text("Just ask me anything!")
-                .font(.subheadline)
-                .fontWeight(.medium)
+                .font(.headline)
                 .foregroundColor(.green)
+                .padding(.top)
         }
         .padding()
         .background(Color(.secondarySystemBackground))
         .cornerRadius(16)
-    }
-}
-
-struct FeatureRow: View {
-    let icon: String
-    let text: String
-    
-    var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: icon)
-                .foregroundColor(.green)
-                .frame(width: 16)
-            
-            Text(text)
-                .font(.caption)
-                .foregroundColor(.secondary)
-        }
+        .padding()
     }
 }
 
 struct ChatBubble: View {
-    let message: ChatMessage
-    @State private var hasAppeared = false
+    let message: SimpleMessage
     
     var body: some View {
         HStack {
             if message.isUser {
                 Spacer()
-                
-                VStack(alignment: .trailing, spacing: 4) {
-                    Text(message.content)
-                        .font(.subheadline)
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 12)
-                        .background(Color.green)
-                        .cornerRadius(18)
-                    
-                    Text(message.timestamp, style: .time)
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
-                }
+                Text(message.content)
+                    .padding()
+                    .background(Color.blue)
+                    .foregroundColor(.white)
+                    .cornerRadius(16)
+                    .frame(maxWidth: 280, alignment: .trailing)
             } else {
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack {
-                        Image(systemName: "brain.head.profile")
-                            .font(.caption)
-                            .foregroundColor(.green)
-                        
-                        Text("Krishi AI")
-                            .font(.caption)
-                            .fontWeight(.medium)
-                            .foregroundColor(.secondary)
-                    }
-                    
-                    // Use TypingText for AI responses
-                    TypingText(
-                        text: message.content,
-                        font: .subheadline,
-                        color: .primary,
-                        typingSpeed: 0.03,
-                        startTyping: hasAppeared
-                    )
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
-                    .background(Color(.secondarySystemBackground))
-                    .cornerRadius(18)
-                    .onAppear {
-                        hasAppeared = true
-                    }
-                    
-                    Text(message.timestamp, style: .time)
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
+                VStack(alignment: .leading) {
+                    Text(message.content)
+                        .padding()
+                        .background(Color(.systemGray5))
+                        .cornerRadius(16)
+                        .frame(maxWidth: 280, alignment: .leading)
                 }
-                
                 Spacer()
             }
         }
+        .padding(.horizontal)
+    }
+}
+
+struct AIThinkingIndicator: View {
+    @State private var dotCount = 0
+    
+    var body: some View {
+        HStack {
+            Text("AI is thinking" + String(repeating: ".", count: dotCount))
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .onAppear {
+                    Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { _ in
+                        dotCount = (dotCount + 1) % 4
+                    }
+                }
+            Spacer()
+        }
+        .padding(.horizontal)
     }
 }
 
 struct QuickActionsView: View {
-    let onAction: (QuickAction) -> Void
-    @StateObject private var aiServiceManager = AIServiceManager.shared
+    let onActionSelected: (String) -> Void
+    
+    private let quickActions = [
+        "What's the weather forecast for farming?",
+        "How to identify crop diseases?",
+        "Current market prices for vegetables",
+        "Best irrigation practices",
+        "Seasonal crop recommendations"
+    ]
     
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 12) {
-                ForEach(aiServiceManager.getContextualQuickActions(), id: \.id) { action in
-                    AssistantQuickActionButton(action: action) {
-                        onAction(action)
+                ForEach(quickActions, id: \.self) { action in
+                    Button(action: {
+                        onActionSelected(action)
+                    }) {
+                        Text(action)
+                            .font(.subheadline)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                            .background(Color.green.opacity(0.1))
+                            .foregroundColor(.green)
+                            .cornerRadius(20)
                     }
                 }
             }
             .padding(.horizontal)
         }
         .padding(.vertical, 8)
-        .background(Color(.systemBackground))
-    }
-}
-
-
-
-struct AssistantQuickActionButton: View {
-    let action: QuickAction
-    let onTap: () -> Void
-    
-    var body: some View {
-        Button(action: onTap) {
-            VStack(spacing: 8) {
-                Image(systemName: action.icon)
-                    .font(.title3)
-                    .foregroundColor(.green)
-                
-                Text(action.title)
-                    .font(.caption)
-                    .fontWeight(.medium)
-                    .foregroundColor(.primary)
-            }
-            .frame(width: 80, height: 60)
-            .background(Color(.systemBackground))
-            .cornerRadius(12)
-            .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
-        }
-        .buttonStyle(PlainButtonStyle())
     }
 }
 
 struct MessageInputView: View {
     @Binding var text: String
-    @FocusState.Binding var isTextFieldFocused: Bool
+    var isTextFieldFocused: FocusState<Bool>.Binding
     let onSend: (String) -> Void
     let onQuickActions: () -> Void
-    @State private var showingVoiceInput = false
+    let onAttachment: () -> Void
+    let onVoiceRecord: () -> Void
     
     var body: some View {
         VStack(spacing: 0) {
@@ -416,9 +310,7 @@ struct MessageInputView: View {
                 // Integrated search bar with all controls
                 HStack(spacing: 12) {
                     // Plus button inside search bar
-                    Button(action: {
-                        // Handle attachment or additional options
-                    }) {
+                    Button(action: onAttachment) {
                         Image(systemName: "plus")
                             .font(.system(size: 18, weight: .medium))
                             .foregroundColor(.secondary)
@@ -447,7 +339,7 @@ struct MessageInputView: View {
                         .textFieldStyle(PlainTextFieldStyle())
                         .foregroundColor(.primary)
                         .lineLimit(1...4)
-                        .focused($isTextFieldFocused)
+                        .focused(isTextFieldFocused)
                         .frame(minHeight: 20)
                     
                     Spacer(minLength: 0)
@@ -455,9 +347,7 @@ struct MessageInputView: View {
                     // Right side controls
                     HStack(spacing: 8) {
                         // Voice input button
-                        Button(action: {
-                            showingVoiceInput.toggle()
-                        }) {
+                        Button(action: onVoiceRecord) {
                             Image(systemName: "mic.fill")
                                 .font(.system(size: 16, weight: .medium))
                                 .foregroundColor(.secondary)
@@ -468,8 +358,10 @@ struct MessageInputView: View {
                         Button(action: {
                             if !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                                 onSend(text)
+                                #if canImport(UIKit)
                                 UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-                                isTextFieldFocused = false
+                                #endif
+                                isTextFieldFocused.wrappedValue = false
                             }
                         }) {
                             Image(systemName: text.isEmpty ? "waveform" : "arrow.up")
@@ -508,113 +400,6 @@ struct MessageInputView: View {
     }
 }
 
-// MARK: - Typing Text Component
-
-struct TypingText: View {
-    let text: String
-    let font: Font
-    let color: Color
-    let typingSpeed: Double
-    let startTyping: Bool
-    
-    @State private var displayedText = ""
-    @State private var currentIndex = 0
-    @State private var timer: Timer?
-    
-    init(text: String, font: Font = .body, color: Color = .primary, typingSpeed: Double = 0.05, startTyping: Bool = true) {
-        self.text = text
-        self.font = font
-        self.color = color
-        self.typingSpeed = typingSpeed
-        self.startTyping = startTyping
-    }
-    
-    var body: some View {
-        Text(displayedText)
-            .font(font)
-            .foregroundColor(color)
-            .multilineTextAlignment(.leading)
-            .onAppear {
-                if startTyping {
-                    startTypingAnimation()
-                }
-            }
-            .onChange(of: startTyping) { _, newValue in
-                if newValue {
-                    startTypingAnimation()
-                }
-            }
-            .onDisappear {
-                stopTypingAnimation()
-            }
-    }
-    
-    private func startTypingAnimation() {
-        // Reset states
-        displayedText = ""
-        currentIndex = 0
-        stopTypingAnimation()
-        
-        // Start typing animation
-        timer = Timer.scheduledTimer(withTimeInterval: typingSpeed, repeats: true) { _ in
-            if currentIndex < text.count {
-                let index = text.index(text.startIndex, offsetBy: currentIndex)
-                displayedText = String(text[..<text.index(after: index)])
-                currentIndex += 1
-            } else {
-                stopTypingAnimation()
-            }
-        }
-    }
-    
-    private func stopTypingAnimation() {
-        timer?.invalidate()
-        timer = nil
-    }
-}
-
-struct AIThinkingIndicator: View {
-    @State private var animationPhase = 0
-    
-    var body: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                HStack {
-                    Image(systemName: "brain.head.profile")
-                        .font(.caption)
-                        .foregroundColor(.green)
-                    
-                    Text("Krishi AI is thinking...")
-                        .font(.caption)
-                        .fontWeight(.medium)
-                        .foregroundColor(.secondary)
-                }
-                
-                HStack(spacing: 4) {
-                    ForEach(0..<3) { index in
-                        Circle()
-                            .fill(Color.green.opacity(animationPhase == index ? 1.0 : 0.3))
-                            .frame(width: 8, height: 8)
-                            .animation(.easeInOut(duration: 0.6).repeatForever().delay(Double(index) * 0.2), value: animationPhase)
-                    }
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-                .background(Color(.secondarySystemBackground))
-                .cornerRadius(18)
-            }
-            
-            Spacer()
-        }
-        .onAppear {
-            withAnimation(.easeInOut(duration: 0.6).repeatForever()) {
-                animationPhase = (animationPhase + 1) % 3
-            }
-        }
-    }
-}
-
 #Preview {
     AssistantView()
-        .environmentObject(UserManager())
 }

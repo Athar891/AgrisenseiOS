@@ -6,8 +6,10 @@
 //
 
 import Foundation
+import SwiftUI
+#if canImport(FirebaseFirestore)
 import FirebaseFirestore
-import UIKit
+#endif
 
 @MainActor
 class CropManager: ObservableObject {
