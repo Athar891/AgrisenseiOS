@@ -1,0 +1,8 @@
+<!--
+This is a placeholder. Do NOT commit your real GoogleService-Info.plist.
+Download your Firebase iOS config from the Firebase console and place it at:
+
+Agrisense/GoogleService-Info.plist
+
+Ensure the real file is NOT tracked by git (it's ignored in .gitignore).
+-->

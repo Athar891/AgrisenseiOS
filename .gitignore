@@ -51,3 +51,58 @@ Carthage/
 *.sh
 *.rules
 
+
+# Security: Secrets and credentials (DO NOT COMMIT)
+# Environment files
+.env
+.env.*
+*.env
+*.secrets
+*.secret
+secrets.*
+
+# Allow example templates
+!**/Secrets.example.swift
+!**/*.example
+!**/*.example.*
+
+# Firebase/Google configs
+**/GoogleService-Info.plist
+**/GoogleService-Info*.plist
+**/FirebaseAppIDFile.json
+
+# Allow committing example placeholders of configs
+!**/GoogleService-Info.plist.example
+
+# Service accounts and credentials
+**/*serviceAccount*.json
+**/ServiceAccount*.json
+**/*credentials*.json
+
+# Private keys and certificates
+**/*.pem
+**/*.key
+**/*.cer
+**/*.crt
+**/*.der
+**/*.p12
+**/*.p8
+
+# Apple provisioning profiles and archives
+**/*.mobileprovision
+**/*.provisionprofile
+**/*.ipa
+**/*.dSYM
+**/*.xcarchive
+
+# Swift files that may contain secrets
+**/Secrets.swift
+
+# Python venvs and local tooling
+.venv/
+.direnv/
+.kiro/
+
+# Local derived data folders
+.DerivedData_temp/
+
