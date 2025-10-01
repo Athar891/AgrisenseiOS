@@ -7,11 +7,14 @@ service cloud.firestore {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
     
-    // Marketplace products are readable by all, writable by authenticated users
+    // Marketplace products - require authentication for reads to prevent scraping
     match /products/{productId} {
-      allow read: if true;
-      // Allow authenticated users to create products
+      // Require authentication to read products
+      allow read: if request.auth != null;
+      
+      // Allow authenticated users to create products with valid data
       allow create: if request.auth != null && validateProductData(request.resource.data);
+      
       // Allow users to update/delete their own products or admins to manage any product
       allow update, delete: if request.auth != null && (
         request.auth.uid == resource.data.sellerId ||
@@ -34,14 +37,25 @@ service cloud.firestore {
       allow update: if request.auth != null && (
         // Author can update all fields
         request.auth.uid == resource.data.userId ||
-        // Any authenticated user can update likes and likedByUsers array
+        // Like/unlike operations with enhanced validation
         (
-          // Only allow updating specific fields for non-authors
+          // Only allow updating likes and likedByUsers fields
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes', 'likedByUsers']) &&
-          // Ensure likes count is only incremented or decremented by 1
           (
-            request.resource.data.likes == resource.data.likes + 1 ||
-            request.resource.data.likes == resource.data.likes - 1
+            // User is adding their own like
+            (
+              request.resource.data.likedByUsers.hasAll([request.auth.uid]) &&
+              !resource.data.likedByUsers.hasAll([request.auth.uid]) &&
+              request.resource.data.likes == resource.data.likes + 1 &&
+              request.resource.data.likedByUsers.size() == resource.data.likedByUsers.size() + 1
+            ) ||
+            // User is removing their own like
+            (
+              !request.resource.data.likedByUsers.hasAll([request.auth.uid]) &&
+              resource.data.likedByUsers.hasAll([request.auth.uid]) &&
+              request.resource.data.likes == resource.data.likes - 1 &&
+              request.resource.data.likedByUsers.size() == resource.data.likedByUsers.size() - 1
+            )
           )
         )
       );

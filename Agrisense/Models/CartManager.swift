@@ -10,11 +10,12 @@ import Combine
 
 class CartManager: ObservableObject {
     @Published var currentCart: Cart
-    private let userDefaults = UserDefaults.standard
+    private let secureStorage = SecureStorage.shared
     private let cartKey = "user_cart_"
     
     init(userId: String) {
         self.currentCart = Cart(userId: userId)
+        migrateFromUserDefaults(for: userId)
         loadCart(for: userId)
     }
     
@@ -79,23 +80,65 @@ class CartManager: ObservableObject {
     
     private func saveCart() {
         let key = cartKey + currentCart.userId
-        if let encoded = try? JSONEncoder().encode(currentCart) {
-            userDefaults.set(encoded, forKey: key)
+        do {
+            try secureStorage.save(currentCart, forKey: key)
+            #if DEBUG
+            print("[CartManager] Successfully saved cart with \(currentCart.totalItems) items to secure storage")
+            #endif
+        } catch {
+            #if DEBUG
+            print("[CartManager] Failed to save cart: \(error.localizedDescription)")
+            #endif
         }
     }
     
     private func loadCart(for userId: String) {
         let key = cartKey + userId
-        guard let data = userDefaults.data(forKey: key),
-              let cart = try? JSONDecoder().decode(Cart.self, from: data) else {
+        do {
+            let cart = try secureStorage.load(forKey: key, as: Cart.self)
+            currentCart = cart
+            #if DEBUG
+            print("[CartManager] Successfully loaded cart with \(cart.totalItems) items from secure storage")
+            #endif
+        } catch SecureStorageError.itemNotFound {
             currentCart = Cart(userId: userId)
+        } catch {
+            #if DEBUG
+            print("[CartManager] Failed to load cart: \(error.localizedDescription)")
+            #endif
+            currentCart = Cart(userId: userId)
+        }
+    }
+    
+    private func migrateFromUserDefaults(for userId: String) {
+        let key = cartKey + userId
+        
+        // Check if already migrated
+        if secureStorage.exists(forKey: key) {
             return
         }
-        currentCart = cart
+        
+        // Migrate from UserDefaults
+        if let data = UserDefaults.standard.data(forKey: key),
+           let legacyCart = try? JSONDecoder().decode(Cart.self, from: data) {
+            do {
+                try secureStorage.save(legacyCart, forKey: key)
+                // Clear from UserDefaults after successful migration
+                UserDefaults.standard.removeObject(forKey: key)
+                #if DEBUG
+                print("[CartManager] Migrated cart with \(legacyCart.totalItems) items from UserDefaults to Keychain")
+                #endif
+            } catch {
+                #if DEBUG
+                print("[CartManager] Failed to migrate cart: \(error.localizedDescription)")
+                #endif
+            }
+        }
     }
     
     func switchUser(to userId: String) {
         currentCart = Cart(userId: userId)
+        migrateFromUserDefaults(for: userId)
         loadCart(for: userId)
     }
     

@@ -10,11 +10,12 @@ import Combine
 
 class AddressManager: ObservableObject {
     @Published var addressCollection: AddressCollection
-    private let userDefaults = UserDefaults.standard
+    private let secureStorage = SecureStorage.shared
     private let addressKey = "user_addresses_"
     
     init(userId: String) {
         self.addressCollection = AddressCollection(userId: userId)
+        migrateFromUserDefaults(for: userId)
         loadAddresses(for: userId)
     }
     
@@ -66,23 +67,65 @@ class AddressManager: ObservableObject {
     
     private func saveAddresses() {
         let key = addressKey + addressCollection.userId
-        if let encoded = try? JSONEncoder().encode(addressCollection) {
-            userDefaults.set(encoded, forKey: key)
+        do {
+            try secureStorage.save(addressCollection, forKey: key)
+            #if DEBUG
+            print("[AddressManager] Successfully saved \(addressCollection.addresses.count) addresses to secure storage")
+            #endif
+        } catch {
+            #if DEBUG
+            print("[AddressManager] Failed to save addresses: \(error.localizedDescription)")
+            #endif
         }
     }
     
     private func loadAddresses(for userId: String) {
         let key = addressKey + userId
-        guard let data = userDefaults.data(forKey: key),
-              let collection = try? JSONDecoder().decode(AddressCollection.self, from: data) else {
+        do {
+            let collection = try secureStorage.load(forKey: key, as: AddressCollection.self)
+            addressCollection = collection
+            #if DEBUG
+            print("[AddressManager] Successfully loaded \(collection.addresses.count) addresses from secure storage")
+            #endif
+        } catch SecureStorageError.itemNotFound {
             addressCollection = AddressCollection(userId: userId)
+        } catch {
+            #if DEBUG
+            print("[AddressManager] Failed to load addresses: \(error.localizedDescription)")
+            #endif
+            addressCollection = AddressCollection(userId: userId)
+        }
+    }
+    
+    private func migrateFromUserDefaults(for userId: String) {
+        let key = addressKey + userId
+        
+        // Check if already migrated
+        if secureStorage.exists(forKey: key) {
             return
         }
-        addressCollection = collection
+        
+        // Migrate from UserDefaults
+        if let data = UserDefaults.standard.data(forKey: key),
+           let legacyCollection = try? JSONDecoder().decode(AddressCollection.self, from: data) {
+            do {
+                try secureStorage.save(legacyCollection, forKey: key)
+                // Clear from UserDefaults after successful migration
+                UserDefaults.standard.removeObject(forKey: key)
+                #if DEBUG
+                print("[AddressManager] Migrated \(legacyCollection.addresses.count) addresses from UserDefaults to Keychain")
+                #endif
+            } catch {
+                #if DEBUG
+                print("[AddressManager] Failed to migrate addresses: \(error.localizedDescription)")
+                #endif
+            }
+        }
     }
     
     func switchUser(to userId: String) {
         addressCollection = AddressCollection(userId: userId)
+        migrateFromUserDefaults(for: userId)
         loadAddresses(for: userId)
     }
     

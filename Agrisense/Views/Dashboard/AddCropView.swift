@@ -140,7 +140,7 @@ struct AddCropView: View {
             // Upload image if selected
             var imageUrl: String?
             if let cropImage = cropImage {
-                imageUrl = try await cropManager.uploadCropImage(cropImage)
+                imageUrl = try await cropManager.uploadCropImage(cropImage, userId: userId)
             }
             
             // Create new crop

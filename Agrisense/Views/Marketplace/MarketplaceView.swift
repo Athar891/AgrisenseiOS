@@ -909,6 +909,7 @@ struct ImagePickerView: View {
     @State private var uploadError: String?
     @State private var showingAlert = false
     let productManager: ProductManager
+    let userId: String
     
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
@@ -1037,7 +1038,7 @@ struct ImagePickerView: View {
         Task {
             isUploading = true
             do {
-                let imageUrl = try await productManager.uploadProductImage(image)
+                let imageUrl = try await productManager.uploadProductImage(image, userId: userId)
                 await MainActor.run {
                     if imageIndex < imageUrls.count {
                         imageUrls[imageIndex] = imageUrl
@@ -1139,7 +1140,8 @@ struct AddProductView: View {
                     ImagePickerView(
                         images: $productImages,
                         imageUrls: $productImageUrls,
-                        productManager: productManager
+                        productManager: productManager,
+                        userId: userManager.currentUser?.id ?? ""
                     )
                     .frame(height: 120)
                     
@@ -1599,6 +1601,7 @@ struct EditProductView: View {
     
     private func addNewImage(_ image: UIImage) {
         guard allImageUrls.count < 5 else { return }
+        guard let userId = userManager.currentUser?.id else { return }
         
         newImages.append(image)
         newImageUrls.append("") // Placeholder until upload completes
@@ -1608,7 +1611,7 @@ struct EditProductView: View {
         // Upload to Cloudinary
         Task {
             do {
-                let imageUrl = try await productManager.uploadProductImage(image)
+                let imageUrl = try await productManager.uploadProductImage(image, userId: userId)
                 await MainActor.run {
                     if imageIndex < newImageUrls.count {
                         newImageUrls[imageIndex] = imageUrl

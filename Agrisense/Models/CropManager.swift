@@ -23,6 +23,22 @@ class CropManager: ObservableObject {
     private let cloudinaryUploadPreset = Secrets.cloudinaryUploadPreset
     
     func addCrop(_ crop: Crop, for userId: String) async throws {
+        // Rate limiting - 10 crop additions per hour
+        let rateLimiter = RateLimiter.shared
+        guard rateLimiter.checkLimit(key: "addCrop_\(userId)", maxRequests: 10, timeWindow: 3600) else {
+            let timeUntil = rateLimiter.timeUntilReset(key: "addCrop_\(userId)", timeWindow: 3600) ?? 3600
+            throw NSError(domain: "RateLimit", code: 429, userInfo: [
+                NSLocalizedDescriptionKey: "Please wait \(Int(timeUntil / 60)) minutes before adding more crops."
+            ])
+        }
+        
+        // Validate crop name
+        guard InputValidator.validateCropName(crop.name) else {
+            throw NSError(domain: "Validation", code: 400, userInfo: [
+                NSLocalizedDescriptionKey: "Crop name must be 2-100 characters and contain only letters, numbers, spaces, and hyphens."
+            ])
+        }
+        
         isLoading = true
         defer { isLoading = false }
         
@@ -34,6 +50,22 @@ class CropManager: ObservableObject {
     }
     
     func updateCrop(_ crop: Crop, for userId: String) async throws {
+        // Rate limiting - 20 crop updates per hour
+        let rateLimiter = RateLimiter.shared
+        guard rateLimiter.checkLimit(key: "updateCrop_\(userId)", maxRequests: 20, timeWindow: 3600) else {
+            let timeUntil = rateLimiter.timeUntilReset(key: "updateCrop_\(userId)", timeWindow: 3600) ?? 3600
+            throw NSError(domain: "RateLimit", code: 429, userInfo: [
+                NSLocalizedDescriptionKey: "Please wait \(Int(timeUntil / 60)) minutes before updating crops."
+            ])
+        }
+        
+        // Validate crop name
+        guard InputValidator.validateCropName(crop.name) else {
+            throw NSError(domain: "Validation", code: 400, userInfo: [
+                NSLocalizedDescriptionKey: "Crop name must be 2-100 characters and contain only letters, numbers, spaces, and hyphens."
+            ])
+        }
+        
         isLoading = true
         defer { isLoading = false }
         
@@ -99,13 +131,36 @@ class CropManager: ObservableObject {
         ], merge: true)
     }
     
-    func uploadCropImage(_ image: UIImage) async throws -> String {
+    func uploadCropImage(_ image: UIImage, userId: String) async throws -> String {
+        // Rate limiting - 20 image uploads per hour
+        let rateLimiter = RateLimiter.shared
+        guard rateLimiter.checkLimit(key: "cropImageUpload_\(userId)", maxRequests: 20, timeWindow: 3600) else {
+            let timeUntil = rateLimiter.timeUntilReset(key: "cropImageUpload_\(userId)", timeWindow: 3600) ?? 3600
+            throw NSError(domain: "RateLimit", code: 429, userInfo: [
+                NSLocalizedDescriptionKey: "Please wait \(Int(timeUntil / 60)) minutes before uploading more images."
+            ])
+        }
+        
         let cloudinaryCloudName = Secrets.cloudinaryCloudName
         let cloudinaryUploadPreset = Secrets.cloudinaryUploadPreset
         
+        // Validate image first
+        guard let imageData = image.jpegData(compressionQuality: 1.0) else {
+            throw NSError(domain: "ImageProcessingError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Failed to process image."])
+        }
+        
+        do {
+            _ = try ImageValidator.validate(imageData: imageData, config: .post)
+        } catch {
+            #if DEBUG
+            print("[CropManager] Image validation failed: \(error.localizedDescription)")
+            #endif
+            throw NSError(domain: "ImageValidation", code: 0, userInfo: [NSLocalizedDescriptionKey: error.localizedDescription])
+        }
+        
         // Compress and convert image to WebP format
         guard let compressedImage = compressImage(image, maxSizeKB: 500),
-              let imageData = convertToWebP(compressedImage) else {
+              let processedImageData = convertToWebP(compressedImage) else {
             throw NSError(domain: "ImageProcessingError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Failed to process image for upload."])
         }
 
@@ -134,7 +189,7 @@ class CropManager: ObservableObject {
         body.append("--\(boundary)\r\n".data(using: .utf8)!)
         body.append("Content-Disposition: form-data; name=\"file\"; filename=\"crop_image.jpg\"\r\n".data(using: .utf8)!)
         body.append("Content-Type: image/jpeg\r\n\r\n".data(using: .utf8)!)
-        body.append(imageData)
+        body.append(processedImageData)
         body.append("\r\n".data(using: .utf8)!)
         body.append("--\(boundary)--\r\n".data(using: .utf8)!)
         
@@ -169,15 +224,26 @@ class CropManager: ObservableObject {
                     return secureUrl
                 } else {
                     // Parse error response
-                    var errorMessage = "Upload failed with status code: \(httpResponse.statusCode)"
+                    var errorMessage = "Failed to upload image. Please try again."
                     
+                    #if DEBUG
                     if let errorJson = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                        let error = errorJson["error"] as? [String: Any],
                        let message = error["message"] as? String {
+                        print("[CropManager] Cloudinary error: \(message)")
                         errorMessage = message
                     } else if let errorString = String(data: data, encoding: .utf8) {
+                        print("[CropManager] Cloudinary response: \(errorString)")
                         errorMessage = errorString
                     }
+                    #else
+                    // In production, don't expose detailed error messages
+                    if let errorJson = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                       let error = errorJson["error"] as? [String: Any],
+                       let _ = error["message"] as? String {
+                        errorMessage = "Failed to upload image. Please try again."
+                    }
+                    #endif
                     
                     let error = NSError(domain: "CloudinaryError", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: errorMessage])
                     

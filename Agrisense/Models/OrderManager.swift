@@ -12,12 +12,13 @@ class OrderManager: ObservableObject {
     @Published var orders: [Order] = []
     @Published var orderSummary: OrderHistorySummary?
     
-    private let userDefaults = UserDefaults.standard
+    private let secureStorage = SecureStorage.shared
     private let ordersKey = "user_orders_"
     private var currentUserId: String
     
     init(userId: String) {
         self.currentUserId = userId
+        migrateFromUserDefaults(for: userId)
         loadOrders(for: userId)
         updateOrderSummary()
     }
@@ -71,23 +72,65 @@ class OrderManager: ObservableObject {
     
     private func saveOrders() {
         let key = ordersKey + currentUserId
-        if let encoded = try? JSONEncoder().encode(orders) {
-            userDefaults.set(encoded, forKey: key)
+        do {
+            try secureStorage.save(orders, forKey: key)
+            #if DEBUG
+            print("[OrderManager] Successfully saved \(orders.count) orders to secure storage")
+            #endif
+        } catch {
+            #if DEBUG
+            print("[OrderManager] Failed to save orders: \(error.localizedDescription)")
+            #endif
         }
     }
     
     private func loadOrders(for userId: String) {
         let key = ordersKey + userId
-        guard let data = userDefaults.data(forKey: key),
-              let loadedOrders = try? JSONDecoder().decode([Order].self, from: data) else {
+        do {
+            let loadedOrders = try secureStorage.load(forKey: key, as: [Order].self)
+            orders = loadedOrders.sorted { $0.orderDate > $1.orderDate }
+            #if DEBUG
+            print("[OrderManager] Successfully loaded \(orders.count) orders from secure storage")
+            #endif
+        } catch SecureStorageError.itemNotFound {
             orders = []
+        } catch {
+            #if DEBUG
+            print("[OrderManager] Failed to load orders: \(error.localizedDescription)")
+            #endif
+            orders = []
+        }
+    }
+    
+    private func migrateFromUserDefaults(for userId: String) {
+        let key = ordersKey + userId
+        
+        // Check if already migrated
+        if secureStorage.exists(forKey: key) {
             return
         }
-        orders = loadedOrders.sorted { $0.orderDate > $1.orderDate }
+        
+        // Migrate from UserDefaults
+        if let data = UserDefaults.standard.data(forKey: key),
+           let legacyOrders = try? JSONDecoder().decode([Order].self, from: data) {
+            do {
+                try secureStorage.save(legacyOrders, forKey: key)
+                // Clear from UserDefaults after successful migration
+                UserDefaults.standard.removeObject(forKey: key)
+                #if DEBUG
+                print("[OrderManager] Migrated \(legacyOrders.count) orders from UserDefaults to Keychain")
+                #endif
+            } catch {
+                #if DEBUG
+                print("[OrderManager] Failed to migrate orders: \(error.localizedDescription)")
+                #endif
+            }
+        }
     }
     
     func switchUser(to userId: String) {
         currentUserId = userId
+        migrateFromUserDefaults(for: userId)
         loadOrders(for: userId)
         updateOrderSummary()
     }

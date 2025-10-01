@@ -50,18 +50,38 @@ class UserManager: ObservableObject {
     }
 
     func signUp(email: String, password: String, fullName: String, userType: UserType) async throws {
+        // Rate limiting - prevent spam signups
+        let rateLimitKey = "signup_\(email)"
+        guard RateLimiter.shared.checkLimit(
+            key: rateLimitKey,
+            maxRequests: RateLimitConfig.signupMaxAttempts,
+            timeWindow: RateLimitConfig.signupTimeWindow
+        ) else {
+            if let retryAfter = RateLimiter.shared.timeUntilReset(key: rateLimitKey, timeWindow: RateLimitConfig.signupTimeWindow) {
+                throw RateLimitError.exceeded(retryAfter: retryAfter)
+            }
+            throw NSError(domain: "RateLimitError", code: 429, userInfo: [NSLocalizedDescriptionKey: "Too many signup attempts. Please try again later."])
+        }
+        
+        // Enhanced input validation
+        do {
+            try InputValidator.validateEmail(email)
+            try InputValidator.validatePassword(password)
+            try InputValidator.validateName(fullName, fieldName: "Full Name")
+        } catch {
+            throw error
+        }
+        
         let authResult = try await Auth.auth().createUser(withEmail: email, password: password)
         
         let changeRequest = authResult.user.createProfileChangeRequest()
         changeRequest.displayName = fullName
         try await changeRequest.commitChanges()
         
-        // Here, you would typically save additional user info (like userType) to Firestore.
-        // For now, the listener will update the currentUser.
-        // Create a Firestore user document so other flows that call updateData won't fail.
+        // Create a Firestore user document
         let userData: [String: Any] = [
-            "name": fullName,
-            "email": email,
+            "name": fullName.trimmingCharacters(in: .whitespacesAndNewlines),
+            "email": email.trimmingCharacters(in: .whitespacesAndNewlines),
             "userType": userType.rawValue,
             "profileImage": NSNull(),
             "location": "",
@@ -73,12 +93,41 @@ class UserManager: ObservableObject {
             try await db.collection("users").document(authResult.user.uid).setData(userData)
         } catch {
             // Non-fatal: print for debugging but don't fail signup because auth succeeded.
-            print("Warning: failed to create Firestore user document: \(error.localizedDescription)")
+            #if DEBUG
+            print("DEBUG: Failed to create Firestore user document: \(error.localizedDescription)")
+            #endif
         }
     }
 
     func signIn(email: String, password: String) async throws {
+        // Rate limiting - prevent brute force attacks
+        let rateLimitKey = "login_\(email)"
+        guard RateLimiter.shared.checkLimit(
+            key: rateLimitKey,
+            maxRequests: RateLimitConfig.loginMaxAttempts,
+            timeWindow: RateLimitConfig.loginTimeWindow
+        ) else {
+            if let retryAfter = RateLimiter.shared.timeUntilReset(key: rateLimitKey, timeWindow: RateLimitConfig.loginTimeWindow) {
+                throw RateLimitError.exceeded(retryAfter: retryAfter)
+            }
+            throw NSError(domain: "RateLimitError", code: 429, userInfo: [NSLocalizedDescriptionKey: "Too many login attempts. Please try again later."])
+        }
+        
+        // Enhanced input validation
+        do {
+            try InputValidator.validateEmail(email)
+        } catch {
+            throw error
+        }
+        
+        guard !password.isEmpty else {
+            throw NSError(domain: "ValidationError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Password is required"])
+        }
+        
         try await Auth.auth().signIn(withEmail: email, password: password)
+        
+        // Clear rate limit on successful login
+        RateLimiter.shared.reset(key: "login_\(email)")
     }
 
     func signOut() {
@@ -100,14 +149,31 @@ class UserManager: ObservableObject {
             throw NSError(domain: "UserManager", code: 0, userInfo: [NSLocalizedDescriptionKey: "No current user"])
         }
         
+        // Rate limiting
+        let rateLimitKey = "profile_update_\(user.id)"
+        guard RateLimiter.shared.checkLimit(
+            key: rateLimitKey,
+            maxRequests: RateLimitConfig.profileUpdateMaxAttempts,
+            timeWindow: RateLimitConfig.profileUpdateTimeWindow
+        ) else {
+            if let retryAfter = RateLimiter.shared.timeUntilReset(key: rateLimitKey, timeWindow: RateLimitConfig.profileUpdateTimeWindow) {
+                throw RateLimitError.exceeded(retryAfter: retryAfter)
+            }
+            throw NSError(domain: "RateLimitError", code: 429, userInfo: [NSLocalizedDescriptionKey: "Too many update attempts. Please try again later."])
+        }
+        
         isUpdatingProfile = true
         
         do {
+            // Enhanced input validation
+            try InputValidator.validateName(name)
+            try InputValidator.validatePhoneNumber(phoneNumber, required: false)
+            
             // Update Firestore
             let userData: [String: Any] = [
-                "name": name,
-                "phoneNumber": phoneNumber,
-                "location": location,
+                "name": name.trimmingCharacters(in: .whitespacesAndNewlines),
+                "phoneNumber": phoneNumber.trimmingCharacters(in: .whitespacesAndNewlines),
+                "location": location.trimmingCharacters(in: .whitespacesAndNewlines),
                 "email": user.email,
                 "userType": user.userType.rawValue
             ]
@@ -135,7 +201,9 @@ class UserManager: ObservableObject {
             self.currentUser = updatedUser
             
         } catch {
-            print("Error updating profile: \(error.localizedDescription)")
+            #if DEBUG
+            print("DEBUG: Error updating profile: \(error.localizedDescription)")
+            #endif
             throw error
         }
         
@@ -146,33 +214,42 @@ class UserManager: ObservableObject {
         // Clear any previous errors
         profileUpdateError = nil
         
-    guard let imageData = flattenImageForUpload(image) else {
-            let errorMessage = "Failed to process image for upload. Please try a different image."
-            profileUpdateError = errorMessage
-            throw NSError(domain: "ImageProcessingError", code: 0, userInfo: [NSLocalizedDescriptionKey: errorMessage])
-        }
-        
         guard let user = currentUser else {
             let errorMessage = "No current user found. Please sign in again."
             profileUpdateError = errorMessage
             throw NSError(domain: "UserManager", code: 0, userInfo: [NSLocalizedDescriptionKey: errorMessage])
         }
         
-        // Check if image data is valid and within size limits
-        guard imageData.count > 0 else {
-            let errorMessage = "Image data is empty. Please try a different image."
+        // Rate limiting - prevent spam uploads
+        let rateLimitKey = "profile_image_upload_\(user.id)"
+        guard RateLimiter.shared.checkLimit(
+            key: rateLimitKey,
+            maxRequests: RateLimitConfig.imageUploadMaxAttempts,
+            timeWindow: RateLimitConfig.imageUploadTimeWindow
+        ) else {
+            if let retryAfter = RateLimiter.shared.timeUntilReset(key: rateLimitKey, timeWindow: RateLimitConfig.imageUploadTimeWindow) {
+                let errorMessage = "Too many upload attempts. Please try again in \(Int(retryAfter / 60) + 1) minute(s)."
+                profileUpdateError = errorMessage
+                throw NSError(domain: "RateLimitError", code: 429, userInfo: [NSLocalizedDescriptionKey: errorMessage])
+            }
+            let errorMessage = "Too many upload attempts. Please try again later."
             profileUpdateError = errorMessage
-            throw NSError(domain: "UserManager", code: 0, userInfo: [NSLocalizedDescriptionKey: errorMessage])
+            throw NSError(domain: "RateLimitError", code: 429, userInfo: [NSLocalizedDescriptionKey: errorMessage])
         }
         
-        // Check if compressed image is still too large (shouldn't happen, but just in case)
-        // Allow up to 5 MB profile images (5120 KB)
-        let sizeInKB = imageData.count / 1024
-        let maxAllowedKB = 5 * 1024
-        guard sizeInKB <= maxAllowedKB else {
-            let errorMessage = "Image is too large (\(sizeInKB)KB). Please choose an image under 5 MB."
+        guard let imageData = flattenImageForUpload(image) else {
+            let errorMessage = "Failed to process image for upload. Please try a different image."
             profileUpdateError = errorMessage
-            throw NSError(domain: "UserManager", code: 0, userInfo: [NSLocalizedDescriptionKey: errorMessage])
+            throw NSError(domain: "ImageProcessingError", code: 0, userInfo: [NSLocalizedDescriptionKey: errorMessage])
+        }
+        
+        // Validate image with security checks
+        do {
+            _ = try ImageValidator.validate(imageData: imageData, config: .profile)
+        } catch {
+            let errorMessage = "Invalid image. Please use a valid JPEG or PNG file."
+            profileUpdateError = errorMessage
+            throw NSError(domain: "ImageValidationError", code: 0, userInfo: [NSLocalizedDescriptionKey: errorMessage])
         }
         
         do {

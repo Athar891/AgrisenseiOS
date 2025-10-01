@@ -23,11 +23,31 @@ class ProductManager: ObservableObject {
     private let cloudinaryProductImagesPreset = Secrets.cloudinaryProductImagesPreset
     
     /// Upload a product image to Cloudinary using the product_images preset
-    func uploadProductImage(_ image: UIImage) async throws -> String {
-        // Compress and prepare image for upload
+    func uploadProductImage(_ image: UIImage, userId: String) async throws -> String {
+        // Rate limiting - prevent spam uploads
+        let rateLimitKey = "product_image_upload_\(userId)"
+        guard RateLimiter.shared.checkLimit(
+            key: rateLimitKey,
+            maxRequests: RateLimitConfig.imageUploadMaxAttempts,
+            timeWindow: RateLimitConfig.imageUploadTimeWindow
+        ) else {
+            if let retryAfter = RateLimiter.shared.timeUntilReset(key: rateLimitKey, timeWindow: RateLimitConfig.imageUploadTimeWindow) {
+                throw RateLimitError.exceeded(retryAfter: retryAfter)
+            }
+            throw NSError(domain: "RateLimitError", code: 429, userInfo: [NSLocalizedDescriptionKey: "Too many uploads. Please try again later."])
+        }
+        
+        // Validate and compress image
         guard let compressedImage = compressImage(image, maxSizeKB: 1024), // 1MB max for product images
               let imageData = compressedImage.jpegData(compressionQuality: 0.8) else {
             throw NSError(domain: "ImageProcessingError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Failed to process image for upload."])
+        }
+        
+        // Validate image with security checks
+        do {
+            _ = try ImageValidator.validate(imageData: imageData, config: .product)
+        } catch {
+            throw NSError(domain: "ImageValidationError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Invalid image. Please use a valid JPEG or PNG file."])
         }
 
         // Upload product image to Cloudinary
@@ -86,21 +106,26 @@ class ProductManager: ObservableObject {
                     isUploading = false
                     
                     // Upload successful
+                    #if DEBUG
+                    print("DEBUG: Product image uploaded successfully to \(secureUrl)")
+                    #endif
                     
                     return secureUrl
                 } else {
-                    // Parse error response
-                    var errorMessage = "Upload failed with status code: \(httpResponse.statusCode)"
-                    
+                    // Parse error response (sanitize for user)
+                    #if DEBUG
+                    var debugMessage = "Upload failed with status code: \(httpResponse.statusCode)"
                     if let errorJson = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                        let error = errorJson["error"] as? [String: Any],
                        let message = error["message"] as? String {
-                        errorMessage = message
+                        debugMessage = message
                     } else if let errorString = String(data: data, encoding: .utf8) {
-                        errorMessage = errorString
+                        debugMessage = errorString
                     }
+                    print("DEBUG: Cloudinary error - \(debugMessage)")
+                    #endif
                     
-                    let error = NSError(domain: "CloudinaryError", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: errorMessage])
+                    let error = NSError(domain: "CloudinaryError", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "Unable to upload image. Please check your connection and try again."])
                     
                     // Don't retry on client errors (4xx)
                     if httpResponse.statusCode >= 400 && httpResponse.statusCode < 500 {
@@ -138,12 +163,12 @@ class ProductManager: ObservableObject {
     }
     
     /// Upload multiple product images to Cloudinary
-    func uploadProductImages(_ images: [UIImage]) async throws -> [String] {
+    func uploadProductImages(_ images: [UIImage], userId: String) async throws -> [String] {
         var imageUrls: [String] = []
         
         for (index, image) in images.enumerated() {
             uploadProgress = Double(index) / Double(images.count)
-            let imageUrl = try await uploadProductImage(image)
+            let imageUrl = try await uploadProductImage(image, userId: userId)
             imageUrls.append(imageUrl)
         }
         
@@ -166,14 +191,45 @@ class ProductManager: ObservableObject {
         sellerId: String,
         sellerName: String
     ) async throws -> String {
+        // Rate limiting - prevent spam product creation
+        let rateLimitKey = "product_creation_\(sellerId)"
+        guard RateLimiter.shared.checkLimit(
+            key: rateLimitKey,
+            maxRequests: RateLimitConfig.productCreationMaxAttempts,
+            timeWindow: RateLimitConfig.productCreationTimeWindow
+        ) else {
+            if let retryAfter = RateLimiter.shared.timeUntilReset(key: rateLimitKey, timeWindow: RateLimitConfig.productCreationTimeWindow) {
+                throw RateLimitError.exceeded(retryAfter: retryAfter)
+            }
+            throw NSError(domain: "RateLimitError", code: 429, userInfo: [NSLocalizedDescriptionKey: "Too many products created. Please try again later."])
+        }
+        
+        // Validate all input data
+        do {
+            try InputValidator.validateProductName(name)
+            try InputValidator.validateProductDescription(description)
+            try InputValidator.validatePrice(price)
+            try InputValidator.validateStock(stock)
+            try InputValidator.validateTextField(unit, fieldName: "Unit", minLength: 1, maxLength: 20)
+            try InputValidator.validateTextField(location, fieldName: "Location", minLength: 2, maxLength: 100)
+            try InputValidator.validateTextField(category, fieldName: "Category", minLength: 2, maxLength: 50)
+        } catch {
+            throw error
+        }
+        
+        // Validate image URLs
+        guard !imageUrls.isEmpty else {
+            throw NSError(domain: "ValidationError", code: 0, userInfo: [NSLocalizedDescriptionKey: "At least one product image is required."])
+        }
+        
         let productData: [String: Any] = [
-            "name": name,
-            "description": description,
+            "name": name.trimmingCharacters(in: .whitespacesAndNewlines),
+            "description": description.trimmingCharacters(in: .whitespacesAndNewlines),
             "price": price,
-            "unit": unit,
+            "unit": unit.trimmingCharacters(in: .whitespacesAndNewlines),
             "category": category,
             "stock": stock,
-            "location": location,
+            "location": location.trimmingCharacters(in: .whitespacesAndNewlines),
             "imageUrls": imageUrls,
             "sellerId": sellerId,
             "sellerName": sellerName,
@@ -187,6 +243,9 @@ class ProductManager: ObservableObject {
         let docRef = try await db.collection("products").addDocument(data: productData)
         
         // Product saved successfully
+        #if DEBUG
+        print("DEBUG: Product created with ID: \(docRef.documentID)")
+        #endif
         
         return docRef.documentID
     }
@@ -203,25 +262,44 @@ class ProductManager: ObservableObject {
         location: String,
         imageUrls: [String]? = nil
     ) async throws {
+        // Validate all input data
+        do {
+            try InputValidator.validateProductName(name)
+            try InputValidator.validateProductDescription(description)
+            try InputValidator.validatePrice(price)
+            try InputValidator.validateStock(stock)
+            try InputValidator.validateTextField(unit, fieldName: "Unit", minLength: 1, maxLength: 20)
+            try InputValidator.validateTextField(location, fieldName: "Location", minLength: 2, maxLength: 100)
+            try InputValidator.validateTextField(category, fieldName: "Category", minLength: 2, maxLength: 50)
+        } catch {
+            throw error
+        }
+        
         var updateData: [String: Any] = [
-            "name": name,
-            "description": description,
+            "name": name.trimmingCharacters(in: .whitespacesAndNewlines),
+            "description": description.trimmingCharacters(in: .whitespacesAndNewlines),
             "price": price,
-            "unit": unit,
+            "unit": unit.trimmingCharacters(in: .whitespacesAndNewlines),
             "category": category,
             "stock": stock,
-            "location": location,
+            "location": location.trimmingCharacters(in: .whitespacesAndNewlines),
             "updatedAt": Timestamp()
         ]
         
         // Only update imageUrls if provided
         if let imageUrls = imageUrls {
+            guard !imageUrls.isEmpty else {
+                throw NSError(domain: "ValidationError", code: 0, userInfo: [NSLocalizedDescriptionKey: "At least one product image is required."])
+            }
             updateData["imageUrls"] = imageUrls
         }
         
         try await db.collection("products").document(productId).updateData(updateData)
         
         // Product updated successfully
+        #if DEBUG
+        print("DEBUG: Product \(productId) updated successfully")
+        #endif
     }
     
     /// Delete a product from Firestore

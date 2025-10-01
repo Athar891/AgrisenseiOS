@@ -54,8 +54,23 @@ class EnhancedUserManager: ObservableObject {
         )
         
         do {
-            // Validate input
-            try validateSignUpInput(email: email, password: password, fullName: fullName)
+            // Rate limiting - prevent spam signups
+            let rateLimitKey = "signup_\(email)"
+            guard RateLimiter.shared.checkLimit(
+                key: rateLimitKey,
+                maxRequests: RateLimitConfig.signupMaxAttempts,
+                timeWindow: RateLimitConfig.signupTimeWindow
+            ) else {
+                if let retryAfter = RateLimiter.shared.timeUntilReset(key: rateLimitKey, timeWindow: RateLimitConfig.signupTimeWindow) {
+                    throw RateLimitError.exceeded(retryAfter: retryAfter)
+                }
+                throw AgriSenseError.validationError("Too many signup attempts. Please try again later.")
+            }
+            
+            // Enhanced input validation
+            try InputValidator.validateEmail(email)
+            try InputValidator.validatePassword(password)
+            try InputValidator.validateName(fullName, fieldName: "Full Name")
             
             let authResult = try await Auth.auth().createUser(withEmail: email, password: password)
             
@@ -91,10 +106,29 @@ class EnhancedUserManager: ObservableObject {
         )
         
         do {
-            // Validate input
-            try validateSignInInput(email: email, password: password)
+            // Rate limiting - prevent brute force attacks
+            let rateLimitKey = "login_\(email)"
+            guard RateLimiter.shared.checkLimit(
+                key: rateLimitKey,
+                maxRequests: RateLimitConfig.loginMaxAttempts,
+                timeWindow: RateLimitConfig.loginTimeWindow
+            ) else {
+                if let retryAfter = RateLimiter.shared.timeUntilReset(key: rateLimitKey, timeWindow: RateLimitConfig.loginTimeWindow) {
+                    throw RateLimitError.exceeded(retryAfter: retryAfter)
+                }
+                throw AgriSenseError.validationError("Too many login attempts. Please try again later.")
+            }
+            
+            // Enhanced input validation
+            try InputValidator.validateEmail(email)
+            guard !password.isEmpty else {
+                throw AgriSenseError.invalidInput("Password")
+            }
             
             try await Auth.auth().signIn(withEmail: email, password: password)
+            
+            // Clear rate limit on successful login
+            RateLimiter.shared.reset(key: "login_\(email)")
             
         } catch {
             let agriSenseError = convertAuthError(error)
@@ -140,8 +174,22 @@ class EnhancedUserManager: ObservableObject {
         isUpdatingProfile = true
         
         do {
-            // Validate input
-            try validateProfileInput(name: name, phoneNumber: phoneNumber)
+            // Rate limiting
+            let rateLimitKey = "profile_update_\(user.id)"
+            guard RateLimiter.shared.checkLimit(
+                key: rateLimitKey,
+                maxRequests: RateLimitConfig.profileUpdateMaxAttempts,
+                timeWindow: RateLimitConfig.profileUpdateTimeWindow
+            ) else {
+                if let retryAfter = RateLimiter.shared.timeUntilReset(key: rateLimitKey, timeWindow: RateLimitConfig.profileUpdateTimeWindow) {
+                    throw RateLimitError.exceeded(retryAfter: retryAfter)
+                }
+                throw AgriSenseError.validationError("Too many update attempts. Please try again later.")
+            }
+            
+            // Enhanced input validation
+            try InputValidator.validateName(name)
+            try InputValidator.validatePhoneNumber(phoneNumber, required: false)
             
             // Update Firestore
             let userData: [String: Any] = [

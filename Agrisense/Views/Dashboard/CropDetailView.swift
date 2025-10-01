@@ -464,7 +464,7 @@ struct EditCropView: View {
             // Upload new image if selected
             var imageUrl: String? = currentImageUrl
             if let cropImage = cropImage {
-                imageUrl = try await cropManager.uploadCropImage(cropImage)
+                imageUrl = try await cropManager.uploadCropImage(cropImage, userId: userId)
             }
             
             // Create updated crop

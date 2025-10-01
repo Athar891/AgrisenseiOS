@@ -44,14 +44,28 @@ struct NewPostView: View {
             return
         }
         
-        // Validate post data
-        guard !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            saveError = "Title is required."
+        // Rate limiting - prevent spam
+        let rateLimitKey = "post_creation_\(userId)"
+        guard RateLimiter.shared.checkLimit(
+            key: rateLimitKey,
+            maxRequests: RateLimitConfig.postCreationMaxAttempts,
+            timeWindow: RateLimitConfig.postCreationTimeWindow
+        ) else {
+            if let retryAfter = RateLimiter.shared.timeUntilReset(key: rateLimitKey, timeWindow: RateLimitConfig.postCreationTimeWindow) {
+                let minutes = Int(retryAfter / 60) + 1
+                saveError = "You've created too many posts. Please wait \(minutes) minute\(minutes == 1 ? "" : "s") before posting again."
+            } else {
+                saveError = "You've created too many posts. Please try again later."
+            }
             return
         }
         
-        guard !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            saveError = "Content is required."
+        // Enhanced validation
+        do {
+            try InputValidator.validatePostTitle(title)
+            try InputValidator.validatePostContent(content)
+        } catch {
+            saveError = error.localizedDescription
             return
         }
         
@@ -67,7 +81,11 @@ struct NewPostView: View {
                 case .failure(let error):
                     DispatchQueue.main.async {
                         isSaving = false
-                        saveError = "Failed to upload image: \(error.localizedDescription)"
+                        // Sanitize error message - don't expose internal details
+                        saveError = "Unable to upload image. Please check your connection and try again."
+                        #if DEBUG
+                        print("DEBUG: Image upload error - \(error.localizedDescription)")
+                        #endif
                     }
                 }
             }
