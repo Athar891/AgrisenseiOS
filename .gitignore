@@ -8,7 +8,6 @@ build/**
 DerivedData/
 xcuserdata/
 *.xcuserstate
-*.xcworkspace
 *.xcuserdatad
 
 # Swift Package Manager
