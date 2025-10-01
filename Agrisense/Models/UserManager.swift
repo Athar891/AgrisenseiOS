@@ -26,7 +26,7 @@ class UserManager: ObservableObject {
     private var authStateHandle: AuthStateDidChangeListenerHandle?
     let db = Firestore.firestore() // Made public for CropManager access
     
-    // Cloudinary Configuration (centralized in Secrets)
+    // Cloudinary Configuration - using values from Secrets
     private let cloudinaryCloudName = Secrets.cloudinaryCloudName
     private let cloudinaryUploadPreset = Secrets.cloudinaryUploadPreset
 

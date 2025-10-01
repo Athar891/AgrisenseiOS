@@ -29,8 +29,10 @@ Thumbs.db
 
 # Backup files
 *.backup
+*.backup.*
 *.old
 *.tmp
+*.temp
 
 # Log files
 *.log
@@ -39,6 +41,9 @@ Thumbs.db
 *SUMMARY.md
 *FIX*.md
 FINAL_SOLUTION.md
+
+# Security audit reports (keep local only)
+SECURITY_*.md
 
 # Carthage
 Carthage/
@@ -106,4 +111,10 @@ secrets.*
 
 # Local derived data folders
 .DerivedData_temp/
+.DerivedData*/
+
+# API test scripts with keys
+test_*.py
+test_*.sh
+*_test_api.*
 

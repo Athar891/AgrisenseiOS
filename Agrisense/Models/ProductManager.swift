@@ -18,7 +18,7 @@ class ProductManager: ObservableObject {
     
     private let db = Firestore.firestore()
     
-    // Cloudinary Configuration for product images
+    // Cloudinary Configuration - using values from Secrets
     private let cloudinaryCloudName = Secrets.cloudinaryCloudName
     private let cloudinaryProductImagesPreset = Secrets.cloudinaryProductImagesPreset
     

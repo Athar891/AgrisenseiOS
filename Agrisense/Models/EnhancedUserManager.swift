@@ -23,7 +23,7 @@ class EnhancedUserManager: ObservableObject {
     private let db = Firestore.firestore()
     private let errorHandler = ErrorHandlingMiddleware.shared
     
-    // Cloudinary Configuration (centralized in Secrets)
+    // Cloudinary Configuration - using values from Secrets
     private let cloudinaryCloudName = Secrets.cloudinaryCloudName
     private let cloudinaryUploadPreset = Secrets.cloudinaryUploadPreset
 
