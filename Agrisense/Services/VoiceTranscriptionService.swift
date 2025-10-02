@@ -25,6 +25,8 @@ class VoiceTranscriptionService: NSObject, ObservableObject {
     private var speechRecognizer: SFSpeechRecognizer?
     private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
     private var recognitionTask: SFSpeechRecognitionTask?
+    // Prevent concurrent start attempts
+    private var isStarting = false
     
     override init() {
         super.init()
@@ -71,29 +73,55 @@ class VoiceTranscriptionService: NSObject, ObservableObject {
             await requestPermissions()
             return
         }
-        
-        guard !isRecording else { return }
-        
+
+        // Prevent re-entrancy if a start is already in progress or recording is active
+        guard !isRecording && !isStarting else { return }
+
+        isStarting = true
+        defer { isStarting = false }
+
         do {
             try await setupAudioSession()
-            try startSpeechRecognition()
+
+            // Ensure we mark recording early to avoid double-start when user taps quickly.
+            // If start fails, we'll reset this flag in the catch block.
             isRecording = true
             isTranscribing = true
             transcriptionText = ""
             errorMessage = nil
+
+            try startSpeechRecognition()
         } catch {
+            // Reset state on failure
+            isRecording = false
+            isTranscribing = false
             errorMessage = "Failed to start recording: \(error.localizedDescription)"
+            // Clean-up any partially configured resources
+            recognitionTask?.cancel()
+            recognitionTask = nil
+            recognitionRequest = nil
+            audioEngine.stop()
         }
     }
     
     func stopRecording() {
         guard isRecording else { return }
-        
-        audioEngine.stop()
+
+        // Stop receiving audio
+        if audioEngine.isRunning {
+            audioEngine.inputNode.removeTap(onBus: 0)
+            audioEngine.stop()
+        }
+
+        // End and cancel recognition
         recognitionRequest?.endAudio()
+        recognitionTask?.cancel()
+        recognitionTask = nil
+        recognitionRequest = nil
+
         isRecording = false
-        
-        // Keep transcribing flag until final result
+
+        // Keep transcribing flag until final result; clear shortly after
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
             self.isTranscribing = false
         }
@@ -124,13 +152,18 @@ class VoiceTranscriptionService: NSObject, ObservableObject {
         // Configure audio engine
         let inputNode = audioEngine.inputNode
         let recordingFormat = inputNode.outputFormat(forBus: 0)
-        
+
+        // Remove any existing tap before installing a new one to avoid multiple taps crash
+        inputNode.removeTap(onBus: 0)
+
         inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { buffer, _ in
             recognitionRequest.append(buffer)
         }
-        
+
         audioEngine.prepare()
-        try audioEngine.start()
+        if !audioEngine.isRunning {
+            try audioEngine.start()
+        }
         
         // Start recognition task
         recognitionTask = speechRecognizer?.recognitionTask(with: recognitionRequest) { [weak self] result, error in
@@ -145,6 +178,7 @@ class VoiceTranscriptionService: NSObject, ObservableObject {
                 
                 if let error = error {
                     self?.errorMessage = error.localizedDescription
+                    // Stop and clean up on error
                     self?.stopRecording()
                 }
             }
@@ -157,7 +191,10 @@ class VoiceTranscriptionService: NSObject, ObservableObject {
     }
     
     deinit {
-        audioEngine.stop()
+        if audioEngine.isRunning {
+            audioEngine.inputNode.removeTap(onBus: 0)
+            audioEngine.stop()
+        }
         recognitionRequest?.endAudio()
     }
 }

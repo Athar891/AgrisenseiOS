@@ -420,13 +420,28 @@ typealias PlatformImage = UIImage
 struct PlatformImage {}
 #endif
 
-// MARK: - AI Service Manager (Temporary Implementation)
+// MARK: - AI Service Manager (Gemini 2.0 Implementation)
 
 @MainActor
 class AIServiceManager: ObservableObject {
     static let shared = AIServiceManager()
+    private var geminiService: GeminiAIService?
     
-    private init() {}
+    private init() {
+        // Initialize with API key from environment or Secrets
+        if let apiKey = getAPIKey() {
+            geminiService = GeminiAIService(apiKey: apiKey)
+        }
+    }
+    
+    private func getAPIKey() -> String? {
+        // Load from Secrets which handles both .env file and environment variables
+        let key = Secrets.geminiAPIKey
+        if key != "YOUR_GEMINI_API_KEY_HERE" && !key.isEmpty {
+            return key
+        }
+        return nil
+    }
     
     func configure(userManager: Any?, cropManager: Any?, weatherService: Any?, appState: Any?) {
         // Configuration placeholder - implement as needed
@@ -434,16 +449,19 @@ class AIServiceManager: ObservableObject {
     }
     
     func sendMessage(_ message: String, conversationHistory: [ChatMessage]) async throws -> AIResponse {
-        // Temporary stub implementation
-        // Replace with actual AI service call when ready
-        return AIResponse(
-            content: "Thank you for your message: '\(message)'. This is a temporary response while the AI service is being configured.",
-            confidence: 0.5,
-            sources: [],
-            recommendations: [],
-            followUpQuestions: ["How can I help you with your farming needs?", "Would you like to know more about crop management?"],
-            metadata: nil
-        )
+        guard let service = geminiService else {
+            return AIResponse(
+                content: "Please configure your Gemini API key to use AI features. Visit https://makersuite.google.com/app/apikey to get your key.",
+                confidence: 0.0,
+                sources: [],
+                recommendations: ["Add GEMINI_API_KEY to your environment variables", "Or add it to Secrets.swift"],
+                followUpQuestions: [],
+                metadata: nil
+            )
+        }
+        
+        let context = AIContext.current()
+        return try await service.sendMessage(message, context: context)
     }
     
     func getContextualQuickActions() -> [QuickAction] {

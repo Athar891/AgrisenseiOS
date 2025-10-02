@@ -94,6 +94,24 @@ struct DailyForecast: Identifiable {
 
 // MARK: - WeatherAPIError
 struct WeatherAPIError: Codable, Error {
+    // OpenWeather sometimes returns cod as Int or String
     let cod: String
     let message: String
+
+    enum CodingKeys: String, CodingKey {
+        case cod, message
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        // cod can be int or string, normalize to string
+        if let intCod = try? container.decode(Int.self, forKey: .cod) {
+            self.cod = String(intCod)
+        } else if let strCod = try? container.decode(String.self, forKey: .cod) {
+            self.cod = strCod
+        } else {
+            self.cod = ""
+        }
+        self.message = (try? container.decode(String.self, forKey: .message)) ?? "Unknown error"
+    }
 }

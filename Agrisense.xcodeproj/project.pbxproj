@@ -23,6 +23,7 @@
 		6F9B83512E4B8D1A00BAE046 /* FirebaseRemoteConfig in Frameworks */ = {isa = PBXBuildFile; productRef = 6F9B83502E4B8D1A00BAE046 /* FirebaseRemoteConfig */; };
 		6F9B83532E4B8D1A00BAE046 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 6F9B83522E4B8D1A00BAE046 /* FirebaseStorage */; };
 		6F9B83552E4B8D1A00BAE046 /* FirebaseStorageCombine-Community in Frameworks */ = {isa = PBXBuildFile; productRef = 6F9B83542E4B8D1A00BAE046 /* FirebaseStorageCombine-Community */; };
+		E1E1E1F2E490968009BE8DA /* .env in Resources */ = {isa = PBXBuildFile; fileRef = E1E1E1E12E47740000FB2790 /* .env */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -44,6 +45,7 @@
 
 /* Begin PBXFileReference section */
 		6F21E4CD2E47740000FB2790 /* Agrisense.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Agrisense.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E1E1E1E12E47740000FB2790 /* .env */ = {isa = PBXFileReference; lastKnownFileType = text; path = ".env"; sourceTree = "<group>"; };
 		6F21E4DA2E47740200FB2790 /* AgrisenseTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AgrisenseTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		6F21E4E42E47740200FB2790 /* AgrisenseUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AgrisenseUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -66,6 +68,10 @@
 			);
 			path = Agrisense;
 			sourceTree = "<group>";
+			children = (
+				6F21E4CF2E47740000FB2790 /* Agrisense */,
+				E1E1E12E47740000FB2790 /* .env (group reference) */,
+			);
 		};
 		6F21E4DD2E47740200FB2790 /* AgrisenseTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
@@ -298,6 +304,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E1E1E1F2E490968009BE8DA /* .env in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

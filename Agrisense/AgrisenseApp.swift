@@ -87,10 +87,12 @@ struct AgrisenseApp: App {
 struct ContentView: View {
     @EnvironmentObject var userManager: UserManager
     @EnvironmentObject var appState: AppState
+    @State private var showSplash = true
     
     var body: some View {
-        Group {
-            if userManager.isAuthenticated {
+        ZStack {
+            Group {
+                if userManager.isAuthenticated {
                 TabView(selection: $appState.selectedTab) {
                     DashboardView()
                         .tabItem {
@@ -127,8 +129,25 @@ struct ContentView: View {
                         }
                         .tag(AppState.Tab.profile)
                 }
-            } else {
-                AuthenticationView()
+                } else {
+                    AuthenticationView()
+                }
+            }
+            .opacity(showSplash ? 0 : 1)
+            
+            // Splash screen overlay
+            if showSplash {
+                SplashScreenView()
+                    .transition(.opacity)
+                    .zIndex(1)
+            }
+        }
+        .onAppear {
+            // Show splash screen for 2.5 seconds
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+                withAnimation(.easeOut(duration: 0.5)) {
+                    showSplash = false
+                }
             }
         }
     }

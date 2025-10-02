@@ -9,7 +9,12 @@ class WeatherService {
     func fetchWeather(for location: CLLocation, completion: @escaping (Result<WeatherData, Error>) -> Void) {
         let lat = location.coordinate.latitude
         let lon = location.coordinate.longitude
-        
+        // Validate API key
+        if apiKey.isEmpty || apiKey == "YOUR_OPENWEATHER_API_KEY_HERE" {
+            completion(.failure(NSError(domain: "WeatherService", code: 401, userInfo: [NSLocalizedDescriptionKey: "OpenWeather API key is missing. Set OPENWEATHER_API_KEY in environment or update Secrets.swift"])))
+            return
+        }
+
         guard let url = URL(string: "\(baseURL)?lat=\(lat)&lon=\(lon)&appid=\(apiKey)&units=metric") else {
             completion(.failure(URLError(.badURL)))
             return
@@ -48,8 +53,33 @@ class WeatherService {
                 return
             }
 
+            guard let httpResponse = response as? HTTPURLResponse else {
+                completion(.failure(URLError(.badServerResponse)))
+                return
+            }
+
             guard let data = data else {
                 completion(.failure(URLError(.cannotParseResponse)))
+                return
+            }
+
+            // Redact API key from logs
+            let redactedURL = url.absoluteString.replacingOccurrences(of: self.apiKey, with: "<REDACTED>")
+            let responseText = String(data: data, encoding: .utf8) ?? "<non-text response>"
+            let truncatedResponse = responseText.count > 1000 ? String(responseText.prefix(1000)) + "...(truncated)" : responseText
+            print("[WeatherService] HTTP \(httpResponse.statusCode) - URL: \(redactedURL)")
+            print("[WeatherService] Response body (truncated): \n\(truncatedResponse)")
+
+            // Check for non-200 status codes and try to parse API error
+            if !(200...299).contains(httpResponse.statusCode) {
+                if let apiError = try? JSONDecoder().decode(WeatherAPIError.self, from: data) {
+                    print("[WeatherService] API error: \(apiError.message)")
+                    completion(.failure(apiError))
+                } else {
+                    let message = String(data: data, encoding: .utf8) ?? HTTPURLResponse.localizedString(forStatusCode: httpResponse.statusCode)
+                    print("[WeatherService] Non-JSON error message: \(message)")
+                    completion(.failure(NSError(domain: "WeatherService", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: message])))
+                }
                 return
             }
 
@@ -57,11 +87,10 @@ class WeatherService {
                 let weatherData = try JSONDecoder().decode(WeatherData.self, from: data)
                 completion(.success(weatherData))
             } catch {
-                // If decoding WeatherData fails, try to decode WeatherAPIError
-                do {
-                    let apiError = try JSONDecoder().decode(WeatherAPIError.self, from: data)
+                // If decoding WeatherData fails, try to decode WeatherAPIError for a clearer message
+                if let apiError = try? JSONDecoder().decode(WeatherAPIError.self, from: data) {
                     completion(.failure(apiError))
-                } catch {
+                } else {
                     completion(.failure(error))
                 }
             }
@@ -75,8 +104,32 @@ class WeatherService {
                 return
             }
 
+            guard let httpResponse = response as? HTTPURLResponse else {
+                completion(.failure(URLError(.badServerResponse)))
+                return
+            }
+
             guard let data = data else {
                 completion(.failure(URLError(.cannotParseResponse)))
+                return
+            }
+
+            // Redact API key from logs
+            let redactedURL = url.absoluteString.replacingOccurrences(of: self.apiKey, with: "<REDACTED>")
+            let responseText = String(data: data, encoding: .utf8) ?? "<non-text response>"
+            let truncatedResponse = responseText.count > 1000 ? String(responseText.prefix(1000)) + "...(truncated)" : responseText
+            print("[WeatherService] Forecast HTTP \(httpResponse.statusCode) - URL: \(redactedURL)")
+            print("[WeatherService] Forecast response body (truncated): \n\(truncatedResponse)")
+
+            if !(200...299).contains(httpResponse.statusCode) {
+                if let apiError = try? JSONDecoder().decode(WeatherAPIError.self, from: data) {
+                    print("[WeatherService] Forecast API error: \(apiError.message)")
+                    completion(.failure(apiError))
+                } else {
+                    let message = String(data: data, encoding: .utf8) ?? HTTPURLResponse.localizedString(forStatusCode: httpResponse.statusCode)
+                    print("[WeatherService] Forecast non-JSON error message: \(message)")
+                    completion(.failure(NSError(domain: "WeatherService", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: message])))
+                }
                 return
             }
 
@@ -84,11 +137,9 @@ class WeatherService {
                 let forecastData = try JSONDecoder().decode(WeatherForecastData.self, from: data)
                 completion(.success(forecastData))
             } catch {
-                // If decoding forecast fails, try to decode WeatherAPIError
-                do {
-                    let apiError = try JSONDecoder().decode(WeatherAPIError.self, from: data)
+                if let apiError = try? JSONDecoder().decode(WeatherAPIError.self, from: data) {
                     completion(.failure(apiError))
-                } catch {
+                } else {
                     completion(.failure(error))
                 }
             }
