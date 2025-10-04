@@ -86,7 +86,10 @@ class MarketPriceManager: ObservableObject {
         updateCurrentCrop()
         savePrices()
         
-        print("🌾 Market prices updated. Now showing: \(currentCropName) - \(currentMarketPrice)")
+        #if DEBUG
+        // Only log in debug builds to reduce console noise
+        // print("🌾 Market prices updated. Now showing: \(currentCropName) - \(currentMarketPrice)")
+        #endif
     }
     
     private func updateCurrentCrop() {

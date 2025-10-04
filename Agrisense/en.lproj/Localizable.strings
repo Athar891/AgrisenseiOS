@@ -343,3 +343,36 @@
 "go_online" = "Go Online";
 "connection_restored" = "Connection restored";
 "working_offline" = "Working offline";
+
+/* Assistant */
+"assistant_welcome_title" = "Krishi AI";
+"assistant_tools" = "Tools";
+"assistant_input_placeholder" = "Ask me anything...";
+"assistant_missing_api_key" = "I'm currently being configured. Please add your Gemini API key to use the full AI capabilities.";
+"assistant_generic_error" = "I encountered an error: %@. Please try again.";
+"assistant_action_weather" = "What's the weather forecast for farming?";
+"assistant_action_disease" = "How to identify crop diseases?";
+"assistant_action_market_prices" = "Current market prices for vegetables";
+"assistant_action_irrigation" = "Best irrigation practices";
+"assistant_action_seasonal" = "Seasonal crop recommendations";
+
+/* Live AI Interaction */
+"live_ai_title" = "Live";
+"live_ai_standby" = "Standby";
+"live_ai_listening" = "Listening";
+"live_ai_thinking" = "Thinking";
+"live_ai_responding" = "Responding";
+"live_ai_camera_off" = "Camera Off";
+"live_ai_paused" = "Paused";
+"live_ai_end_session" = "End Session";
+"live_ai_end_session_confirmation" = "Are you sure you want to end the live session?";
+"live_ai_camera_permission_denied" = "Camera access is required for live AI interaction";
+"live_ai_microphone_permission_denied" = "Microphone access is required for live AI interaction";
+"live_ai_upload_media" = "Upload Media";
+"live_ai_toggle_camera" = "Toggle Camera";
+"live_ai_pause_session" = "Pause Session";
+"live_ai_resume_session" = "Resume Session";
+"live_ai_standby_prompt" = "Ask me a question about your farm";
+"live_ai_video_prompt" = "Show me what you'd like help with";
+"live_ai_tap_mic_prompt" = "Tap the mic and speak";
+"live_ai_ready_to_help" = "Ready to help with your farming needs";

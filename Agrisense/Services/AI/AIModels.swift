@@ -426,12 +426,21 @@ struct PlatformImage {}
 class AIServiceManager: ObservableObject {
     static let shared = AIServiceManager()
     private var geminiService: GeminiAIService?
+    private var isInitialized = false
     
     private init() {
-        // Initialize with API key from environment or Secrets
-        if let apiKey = getAPIKey() {
-            geminiService = GeminiAIService(apiKey: apiKey)
+        // Lazy initialization - service will be created on first use
+    }
+    
+    func getService() -> GeminiAIService? {
+        if !isInitialized {
+            // Initialize with API key from environment or Secrets
+            if let apiKey = getAPIKey() {
+                geminiService = GeminiAIService(apiKey: apiKey)
+                isInitialized = true
+            }
         }
+        return geminiService
     }
     
     private func getAPIKey() -> String? {

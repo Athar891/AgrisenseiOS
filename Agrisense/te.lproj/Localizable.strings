@@ -179,3 +179,15 @@
 "soybeans_price" = "సోయాబీన్స్: ₹4,500 / క్వింటల్";
 "done" = "పూర్తయి";
 "add_new_crop" = "కొత్త పంట జోడించండి";
+
+/* Assistant */
+"assistant_welcome_title" = "కృషి AI";
+"assistant_tools" = "సాధనాలు";
+"assistant_input_placeholder" = "ఏదైనా అడగండి...";
+"assistant_missing_api_key" = "నేను ప్రస్తుతం అమర్చబడుతున్నాను. పూర్తిస్థాయి AI సామర్థ్యాలను వినియోగించడానికి మీ Gemini API key ను చేర్చండి.";
+"assistant_generic_error" = "లోపం జరిగింది: %@. దయచేసి తిరిగి ప్రయత్నించండి.";
+"assistant_action_weather" = "వ్యవసాయానికి వాతావరణ సూచన ఏమిటి?";
+"assistant_action_disease" = "పంట రోగాలను ఎలా గుర్తించాలి?";
+"assistant_action_market_prices" = "కూరగాయల ప్రస్తుత మార్కెట్ ధరలు";
+"assistant_action_irrigation" = "ఉత్తమ నీటిపారుదల పద్ధతులు";
+"assistant_action_seasonal" = "ఋతువారీ పంట సిఫార్సులు";

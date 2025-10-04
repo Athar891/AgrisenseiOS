@@ -7,9 +7,7 @@
 
 import Foundation
 import Speech
-#if canImport(AVFoundation)
 import AVFoundation
-#endif
 
 // MARK: - Voice Transcription Service
 
@@ -153,11 +151,21 @@ class VoiceTranscriptionService: NSObject, ObservableObject {
         let inputNode = audioEngine.inputNode
         let recordingFormat = inputNode.outputFormat(forBus: 0)
 
+        // Validate recording format before proceeding
+        guard recordingFormat.sampleRate > 0 && recordingFormat.channelCount > 0 else {
+            throw VoiceError.audioEngineError
+        }
+
         // Remove any existing tap before installing a new one to avoid multiple taps crash
         inputNode.removeTap(onBus: 0)
 
-        inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { buffer, _ in
-            recognitionRequest.append(buffer)
+        inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { [weak recognitionRequest] buffer, _ in
+            // Validate buffer before appending to avoid empty buffer warnings
+            guard let audioBuffer = buffer.audioBufferList.pointee.mBuffers.mData,
+                  buffer.audioBufferList.pointee.mBuffers.mDataByteSize > 0 else {
+                return
+            }
+            recognitionRequest?.append(buffer)
         }
 
         audioEngine.prepare()

@@ -18,7 +18,7 @@ class GeminiAIService: AIService {
     private let baseURL = "https://generativelanguage.googleapis.com/v1beta"
     private let model = "gemini-2.0-flash-exp" // Using Gemini 2.0 Flash Experimental
     
-    init(apiKey: String) {
+    nonisolated init(apiKey: String) {
         self.apiKey = apiKey
     }
     

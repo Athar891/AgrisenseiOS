@@ -1,0 +1,638 @@
+//
+//  LiveAIInteractionView.swift
+//  Agrisense
+//
+//  Created by AI Assistant on 03/10/25.
+//
+
+import SwiftUI
+import AVFoundation
+import PhotosUI
+
+struct LiveAIInteractionView: View {
+    @StateObject private var cameraService = CameraService()
+    @StateObject private var liveAIService: LiveAIService
+    @EnvironmentObject var localizationManager: LocalizationManager
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
+    
+    @State private var showEndSessionAlert = false
+    @State private var showImagePicker = false
+    @State private var selectedImage: UIImage?
+    @State private var showPermissionDenied = false
+    @State private var hasUserSpoken = false
+    @State private var showCameraError = false
+    
+    init() {
+        let apiKey = Secrets.geminiAPIKey
+        _liveAIService = StateObject(wrappedValue: LiveAIService(geminiApiKey: apiKey))
+    }
+    
+    var body: some View {
+        ZStack {
+            // Adaptive Background
+            adaptiveBackground
+            
+            // Main Content Area
+            VStack(spacing: 0) {
+                // Top Navigation Bar
+                topNavigationBar
+                
+                Spacer()
+                
+                // Central Content (Standby Animation or Camera Feed)
+                centralContent
+                
+                Spacer()
+                
+                // Subtitle overlay (if enabled)
+                if liveAIService.subtitlesEnabled && !liveAIService.currentSubtitle.isEmpty {
+                    subtitleOverlay
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 20)
+                }
+                
+                // AI Response Display (hide generic greetings)
+                if !liveAIService.lastResponse.isEmpty && 
+                   !liveAIService.subtitlesEnabled && 
+                   !isGenericGreeting(liveAIService.lastResponse) {
+                    aiResponseCard
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 20)
+                        .transition(.opacity.combined(with: .move(edge: .bottom)))
+                        .animation(.easeInOut(duration: 0.3), value: liveAIService.lastResponse)
+                }
+                
+                // Bottom Control Bar
+                bottomControlBar
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 40)
+            }
+        }
+        .onAppear {
+            setupLiveSession()
+        }
+        .onDisappear {
+            liveAIService.endSession()
+            cameraService.stopSession()
+        }
+        .alert(localizationManager.localizedString(for: "live_ai_end_session"), isPresented: $showEndSessionAlert) {
+            Button(localizationManager.localizedString(for: "cancel"), role: .cancel) { }
+            Button(localizationManager.localizedString(for: "live_ai_end_session"), role: .destructive) {
+                endLiveSession()
+            }
+        } message: {
+            Text(localizationManager.localizedString(for: "live_ai_end_session_confirmation"))
+        }
+        .alert("Permission Required", isPresented: $showPermissionDenied) {
+            Button("Settings") {
+                if let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(settingsUrl)
+                }
+            }
+            Button("Cancel", role: .cancel) {
+                dismiss()
+            }
+        } message: {
+            Text(localizationManager.localizedString(for: "live_ai_camera_permission_denied"))
+        }
+        .sheet(isPresented: $showImagePicker) {
+            LiveImagePicker(selectedImage: $selectedImage)
+        }
+        .alert("Screen Share Error", isPresented: $showCameraError) {
+            Button("OK") { }
+        } message: {
+            Text(liveAIService.screenShareError ?? "Unknown error occurred")
+        }
+        .onChange(of: liveAIService.screenShareError) { _, error in
+            showCameraError = error != nil
+        }
+        .onChange(of: liveAIService.voiceService.transcriptionText) { _, newText in
+            // Trigger processing when user stops speaking (after a pause)
+            if !newText.isEmpty && hasUserSpoken {
+                Task {
+                    // Small delay to ensure user finished speaking
+                    try? await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds
+                    await liveAIService.processUserInput()
+                }
+            }
+            hasUserSpoken = !newText.isEmpty
+        }
+    }
+    
+    // MARK: - Computed Properties
+    
+    private var adaptiveBackground: some View {
+        (colorScheme == .dark ? Color.black : Color.white)
+            .ignoresSafeArea()
+    }
+    
+    private var topNavigationBar: some View {
+        HStack {
+            // Live status indicator
+            liveStatusIndicator
+            
+            Spacer()
+            
+            // Subtitle toggle button
+            Button(action: {
+                liveAIService.toggleSubtitles()
+            }) {
+                Image(systemName: liveAIService.subtitlesEnabled ? "captions.bubble.fill" : "captions.bubble")
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundColor(liveAIService.subtitlesEnabled ? .green : (colorScheme == .dark ? .white : .black))
+                    .frame(width: 40, height: 40)
+                    .background(
+                        Circle()
+                            .fill(.regularMaterial)
+                    )
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 20)
+    }
+    
+    private var liveStatusIndicator: some View {
+        HStack(spacing: 8) {
+            LiveStatusIndicator(
+                isActive: liveAIService.isActive && !liveAIService.isPaused,
+                currentState: liveAIService.currentState,
+                colorScheme: colorScheme
+            )
+            
+            Text(statusText)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundColor(colorScheme == .dark ? .white : .black)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(.regularMaterial)
+        )
+    }
+    
+    private var statusText: String {
+        switch liveAIService.currentState {
+        case .standby:
+            return localizationManager.localizedString(for: "live_ai_standby")
+        case .listening:
+            return localizationManager.localizedString(for: "live_ai_listening")
+        case .thinking:
+            return localizationManager.localizedString(for: "live_ai_thinking")
+        case .responding:
+            return localizationManager.localizedString(for: "live_ai_responding")
+        case .paused:
+            return localizationManager.localizedString(for: "live_ai_paused")
+        }
+    }
+    
+    private var centralContent: some View {
+        Group {
+            if cameraService.permissionDenied {
+                // Camera permission denied message with retry options
+                cameraPermissionDeniedView
+            } else if cameraService.error != nil {
+                // Camera error with retry option
+                cameraErrorView
+            } else if cameraService.isCameraOn && cameraService.isAuthorized {
+                // Live camera feed
+                CameraPreview(session: cameraService.session)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(
+                                LinearGradient(
+                                    colors: [Color.green.opacity(0.3), Color.blue.opacity(0.3)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 2
+                            )
+                    )
+                    .padding(.horizontal, 20)
+            } else {
+                // Standby Animation (ChatGPT-style sphere)
+                standbyAnimationView
+            }
+        }
+    }
+    
+    private var cameraErrorView: some View {
+        VStack(spacing: 20) {
+            Image(systemName: "exclamationmark.camera.fill")
+                .font(.system(size: 60))
+                .foregroundColor(.orange)
+            
+            Text(cameraService.error?.localizedDescription ?? "Camera setup failed")
+                .font(.title2)
+                .fontWeight(.medium)
+                .foregroundColor(colorScheme == .dark ? .white : .black)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 40)
+            
+            if cameraService.canRetry {
+                Button(action: {
+                    cameraService.retrySetup()
+                }) {
+                    Text("Retry (\(cameraService.setupAttempts)/3)")
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 12)
+                        .background(Color.orange)
+                        .cornerRadius(8)
+                }
+            } else {
+                Text("Continuing with voice-only interaction")
+                    .font(.caption)
+                    .foregroundColor(.gray)
+                    .multilineTextAlignment(.center)
+            }
+        }
+    }
+    
+    private var standbyAnimationView: some View {
+        VStack(spacing: 30) {
+            // Lottie-Based Animated Orb
+            LottieOrbAnimation(
+                currentState: liveAIService.currentState,
+                audioLevel: liveAIService.audioLevel,
+                isListening: liveAIService.currentState == .listening
+            )
+        }
+    }
+    
+    private var cameraPermissionDeniedView: some View {
+        VStack(spacing: 20) {
+            Image(systemName: "camera.fill")
+                .font(.system(size: 60))
+                .foregroundColor(.gray)
+            
+            Text(localizationManager.localizedString(for: "live_ai_camera_permission_denied"))
+                .font(.title2)
+                .fontWeight(.medium)
+                .foregroundColor(colorScheme == .dark ? .white : .black)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 40)
+            
+            VStack(spacing: 12) {
+                if cameraService.canRetry {
+                    Button(action: {
+                        cameraService.retrySetup()
+                    }) {
+                        Text("Retry Camera Setup")
+                            .font(.headline)
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 24)
+                            .padding(.vertical, 12)
+                            .background(Color.blue)
+                            .cornerRadius(8)
+                    }
+                }
+                
+                Button(action: {
+                    // Open Settings app
+                    if let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(settingsUrl)
+                    }
+                }) {
+                    Text("Open Settings")
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 12)
+                        .background(Color.green)
+                        .cornerRadius(8)
+                }
+                
+                Text("Continue without camera for voice-only interaction")
+                    .font(.caption)
+                    .foregroundColor(.gray)
+                    .multilineTextAlignment(.center)
+                    .padding(.top, 8)
+            }
+        }
+    }
+    
+    private var subtitleOverlay: some View {
+        VStack(spacing: 8) {
+            Text(liveAIService.currentSubtitle)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundColor(.white)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color.black.opacity(0.75))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                        )
+                )
+                .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
+        }
+        .transition(.opacity.combined(with: .move(edge: .bottom)))
+        .animation(.easeInOut(duration: 0.3), value: liveAIService.currentSubtitle)
+    }
+    
+    private var aiResponseCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: "brain.head.profile")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.green)
+                
+                Text("Krishi AI")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.green)
+                
+                Spacer()
+                
+                if liveAIService.isProcessing {
+                    ProgressView()
+                        .scaleEffect(0.8)
+                }
+            }
+            
+            // Only show meaningful responses, filter out generic greetings
+            if !isGenericGreeting(liveAIService.lastResponse) {
+                Text(liveAIService.lastResponse)
+                    .font(.system(size: 15))
+                    .foregroundColor(colorScheme == .dark ? .white : .black)
+                    .lineLimit(nil)
+            }
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(.regularMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(
+                            LinearGradient(
+                                colors: [Color.green.opacity(0.3), Color.clear],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1
+                        )
+                )
+        )
+    }
+    
+    // Helper to filter out generic greeting messages
+    private func isGenericGreeting(_ text: String) -> Bool {
+        let lowercased = text.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        let genericPhrases = ["hi", "hello", "hey", "how can i help you", "how can i help", "how may i help"]
+        return genericPhrases.contains(lowercased)
+    }
+    
+    private var bottomControlBar: some View {
+        HStack(spacing: 20) {
+            // Video toggle button
+            ControlButton(
+                icon: cameraService.isCameraOn ? "video.fill" : "video.slash.fill",
+                isActive: cameraService.isCameraOn && cameraService.isAuthorized,
+                colorScheme: colorScheme,
+                action: {
+                    if cameraService.permissionDenied {
+                        // Show permission denied alert
+                        showPermissionDenied = true
+                    } else {
+                        cameraService.toggleCamera()
+                    }
+                }
+            )
+            
+            // Screen share button
+            ControlButton(
+                icon: "shareplay",
+                isActive: true,
+                colorScheme: colorScheme,
+                action: {
+                    requestScreenSharePermission()
+                }
+            )
+            
+            // Pause/Resume button
+            ControlButton(
+                icon: liveAIService.isPaused ? "play.fill" : "pause.fill",
+                isActive: !liveAIService.isPaused,
+                colorScheme: colorScheme,
+                action: {
+                    if liveAIService.isPaused {
+                        liveAIService.resumeSession()
+                    } else {
+                        liveAIService.pauseSession()
+                    }
+                }
+            )
+            
+            // End session button (red)
+            Button(action: {
+                showEndSessionAlert = true
+            }) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundColor(.white)
+                    .frame(width: 50, height: 50)
+                    .background(
+                        Circle()
+                            .fill(Color.red)
+                    )
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 16)
+        .background(
+            RoundedRectangle(cornerRadius: 30)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 30)
+                        .stroke(
+                            LinearGradient(
+                                colors: colorScheme == .dark ? 
+                                    [Color.blue.opacity(0.3), Color.clear] :
+                                    [Color.gray.opacity(0.2), Color.clear],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1
+                        )
+                )
+        )
+    }
+    
+    // MARK: - Methods
+    
+    private func setupLiveSession() {
+        liveAIService.startLiveSession()
+        
+        // Auto-greet the user as specified
+        Task {
+            try? await Task.sleep(nanoseconds: 1_000_000_000) // 1 second delay
+            await liveAIService.performAutoGreeting()
+        }
+    }
+    
+    private func requestScreenSharePermission() {
+        Task {
+            await liveAIService.requestScreenShare()
+        }
+    }
+    
+    private func endLiveSession() {
+        liveAIService.endSession()
+        cameraService.stopSession()
+        dismiss()
+    }
+}
+
+// MARK: - Live Status Indicator
+struct LiveStatusIndicator: View {
+    let isActive: Bool
+    let currentState: LiveAIState
+    let colorScheme: ColorScheme
+    @State private var isAnimating = false
+    
+    var body: some View {
+        HStack(spacing: 6) {
+            // Animated status icon based on current state
+            Image(systemName: statusIcon)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(statusColor)
+                .scaleEffect(shouldAnimate ? (isAnimating ? 1.2 : 1.0) : 1.0)
+                .animation(
+                    shouldAnimate ? .easeInOut(duration: 0.8).repeatForever(autoreverses: true) : .none,
+                    value: isAnimating
+                )
+                .onAppear {
+                    isAnimating = true
+                }
+        }
+    }
+    
+    private var statusIcon: String {
+        switch currentState {
+        case .standby:
+            return "circle.fill"
+        case .listening:
+            return "waveform"
+        case .thinking:
+            return "brain.head.profile"
+        case .responding:
+            return "speaker.wave.2.fill"
+        case .paused:
+            return "pause.fill"
+        }
+    }
+    
+    private var statusColor: Color {
+        switch currentState {
+        case .standby:
+            return .green
+        case .listening:
+            return .blue
+        case .thinking:
+            return .orange
+        case .responding:
+            return .purple
+        case .paused:
+            return .gray
+        }
+    }
+    
+    private var shouldAnimate: Bool {
+        currentState == .listening || currentState == .thinking || currentState == .responding
+    }
+}
+
+// MARK: - Control Button
+struct ControlButton: View {
+    let icon: String
+    let isActive: Bool
+    let colorScheme: ColorScheme
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: icon)
+                .font(.system(size: 18, weight: .medium))
+                .foregroundColor(buttonForegroundColor)
+                .frame(width: 50, height: 50)
+                .background(
+                    Circle()
+                        .fill(buttonBackgroundColor)
+                )
+        }
+        .scaleEffect(isActive ? 1.0 : 0.9)
+        .animation(.easeInOut(duration: 0.2), value: isActive)
+    }
+    
+    private var buttonForegroundColor: Color {
+        if isActive {
+            return colorScheme == .dark ? .white : .black
+        } else {
+            return .gray
+        }
+    }
+    
+    private var buttonBackgroundColor: Color {
+        if isActive {
+            return colorScheme == .dark ? Color.white.opacity(0.2) : Color.black.opacity(0.1)
+        } else {
+            return Color.gray.opacity(0.3)
+        }
+    }
+}
+
+// MARK: - Live Image Picker
+struct LiveImagePicker: UIViewControllerRepresentable {
+    @Binding var selectedImage: UIImage?
+    @Environment(\.dismiss) private var dismiss
+    
+    func makeUIViewController(context: Context) -> PHPickerViewController {
+        var config = PHPickerConfiguration()
+        config.filter = .images
+        config.selectionLimit = 1
+        
+        let picker = PHPickerViewController(configuration: config)
+        picker.delegate = context.coordinator
+        return picker
+    }
+    
+    func updateUIViewController(_ uiViewController: PHPickerViewController, context: Context) {}
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+    
+    class Coordinator: NSObject, PHPickerViewControllerDelegate {
+        let parent: LiveImagePicker
+        
+        init(_ parent: LiveImagePicker) {
+            self.parent = parent
+        }
+        
+        func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+            parent.dismiss()
+            
+            guard let provider = results.first?.itemProvider else { return }
+            
+            if provider.canLoadObject(ofClass: UIImage.self) {
+                provider.loadObject(ofClass: UIImage.self) { image, _ in
+                    DispatchQueue.main.async {
+                        self.parent.selectedImage = image as? UIImage
+                    }
+                }
+            }
+        }
+    }
+}
+
+#Preview {
+    LiveAIInteractionView()
+        .environmentObject(LocalizationManager.shared)
+}

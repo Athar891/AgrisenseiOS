@@ -332,3 +332,28 @@
 "go_online" = "ऑनलाइन जाएं";
 "connection_restored" = "कनेक्शन बहाल";
 "working_offline" = "ऑफ़लाइन काम कर रहा है";
+
+/* Assistant */
+"assistant_welcome_title" = "कृषि AI";
+"assistant_tools" = "उपकरण";
+"assistant_input_placeholder" = "कुछ भी पूछें...";
+"assistant_missing_api_key" = "मैं वर्तमान में कॉन्फ़िगर किया जा रहा हूँ। कृपया पूर्ण AI क्षमताओं का उपयोग करने के लिए अपना Gemini API कुंजी जोड़ें।";
+"assistant_generic_error" = "त्रुटि हुई: %@. कृपया पुनः प्रयास करें।";
+"assistant_action_weather" = "खेती के लिए मौसम पूर्वानुमान क्या है?";
+"assistant_action_disease" = "फसल रोगों की पहचान कैसे करें?";
+"assistant_action_market_prices" = "सब्जियों के वर्तमान बाजार भाव";
+"assistant_action_irrigation" = "सर्वश्रेष्ठ सिंचाई प्रथाएँ";
+"assistant_action_seasonal" = "मौसमी फसल सिफारिशें";
+
+/* Live AI Interaction */
+"live_ai_title" = "लाइव";
+"live_ai_camera_off" = "कैमरा बंद";
+"live_ai_paused" = "रुका हुआ";
+"live_ai_end_session" = "सत्र समाप्त करें";
+"live_ai_end_session_confirmation" = "क्या आप वाकई लाइव सत्र समाप्त करना चाहते हैं?";
+"live_ai_camera_permission_denied" = "लाइव AI इंटरैक्शन के लिए कैमरा एक्सेस आवश्यक है";
+"live_ai_microphone_permission_denied" = "लाइव AI इंटरैक्शन के लिए माइक्रोफोन एक्सेस आवश्यक है";
+"live_ai_upload_media" = "मीडिया अपलोड करें";
+"live_ai_toggle_camera" = "कैमरा टॉगल करें";
+"live_ai_pause_session" = "सत्र रोकें";
+"live_ai_resume_session" = "सत्र जारी रखें";

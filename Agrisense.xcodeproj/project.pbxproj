@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		6F40F12E2E490968009BE8DA /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 6F40F12D2E490968009BE8DA /* GoogleSignIn */; };
 		6F40F1312E490970009BE8DA /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 6F40F1302E490970009BE8DA /* GoogleSignInSwift */; };
+		6F6A48272E910C1800CC8601 /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = 6F6A48262E910C1800CC8601 /* Lottie */; };
 		6F9B833B2E4B8D1A00BAE046 /* FirebaseAI in Frameworks */ = {isa = PBXBuildFile; productRef = 6F9B833A2E4B8D1A00BAE046 /* FirebaseAI */; };
 		6F9B833D2E4B8D1A00BAE046 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 6F9B833C2E4B8D1A00BAE046 /* FirebaseAnalytics */; };
 		6F9B833F2E4B8D1A00BAE046 /* FirebaseAnalyticsCore in Frameworks */ = {isa = PBXBuildFile; productRef = 6F9B833E2E4B8D1A00BAE046 /* FirebaseAnalyticsCore */; };
@@ -45,9 +46,9 @@
 
 /* Begin PBXFileReference section */
 		6F21E4CD2E47740000FB2790 /* Agrisense.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Agrisense.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		E1E1E1E12E47740000FB2790 /* .env */ = {isa = PBXFileReference; lastKnownFileType = text; path = ".env"; sourceTree = "<group>"; };
 		6F21E4DA2E47740200FB2790 /* AgrisenseTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AgrisenseTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		6F21E4E42E47740200FB2790 /* AgrisenseUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AgrisenseUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		E1E1E1E12E47740000FB2790 /* .env */ = {isa = PBXFileReference; lastKnownFileType = text; path = .env; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -68,10 +69,6 @@
 			);
 			path = Agrisense;
 			sourceTree = "<group>";
-			children = (
-				6F21E4CF2E47740000FB2790 /* Agrisense */,
-				E1E1E12E47740000FB2790 /* .env (group reference) */,
-			);
 		};
 		6F21E4DD2E47740200FB2790 /* AgrisenseTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
@@ -96,6 +93,7 @@
 				6F9B83412E4B8D1A00BAE046 /* FirebaseAuth in Frameworks */,
 				6F9B834F2E4B8D1A00BAE046 /* FirebaseInstallations in Frameworks */,
 				6F9B834B2E4B8D1A00BAE046 /* FirebaseFirestoreCombine-Community in Frameworks */,
+				6F6A48272E910C1800CC8601 /* Lottie in Frameworks */,
 				6F9B833B2E4B8D1A00BAE046 /* FirebaseAI in Frameworks */,
 				6F9B83452E4B8D1A00BAE046 /* FirebaseCore in Frameworks */,
 				6F9B83552E4B8D1A00BAE046 /* FirebaseStorageCombine-Community in Frameworks */,
@@ -134,6 +132,7 @@
 				6F21E4E72E47740200FB2790 /* AgrisenseUITests */,
 				6F436D082E48E4520055717D /* Frameworks */,
 				6F21E4CE2E47740000FB2790 /* Products */,
+				6FDA2A3E2E8F828F00F91390 /* Recovered References */,
 			);
 			sourceTree = "<group>";
 		};
@@ -152,6 +151,14 @@
 			children = (
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		6FDA2A3E2E8F828F00F91390 /* Recovered References */ = {
+			isa = PBXGroup;
+			children = (
+				E1E1E1E12E47740000FB2790 /* .env */,
+			);
+			name = "Recovered References";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -190,6 +197,7 @@
 				6F9B83502E4B8D1A00BAE046 /* FirebaseRemoteConfig */,
 				6F9B83522E4B8D1A00BAE046 /* FirebaseStorage */,
 				6F9B83542E4B8D1A00BAE046 /* FirebaseStorageCombine-Community */,
+				6F6A48262E910C1800CC8601 /* Lottie */,
 			);
 			productName = Agrisense;
 			productReference = 6F21E4CD2E47740000FB2790 /* Agrisense.app */;
@@ -286,6 +294,7 @@
 			packageReferences = (
 				6F40F1282E49051F009BE8DA /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
 				6F9B83392E4B8D1A00BAE046 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				6F6A45892E90EF6200CC8601 /* XCRemoteSwiftPackageReference "lottie-ios" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 6F21E4CE2E47740000FB2790 /* Products */;
@@ -669,6 +678,14 @@
 				minimumVersion = 9.0.0;
 			};
 		};
+		6F6A45892E90EF6200CC8601 /* XCRemoteSwiftPackageReference "lottie-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/airbnb/lottie-ios.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 4.5.2;
+			};
+		};
 		6F9B83392E4B8D1A00BAE046 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/firebase/firebase-ios-sdk.git";
@@ -689,6 +706,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 6F40F1282E49051F009BE8DA /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
 			productName = GoogleSignInSwift;
+		};
+		6F6A48262E910C1800CC8601 /* Lottie */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6F6A45892E90EF6200CC8601 /* XCRemoteSwiftPackageReference "lottie-ios" */;
+			productName = Lottie;
 		};
 		6F9B833A2E4B8D1A00BAE046 /* FirebaseAI */ = {
 			isa = XCSwiftPackageProductDependency;

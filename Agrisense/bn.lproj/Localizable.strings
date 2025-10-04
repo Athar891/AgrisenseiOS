@@ -179,3 +179,15 @@
 "soybeans_price" = "সয়াবিন: ₹4,500 / কুইন্টাল";
 "done" = "সম্পন্ন";
 "add_new_crop" = "নতুন ফসল যোগ করুন";
+
+/* Assistant */
+"assistant_welcome_title" = "কৃষি AI";
+"assistant_tools" = "টুলস";
+"assistant_input_placeholder" = "যেকোনো কিছু জিজ্ঞাসা করুন...";
+"assistant_missing_api_key" = "আমি বর্তমানে কনফিগার করা হচ্ছে। সম্পূর্ণ AI সুবিধা পেতে আপনার Gemini API কী যোগ করুন।";
+"assistant_generic_error" = "ত্রুটি হয়েছে: %@। আবার চেষ্টা করুন।";
+"assistant_action_weather" = "কৃষির জন্য আবহাওয়ার পূর্বাভাস কী?";
+"assistant_action_disease" = "ফসলের রোগ কীভাবে শনাক্ত করবেন?";
+"assistant_action_market_prices" = "সবজির বর্তমান বাজার মূল্য";
+"assistant_action_irrigation" = "সেরা সেচ পদ্ধতি";
+"assistant_action_seasonal" = "মৌসুমি ফসলের সুপারিশ";

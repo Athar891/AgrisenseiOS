@@ -13,7 +13,7 @@
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>This app uses speech recognition to convert your voice input to text for AI assistance.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>This app needs camera access to capture images for AI analysis and assistance.</string>
+	<string>Agrisense needs access to your camera to help you identify crop diseases, pests, and soil conditions.</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>

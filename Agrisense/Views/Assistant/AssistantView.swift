@@ -36,6 +36,7 @@ struct SimpleMessage: Identifiable {
 }
 
 struct AssistantView: View {
+    @EnvironmentObject var localizationManager: LocalizationManager
     @State private var messageText = ""
     @State private var messages: [SimpleMessage] = []
     @State private var showingQuickActions = false
@@ -48,6 +49,7 @@ struct AssistantView: View {
     @State private var geminiService: GeminiAIService?
     @State private var showDocumentPicker = false
     @State private var attachedDocuments: [AttachedDocument] = []
+    @State private var showLiveInteraction = false
     
     // Typing effect state variables
     @State private var displayedMessages: [UUID: String] = [:]
@@ -57,12 +59,8 @@ struct AssistantView: View {
     init() {
         // Initialize Gemini AI service with API key from .env or environment
         let apiKey = Secrets.geminiAPIKey
-        print("🔑 Gemini API Key loaded: \(apiKey.prefix(10))... (length: \(apiKey.count))")
         if apiKey != "YOUR_GEMINI_API_KEY_HERE" && !apiKey.isEmpty {
-            print("✅ Gemini AI Service initialized successfully")
             _geminiService = State(initialValue: GeminiAIService(apiKey: apiKey))
-        } else {
-            print("❌ Gemini API Key not configured")
         }
     }
     
@@ -89,43 +87,46 @@ struct AssistantView: View {
                     }
                     
                     // Chat Messages or Centered Welcome
-                    if messages.isEmpty {
-                        // Centered welcome screen - minimalist design
-                        Spacer()
-                        WelcomeMessage()
-                        Spacer()
-                    } else {
-                        // Chat messages view
-                        ScrollViewReader { proxy in
-                            ScrollView {
-                                LazyVStack(spacing: 16) {
-                                    // Chat Messages
-                                    ForEach(messages) { message in
-                                        ChatBubble(message: message, displayedContent: displayedMessages[message.id] ?? "")
+                    Group {
+                        if messages.isEmpty {
+                            // Centered welcome screen - minimalist design
+                            Spacer()
+                            WelcomeMessage()
+                            Spacer()
+                        } else {
+                            // Chat messages view
+                            ScrollViewReader { proxy in
+                                ScrollView {
+                                    LazyVStack(spacing: 16) {
+                                        // Chat Messages
+                                        ForEach(messages) { message in
+                                            ChatBubble(message: message, displayedContent: displayedMessages[message.id] ?? "")
+                                        }
+                                        
+                                        // Loading indicator
+                                        if isWaitingForResponse {
+                                            AIThinkingIndicator()
+                                        }
                                     }
-                                    
-                                    // Loading indicator
-                                    if isWaitingForResponse {
-                                        AIThinkingIndicator()
-                                    }
+                                    .padding()
                                 }
-                                .padding()
-                            }
-                            .background(Color(.systemBackground))
-                            .onTapGesture {
-                                // Dismiss keyboard when tapping in chat area
-                                dismissKeyboard()
-                                isTextFieldFocused = false
-                            }
-                            .onChange(of: messages.count) { _, _ in
-                                if let lastMessage = messages.last {
-                                    withAnimation(.easeInOut(duration: 0.3)) {
-                                        proxy.scrollTo(lastMessage.id, anchor: .bottom)
+                                .background(Color(.systemBackground))
+                                .onTapGesture {
+                                    // Dismiss keyboard when tapping in chat area
+                                    dismissKeyboard()
+                                    isTextFieldFocused = false
+                                }
+                                .onChange(of: messages.count) { _, _ in
+                                    if let lastMessage = messages.last {
+                                        withAnimation(.easeInOut(duration: 0.3)) {
+                                            proxy.scrollTo(lastMessage.id, anchor: .bottom)
+                                        }
                                     }
                                 }
                             }
                         }
                     }
+                    .animation(.none, value: messages.isEmpty)
                     
                     // Quick Actions
                     if showingQuickActions {
@@ -144,13 +145,18 @@ struct AssistantView: View {
                         onSend: sendMessage,
                         onQuickActions: { showingQuickActions.toggle() },
                         onAttachment: { showDocumentPicker = true },
-                        onVoiceRecord: toggleVoiceRecording
+                        onVoiceRecord: toggleVoiceRecording,
+                        onLiveInteraction: { showLiveInteraction = true }
                     )
                 }
                 .background(Color(.systemBackground))
                 .navigationBarHidden(true)
                 .sheet(isPresented: $showDocumentPicker) {
                     DocumentPicker(attachedDocuments: $attachedDocuments)
+                }
+                .fullScreenCover(isPresented: $showLiveInteraction) {
+                    LiveAIInteractionView()
+                        .environmentObject(localizationManager)
                 }
                 .onTapGesture {
                     // Dismiss keyboard when tapping outside text field
@@ -227,7 +233,14 @@ struct AssistantView: View {
     
     private func sendMessage(_ text: String) {
         let userMessage = SimpleMessage(content: text, isUser: true)
-        messages.append(userMessage)
+        
+        // Disable animations when adding first message
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            messages.append(userMessage)
+        }
+        
         messageText = ""
         isWaitingForResponse = true
         
@@ -241,7 +254,7 @@ struct AssistantView: View {
                 guard let service = geminiService else {
                     // Fallback if service is not initialized
                     let fallbackResponse = SimpleMessage(
-                        content: "I'm currently being configured. Please add your Gemini API key to use the full AI capabilities.",
+                        content: localizationManager.localizedString(for: "assistant_missing_api_key"),
                         isUser: false
                     )
                     messages.append(fallbackResponse)
@@ -261,8 +274,9 @@ struct AssistantView: View {
                 startTypingEffect(for: aiResponse)
                 isWaitingForResponse = false
             } catch {
+                let errorTemplate = localizationManager.localizedString(for: "assistant_generic_error")
                 let errorMessage = SimpleMessage(
-                    content: "I apologize, but I encountered an error: \(error.localizedDescription). Please try again.",
+                    content: String(format: errorTemplate, error.localizedDescription),
                     isUser: false
                 )
                 messages.append(errorMessage)
@@ -333,36 +347,49 @@ struct AssistantView: View {
 // MARK: - Supporting Views
 
 struct WelcomeMessage: View {
+    @EnvironmentObject var localizationManager: LocalizationManager
     var body: some View {
         // Minimalist centered gradient text - no icon, no card, no background
-        GradientTitle(text: "Krishi AI")
+        GradientTitle(text: localizationManager.localizedString(for: "assistant_welcome_title"))
             .frame(maxWidth: .infinity)
+            .transition(.identity) // Disable any transition effects
     }
 }
 
 // Animated gradient title used in the welcome card
 struct GradientTitle: View {
     let text: String
-    @State private var animate = false
+    @State private var gradientOffset: CGFloat = 0
 
     var body: some View {
-        // Clean gradient text without any background elements
+        // Clean gradient text with animated colors only
         Text(text)
             .font(.system(size: 34, weight: .bold))
             .foregroundColor(.clear)
             .overlay(
                 LinearGradient(
-                    gradient: Gradient(colors: [Color(#colorLiteral(red: 0.117, green: 0.78, blue: 0.317, alpha: 1)), Color.blue, Color.purple, Color(#colorLiteral(red: 0.117, green: 0.78, blue: 0.317, alpha: 1))]),
-                    startPoint: animate ? .leading : .trailing,
-                    endPoint: animate ? .trailing : .leading
+                    gradient: Gradient(colors: [
+                        Color(#colorLiteral(red: 0.117, green: 0.78, blue: 0.317, alpha: 1)), 
+                        Color.blue, 
+                        Color.purple, 
+                        Color(#colorLiteral(red: 0.117, green: 0.78, blue: 0.317, alpha: 1))
+                    ]),
+                    startPoint: .leading,
+                    endPoint: .trailing
                 )
-                .animation(.linear(duration: 2.2).repeatForever(autoreverses: true), value: animate)
+                .hueRotation(Angle(degrees: gradientOffset))
+                .animation(.linear(duration: 3.0).repeatForever(autoreverses: false), value: gradientOffset)
             )
             .mask(
                 Text(text)
                     .font(.system(size: 34, weight: .bold))
             )
-            .onAppear { animate = true }
+            .task {
+                // Start animation immediately without any delay or movement
+                gradientOffset = 360
+            }
+            .transition(.identity)
+            .animation(.none, value: gradientOffset) // Prevent any layout animation
     }
 }
 
@@ -430,13 +457,16 @@ struct AIThinkingIndicator: View {
 struct QuickActionsView: View {
     let onActionSelected: (String) -> Void
     
-    private let quickActions = [
-        "What's the weather forecast for farming?",
-        "How to identify crop diseases?",
-        "Current market prices for vegetables",
-        "Best irrigation practices",
-        "Seasonal crop recommendations"
-    ]
+    @EnvironmentObject var localizationManager: LocalizationManager
+    private var quickActions: [String] {
+        [
+            localizationManager.localizedString(for: "assistant_action_weather"),
+            localizationManager.localizedString(for: "assistant_action_disease"),
+            localizationManager.localizedString(for: "assistant_action_market_prices"),
+            localizationManager.localizedString(for: "assistant_action_irrigation"),
+            localizationManager.localizedString(for: "assistant_action_seasonal")
+        ]
+    }
     
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
@@ -567,6 +597,8 @@ struct MessageInputView: View {
     let onQuickActions: () -> Void
     let onAttachment: () -> Void
     let onVoiceRecord: () -> Void
+    let onLiveInteraction: () -> Void
+    @EnvironmentObject var localizationManager: LocalizationManager
     
     var body: some View {
         VStack(spacing: 0) {
@@ -589,7 +621,7 @@ struct MessageInputView: View {
                                 .font(.system(size: 14, weight: .medium))
                                 .foregroundColor(.green)
                             
-                            Text("Tools")
+                            Text(localizationManager.localizedString(for: "assistant_tools"))
                                 .font(.system(size: 14, weight: .medium))
                                 .foregroundColor(.green)
                         }
@@ -615,7 +647,7 @@ struct MessageInputView: View {
                         }
                         
                         // Text input
-                        TextField("Ask me anything...", text: $text, axis: .vertical)
+                        TextField(localizationManager.localizedString(for: "assistant_input_placeholder"), text: $text, axis: .vertical)
                             .textFieldStyle(PlainTextFieldStyle())
                             .foregroundColor(.primary)
                             .lineLimit(1...4)
@@ -635,9 +667,13 @@ struct MessageInputView: View {
                                 .frame(width: 28, height: 28)
                         }
                         
-                        // Send button
+                        // Live Interaction / Send button
                         Button(action: {
-                            if !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                            if text.isEmpty {
+                                // Launch live interaction when text is empty
+                                onLiveInteraction()
+                            } else {
+                                // Send message when text is present
                                 onSend(text)
                                 #if canImport(UIKit)
                                 UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
@@ -645,14 +681,13 @@ struct MessageInputView: View {
                                 isTextFieldFocused.wrappedValue = false
                             }
                         }) {
-                            Image(systemName: text.isEmpty ? "waveform" : "arrow.up")
+                            Image(systemName: text.isEmpty ? "waveform.path.ecg" : "arrow.up")
                                 .font(.system(size: 16, weight: .bold))
                                 .foregroundColor(.white)
                                 .frame(width: 32, height: 32)
-                                .background(text.isEmpty ? Color(.systemGray4) : Color.green)
+                                .background(text.isEmpty ? Color.blue : Color.green)
                                 .clipShape(Circle())
                         }
-                        .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                         .animation(.easeInOut(duration: 0.2), value: text.isEmpty)
                     }
                 }

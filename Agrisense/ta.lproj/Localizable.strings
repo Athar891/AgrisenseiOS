@@ -179,3 +179,15 @@
 "soybeans_price" = "சோயா: ₹4,500 / குவின்டல்";
 "done" = "முடிந்தது";
 "add_new_crop" = "புதிய பயிர் சேர்க்கவும்";
+
+/* Assistant */
+"assistant_welcome_title" = "கிரிஷி AI";
+"assistant_tools" = "கருவிகள்";
+"assistant_input_placeholder" = "ஏதாவது கேளுங்கள்...";
+"assistant_missing_api_key" = "நான் தற்போது அமைக்கப்படுகிறேன். முழுமையான AI திறன்களைப் பயன்படுத்த உங்கள் Gemini API விசையைச் சேர்க்கவும்.";
+"assistant_generic_error" = "பிழை ஏற்பட்டது: %@. தயவுசெய்து மீண்டும் முயற்சி செய்யவும்.";
+"assistant_action_weather" = "விவசாயத்திற்கான வானிலை முன்னறிவிப்பு என்ன?";
+"assistant_action_disease" = "பயிர் நோய்களை எப்படி அடையாளம் காணலாம்?";
+"assistant_action_market_prices" = "காய்கறிகளின் தற்போதைய சந்தை விலைகள்";
+"assistant_action_irrigation" = "சிறந்த பாசன முறைகள்";
+"assistant_action_seasonal" = "பருவகால பயிர் பரிந்துரைகள்";
