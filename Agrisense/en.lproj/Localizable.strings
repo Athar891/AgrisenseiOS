@@ -84,6 +84,7 @@
 "business" = "business";
 "enable_location_for_weather" = "Enable Location for Weather";
 "location_access_denied_settings" = "Location access denied. Please enable it in Settings.";
+"weather_unavailable" = "Weather unavailable";
 "dash_placeholder" = "-";
 "active_crops" = "Active Crops";
 "harvest_ready" = "Harvest Ready";

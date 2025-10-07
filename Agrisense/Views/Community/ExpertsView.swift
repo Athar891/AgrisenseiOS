@@ -4,9 +4,15 @@
 //
 //  Created by Athar Reza on 09/08/25.
 import SwiftUI
+#if canImport(Firebase)
 import Firebase
+#endif
+#if canImport(FirebaseAuth)
 import FirebaseAuth
+#endif
+#if canImport(FirebaseFirestore)
 import FirebaseFirestore
+#endif
 
 struct ExpertsView: View {
     @EnvironmentObject var userManager: UserManager

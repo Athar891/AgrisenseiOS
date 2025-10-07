@@ -66,7 +66,19 @@ class ScreenRecordingService: NSObject, ObservableObject {
     }
     
     func startRecording() async throws {
-        guard !isRecording else { return }
+        // Check if already recording - prevents "already active with another session" error
+        guard !isRecording else { 
+            print("[ScreenRecording] Already recording, ignoring start request")
+            return 
+        }
+        
+        // Check if recorder is already capturing
+        if screenRecorder.isRecording {
+            print("[ScreenRecording] Screen recorder already active, stopping first")
+            await stopRecording()
+            // Wait a moment for cleanup
+            try await Task.sleep(nanoseconds: 500_000_000)
+        }
         
         if !hasPermission {
             try await requestPermission()
@@ -74,6 +86,7 @@ class ScreenRecordingService: NSObject, ObservableObject {
             try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
                 screenRecorder.startCapture(handler: { [weak self] sampleBuffer, bufferType, error in
                     if let error = error {
+                        print("[ScreenRecording] Capture error: \(error)")
                         Task { @MainActor in
                             self?.error = error
                         }
@@ -87,9 +100,11 @@ class ScreenRecordingService: NSObject, ObservableObject {
                 }, completionHandler: { [weak self] error in
                     Task { @MainActor in
                         if let error = error {
+                            print("[ScreenRecording] Start error: \(error)")
                             self?.error = error
                             continuation.resume(throwing: error)
                         } else {
+                            print("[ScreenRecording] Started successfully")
                             self?.isRecording = true
                             continuation.resume()
                         }
@@ -99,14 +114,23 @@ class ScreenRecordingService: NSObject, ObservableObject {
         }
     }
     
-    func stopRecording() {
-        guard isRecording else { return }
+    func stopRecording() async {
+        guard isRecording else { 
+            print("[ScreenRecording] Not recording, ignoring stop request")
+            return 
+        }
         
-        screenRecorder.stopCapture { [weak self] error in
-            Task { @MainActor in
-                self?.isRecording = false
-                if let error = error {
-                    self?.error = error
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            screenRecorder.stopCapture { [weak self] error in
+                Task { @MainActor in
+                    self?.isRecording = false
+                    if let error = error {
+                        print("[ScreenRecording] Stop error: \(error)")
+                        self?.error = error
+                    } else {
+                        print("[ScreenRecording] Stopped successfully")
+                    }
+                    continuation.resume()
                 }
             }
         }

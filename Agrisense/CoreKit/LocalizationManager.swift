@@ -1,6 +1,7 @@
 import Foundation
 import Combine
 
+@MainActor
 public final class LocalizationManager: ObservableObject {
     public static let shared = LocalizationManager()
 
@@ -8,19 +9,23 @@ public final class LocalizationManager: ObservableObject {
     @Published public private(set) var currentLanguageCode: String?
 
     private let userDefaultsKey = "selectedLanguageCode"
-    private var bundle: Bundle = .main
+    nonisolated(unsafe) private var bundle: Bundle = .main
 
     private init() {
-        if let code = UserDefaults.standard.string(forKey: userDefaultsKey) {
-            currentLanguageCode = code
-            // Use the language identifier directly (e.g. "bn", "hi").
-            // Previous code used the countryCode key which produced invalid locale identifiers
-            // and could prevent the correct .lproj bundle from being loaded.
-            currentLocale = Locale(identifier: code)
-            updateBundle(for: code)
+        // Initialize with default values
+        let savedCode = UserDefaults.standard.string(forKey: "selectedLanguageCode")
+        
+        if let code = savedCode {
+            self.currentLanguageCode = code
+            self.currentLocale = Locale(identifier: code)
         } else {
-            currentLanguageCode = nil
-            currentLocale = Locale.current
+            self.currentLanguageCode = nil
+            self.currentLocale = Locale.current
+        }
+        
+        // Update bundle after initialization if we have a code
+        if let code = savedCode {
+            updateBundle(for: code)
         }
     }
 
@@ -35,7 +40,7 @@ public final class LocalizationManager: ObservableObject {
         ]
     }
 
-    public func localizedString(for key: String) -> String {
+    nonisolated public func localizedString(for key: String) -> String {
         // Prefer explicitly using the Localizable.strings table and fall back to main bundle
         // if the lookup fails. This prevents returning the raw key when a translation exists
         // in the app bundle but the selected language bundle wasn't resolved correctly.

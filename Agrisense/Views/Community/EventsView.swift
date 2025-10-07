@@ -6,9 +6,15 @@
 //
 
 import SwiftUI
+#if canImport(Firebase)
 import Firebase
+#endif
+#if canImport(FirebaseFirestore)
 import FirebaseFirestore
+#endif
+#if canImport(FirebaseAuth)
 import FirebaseAuth
+#endif
 
 struct EventsView: View {
     @State private var events: [Event] = sampleEvents

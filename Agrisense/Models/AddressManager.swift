@@ -8,6 +8,7 @@
 import Foundation
 import Combine
 
+@MainActor
 class AddressManager: ObservableObject {
     @Published var addressCollection: AddressCollection
     private let secureStorage = SecureStorage.shared

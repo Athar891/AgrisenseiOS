@@ -110,6 +110,7 @@
 "business" = "ব্যবসা";
 "enable_location_for_weather" = "আবহাওয়ার জন্য অবস্থান সক্রিয় করুন";
 "location_access_denied_settings" = "অবস্থান অ্যাক্সেস অস্বীকৃত। অনুগ্রহ করে সেটিংসে সক্ষম করুন।";
+"weather_unavailable" = "আবহাওয়া অনুপলব্ধ";
 "dash_placeholder" = "-";
 "active_crops" = "সক্রিয় ফসল";
 "harvest_ready" = "ফসল কাটার জন্য প্রস্তুত";

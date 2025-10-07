@@ -361,6 +361,7 @@ enum AIError: LocalizedError {
     case serviceUnavailable
     case invalidImage
     case contextTooLarge
+    case timeout
     
     var errorDescription: String? {
         switch self {
@@ -380,6 +381,8 @@ enum AIError: LocalizedError {
             return "Invalid image format"
         case .contextTooLarge:
             return "Context is too large for processing"
+        case .timeout:
+            return "Request timed out. Please try again"
         }
     }
 }

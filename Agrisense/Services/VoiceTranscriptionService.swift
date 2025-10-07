@@ -18,6 +18,7 @@ class VoiceTranscriptionService: NSObject, ObservableObject {
     @Published var transcriptionText = ""
     @Published var hasPermission = false
     @Published var errorMessage: String?
+    @Published var isPaused = false
     
     private var audioEngine = AVAudioEngine()
     private var speechRecognizer: SFSpeechRecognizer?
@@ -88,7 +89,7 @@ class VoiceTranscriptionService: NSObject, ObservableObject {
             transcriptionText = ""
             errorMessage = nil
 
-            try startSpeechRecognition()
+            try await startSpeechRecognition()
         } catch {
             // Reset state on failure
             isRecording = false
@@ -102,22 +103,64 @@ class VoiceTranscriptionService: NSObject, ObservableObject {
         }
     }
     
+    /// Pause recording temporarily (for TTS playback) without full cleanup
+    func pauseRecording() {
+        guard isRecording && !isPaused else { return }
+        
+        isPaused = true
+        
+        // Pause audio engine but keep recognition task alive
+        if audioEngine.isRunning {
+            audioEngine.pause()
+        }
+        
+        print("[VoiceTranscription] ⏸️ Paused (TTS playing)")
+    }
+    
+    /// Resume recording after TTS completes
+    func resumeRecording() async {
+        guard isRecording && isPaused else { return }
+        
+        do {
+            // Restart audio engine
+            if !audioEngine.isRunning {
+                try audioEngine.start()
+                // Allow audio to stabilize
+                try await Task.sleep(nanoseconds: 100_000_000) // 100ms
+            }
+            
+            isPaused = false
+            print("[VoiceTranscription] ▶️ Resumed (TTS finished)")
+        } catch {
+            print("[VoiceTranscription] ❌ Failed to resume: \(error)")
+            isPaused = false
+        }
+    }
+    
     func stopRecording() {
         guard isRecording else { return }
 
-        // Stop receiving audio
-        if audioEngine.isRunning {
-            audioEngine.inputNode.removeTap(onBus: 0)
-            audioEngine.stop()
-        }
-
-        // End and cancel recognition
+        // End and cancel recognition first
         recognitionRequest?.endAudio()
         recognitionTask?.cancel()
         recognitionTask = nil
         recognitionRequest = nil
 
+        // Stop audio engine with proper cleanup
+        if audioEngine.isRunning {
+            let inputNode = audioEngine.inputNode
+            inputNode.removeTap(onBus: 0)
+            audioEngine.stop()
+            audioEngine.reset()
+        }
+
         isRecording = false
+        isPaused = false
+        
+        // Release audio session
+        #if os(iOS)
+        AudioSessionManager.shared.releaseAudioSession(service: .voiceTranscription)
+        #endif
 
         // Keep transcribing flag until final result; clear shortly after
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
@@ -127,14 +170,12 @@ class VoiceTranscriptionService: NSObject, ObservableObject {
     
     private func setupAudioSession() async throws {
         #if os(iOS)
-        let audioSession = AVAudioSession.sharedInstance()
-        try audioSession.setCategory(.record, mode: .measurement, options: .duckOthers)
-        try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
+        try AudioSessionManager.shared.configureForRecording(service: .voiceTranscription)
         #endif
         // macOS doesn't need audio session setup
     }
     
-    private func startSpeechRecognition() throws {
+    private func startSpeechRecognition() async throws {
         // Cancel any previous recognition task
         recognitionTask?.cancel()
         recognitionTask = nil
@@ -159,19 +200,34 @@ class VoiceTranscriptionService: NSObject, ObservableObject {
         // Remove any existing tap before installing a new one to avoid multiple taps crash
         inputNode.removeTap(onBus: 0)
 
-        inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { [weak recognitionRequest] buffer, _ in
-            // Validate buffer before appending to avoid empty buffer warnings
-            guard let audioBuffer = buffer.audioBufferList.pointee.mBuffers.mData,
-                  buffer.audioBufferList.pointee.mBuffers.mDataByteSize > 0 else {
+        // Use nonisolated context for audio engine tap to prevent concurrency warnings
+        inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { [weak self, weak recognitionRequest] buffer, _ in
+            // Don't process audio when paused (TTS is speaking)
+            guard let self = self, !self.isPaused else { return }
+            
+            // Validate buffer has valid data, size, and frames
+            let bufferList = buffer.audioBufferList.pointee
+            guard bufferList.mNumberBuffers > 0,
+                  let audioBuffer = bufferList.mBuffers.mData,
+                  bufferList.mBuffers.mDataByteSize > 0,
+                  buffer.frameLength > 0 else {
                 return
             }
             recognitionRequest?.append(buffer)
         }
 
+        // Prepare and start audio engine with proper sequencing
         audioEngine.prepare()
+        
+        // Wait a brief moment for audio engine to fully prepare
+        try await Task.sleep(nanoseconds: 50_000_000) // 50ms
+        
         if !audioEngine.isRunning {
             try audioEngine.start()
         }
+        
+        // Allow audio buffers to stabilize before starting recognition
+        try await Task.sleep(nanoseconds: 100_000_000) // 100ms
         
         // Start recognition task
         recognitionTask = speechRecognizer?.recognitionTask(with: recognitionRequest) { [weak self] result, error in
@@ -185,9 +241,17 @@ class VoiceTranscriptionService: NSObject, ObservableObject {
                 }
                 
                 if let error = error {
-                    self?.errorMessage = error.localizedDescription
-                    // Stop and clean up on error
-                    self?.stopRecording()
+                    // Filter out expected errors (cancellation)
+                    let nsError = error as NSError
+                    let isCancellationError = nsError.code == 216 || // Speech recognition cancelled
+                                             nsError.code == 203 || // Recognition unavailable
+                                             error.localizedDescription.contains("cancel")
+                    
+                    if !isCancellationError {
+                        self?.errorMessage = error.localizedDescription
+                        // Stop and clean up on unexpected errors
+                        self?.stopRecording()
+                    }
                 }
             }
         }

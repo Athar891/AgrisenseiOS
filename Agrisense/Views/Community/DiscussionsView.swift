@@ -6,9 +6,15 @@
 //
 
 import SwiftUI
+#if canImport(Firebase)
 import Firebase
+#endif
+#if canImport(FirebaseAuth)
 import FirebaseAuth
+#endif
+#if canImport(FirebaseFirestore)
 import FirebaseFirestore
+#endif
 
 struct DiscussionsView: View {
     let searchText: String

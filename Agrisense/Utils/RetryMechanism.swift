@@ -258,6 +258,7 @@ class RetryManager: ObservableObject {
 
 // MARK: - Retry Operation
 
+@MainActor
 class RetryOperation: ObservableObject, Identifiable {
     let id: String
     let configuration: RetryConfiguration

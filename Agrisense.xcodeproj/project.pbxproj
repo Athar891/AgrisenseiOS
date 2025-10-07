@@ -504,6 +504,13 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Agrisense/Info.plist;
+				INFOPLIST_KEY_NSCameraUsageDescription = "$(PRODUCT_NAME) This app needs camera to access the live environement for object identification";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "We need your location to provide you with accurate weather forecasts for your area.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "This app needs microphone access to enable voice input for AI assistance.";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "This app needs access to save product images to your photo library.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "This app needs access to your photo library to select product images for your listings.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "This app uses speech recognition to convert your voice input to text for AI assistance.";
+				INFOPLIST_KEY_NSUserTrackingUsageDescription = "Agrisense uses screen recording to help the AI assistant understand what you're seeing and provide better guidance.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -536,6 +543,13 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Agrisense/Info.plist;
+				INFOPLIST_KEY_NSCameraUsageDescription = "$(PRODUCT_NAME) This app needs camera to access the live environement for object identification";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "We need your location to provide you with accurate weather forecasts for your area.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "This app needs microphone access to enable voice input for AI assistance.";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "This app needs access to save product images to your photo library.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "This app needs access to your photo library to select product images for your listings.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "This app uses speech recognition to convert your voice input to text for AI assistance.";
+				INFOPLIST_KEY_NSUserTrackingUsageDescription = "Agrisense uses screen recording to help the AI assistant understand what you're seeing and provide better guidance.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

@@ -206,44 +206,59 @@ struct EnhancedWeatherWidget: View {
         }
         .onAppear {
             viewModel.setup(locationManager: locationManager)
+            
+            // Start location updates if authorized
+            if locationManager.authorizationStatus == .authorizedWhenInUse || 
+               locationManager.authorizationStatus == .authorizedAlways {
+                locationManager.startUpdatingLocation()
+            }
         }
     }
 
     private var weatherContent: some View {
         VStack {
-            SkeletonContainer(
-                isLoading: loadingManager.isLoading(for: LoadingStateKeys.loadWeather)
-            ) {
-                // Skeleton
-                AnyView(WeatherWidgetSkeleton())
-            } content: {
-                // Actual content
-                AnyView(
-                    Group {
-                        if let weatherData = viewModel.weatherData {
-                            HStack(spacing: 8) {
-                                Image(systemName: weatherIcon(for: weatherData.weather?.first?.main ?? ""))
-                                    .foregroundColor(.orange)
-                                
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text("\(weatherData.main?.temp ?? 0, specifier: "%.1f")°C")
-                                        .font(.headline)
-                                        .fontWeight(.semibold)
-                                
-                                Text(weatherData.weather?.first?.main ?? "")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
-                        }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .background(Color(.tertiarySystemBackground))
-                        .cornerRadius(12)
-                    } else {
-                        Text(localizationManager.localizedString(for: "dash_placeholder"))
+            if viewModel.isLoading {
+                // Show loading skeleton
+                WeatherWidgetSkeleton()
+            } else if let errorMessage = viewModel.errorMessage {
+                // Show error message
+                VStack(spacing: 4) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundColor(.orange)
+                        .font(.caption)
+                    Text(localizationManager.localizedString(for: "weather_unavailable"))
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Color(.tertiarySystemBackground))
+                .cornerRadius(12)
+            } else if let weatherData = viewModel.weatherData {
+                // Show actual weather data
+                HStack(spacing: 8) {
+                    Image(systemName: weatherIcon(for: weatherData.weather?.first?.main ?? ""))
+                        .foregroundColor(.orange)
+                    
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("\(weatherData.main?.temp ?? 0, specifier: "%.1f")°C")
+                            .font(.headline)
+                            .fontWeight(.semibold)
+                    
+                        Text(weatherData.weather?.first?.main ?? "")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
                     }
-                    }
-                )
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Color(.tertiarySystemBackground))
+                .cornerRadius(12)
+            } else {
+                // Show placeholder when no data yet
+                Text(localizationManager.localizedString(for: "dash_placeholder"))
+                    .font(.caption)
+                    .foregroundColor(.secondary)
             }
         }
     }

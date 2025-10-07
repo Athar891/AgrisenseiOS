@@ -84,6 +84,7 @@
 "business" = "व्यवसाय";
 "enable_location_for_weather" = "मौसम के लिए स्थान सक्षम करें";
 "location_access_denied_settings" = "स्थान एक्सेस अस्वीकृत। कृपया सेटिंग्स में सक्षम करें।";
+"weather_unavailable" = "मौसम उपलब्ध नहीं";
 "dash_placeholder" = "-";
 "active_crops" = "सक्रिय फसलें";
 "harvest_ready" = "कटाई के लिए तैयार";

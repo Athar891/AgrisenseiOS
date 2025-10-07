@@ -110,6 +110,7 @@
 "business" = "వ్యవసాయం";
 "enable_location_for_weather" = "వాతావరణానికి స్థానం ఎన్‌బుల్ చేయండి";
 "location_access_denied_settings" = "స్థానం యాక్సెస్ నిరాకరించబడింది. దయచేసి సెట్టింగ్స్‌లో ఎన్‌బుల్ చేయండి.";
+"weather_unavailable" = "వాతావరణం అందుబాటులో లేదు";
 "dash_placeholder" = "-";
 "active_crops" = "సక్రియ పంటలు";
 "harvest_ready" = "పంట కోతకు సిద్ధం";

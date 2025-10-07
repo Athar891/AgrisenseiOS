@@ -83,10 +83,11 @@ struct WeatherView: View {
         // Request location permission if not determined
         if locationManager.authorizationStatus == .notDetermined {
             locationManager.requestLocationPermission()
+        } else if locationManager.authorizationStatus == .authorizedWhenInUse || 
+                  locationManager.authorizationStatus == .authorizedAlways {
+            // Start location updates if already authorized
+            locationManager.startUpdatingLocation()
         }
-        
-        // For testing, fetch weather for a default city first
-        viewModel.fetchWeather(for: "London")
         
         // Fetch weather for current location if available
         if let location = locationManager.location {

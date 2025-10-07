@@ -19,6 +19,7 @@ class WeatherViewModel: ObservableObject {
         locationManager.$location
             .compactMap { $0 }
             .sink { [weak self] location in
+                print("[WeatherViewModel] Location updated: \(location.coordinate.latitude), \(location.coordinate.longitude)")
                 self?.fetchWeatherAndForecast(for: location)
             }
             .store(in: &cancellables)

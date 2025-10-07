@@ -6,7 +6,9 @@
 //
 
 import Foundation
+#if canImport(FirebaseFirestore)
 import FirebaseFirestore
+#endif
 import UIKit
 
 @MainActor

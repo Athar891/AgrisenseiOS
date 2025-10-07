@@ -29,11 +29,10 @@ class EnhancedTTSService: NSObject, ObservableObject {
     private func setupAudioSession() {
         #if os(iOS)
         do {
-            let audioSession = AVAudioSession.sharedInstance()
-            try audioSession.setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
-            try audioSession.setActive(true)
+            try AudioSessionManager.shared.configureForPlayback(service: .tts)
+            print("[EnhancedTTSService] ✅ Audio session configured for TTS")
         } catch {
-            print("Failed to setup audio session: \(error)")
+            print("[EnhancedTTSService] ❌ Failed to setup audio session: \(error)")
         }
         #endif
     }
@@ -45,6 +44,9 @@ class EnhancedTTSService: NSObject, ObservableObject {
         currentText = text
         shouldStop = false
         
+        // Ensure audio session is configured before speaking
+        setupAudioSession()
+        
         let utterance = AVSpeechUtterance(string: text)
         utterance.rate = rate
         utterance.voice = AVSpeechSynthesisVoice(language: language)
@@ -52,6 +54,8 @@ class EnhancedTTSService: NSObject, ObservableObject {
         utterance.volume = 1.0
         
         currentUtterance = utterance
+        
+        print("[EnhancedTTSService] 🔊 Speaking: \(text.prefix(50))...")
         synthesizer.speak(utterance)
         
         isSpeaking = true
@@ -69,6 +73,11 @@ class EnhancedTTSService: NSObject, ObservableObject {
         isSpeaking = false
         currentAudioLevel = 0.0
         currentUtterance = nil
+        
+        // Release audio session
+        #if os(iOS)
+        AudioSessionManager.shared.releaseAudioSession(service: .tts)
+        #endif
     }
     
     func pauseSpeaking() {

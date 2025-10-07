@@ -8,6 +8,7 @@
 import Foundation
 import Combine
 
+@MainActor
 class OrderManager: ObservableObject {
     @Published var orders: [Order] = []
     @Published var orderSummary: OrderHistorySummary?

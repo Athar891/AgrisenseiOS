@@ -6,8 +6,12 @@
 //
 
 import SwiftUI
+#if canImport(GoogleSignIn)
 import GoogleSignIn
+#endif
+#if canImport(FirebaseAuth)
 import FirebaseAuth
+#endif
 
 struct SignInView: View {
     @Environment(\.dismiss) private var dismiss

@@ -6,8 +6,12 @@
 //
 
 import Foundation
+#if canImport(FirebaseAuth)
 import FirebaseAuth
+#endif
+#if canImport(FirebaseFirestore)
 import FirebaseFirestore
+#endif
 import UIKit
 
 // MARK: - Enhanced User Manager with Error Handling

@@ -1,5 +1,7 @@
 import SwiftUI
+#if canImport(FirebaseAuth)
 import FirebaseAuth
+#endif
 
 // This addresses the concurrency warning by adding @preconcurrency
 @preconcurrency class FirebaseAuthAdapter: AuthService {

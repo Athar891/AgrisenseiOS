@@ -696,8 +696,7 @@ struct MessageInputView: View {
                 .background(Color(.secondarySystemBackground))
                 .cornerRadius(25)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 25)
-                        .stroke(Color(.separator), lineWidth: 0.5)
+                    AnimatedGradientBorder(cornerRadius: 25, lineWidth: 2)
                 )
             }
             .padding(.horizontal, 16)

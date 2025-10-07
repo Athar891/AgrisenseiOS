@@ -1,6 +1,10 @@
 import SwiftUI
+#if canImport(FirebaseCore)
 import FirebaseCore
+#endif
+#if canImport(GoogleSignIn)
 import GoogleSignIn
+#endif
 
 class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication,

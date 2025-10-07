@@ -107,16 +107,31 @@ struct LiveAIInteractionView: View {
         .onChange(of: liveAIService.screenShareError) { _, error in
             showCameraError = error != nil
         }
-        .onChange(of: liveAIService.voiceService.transcriptionText) { _, newText in
-            // Trigger processing when user stops speaking (after a pause)
-            if !newText.isEmpty && hasUserSpoken {
-                Task {
-                    // Small delay to ensure user finished speaking
-                    try? await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds
-                    await liveAIService.processUserInput()
+        .onChange(of: cameraService.isCameraOn) { _, isCameraOn in
+            if isCameraOn {
+                // Enable frame capture for AI analysis
+                cameraService.enableFrameCapture { [weak liveAIService] image in
+                    guard let liveAIService = liveAIService else { return }
+                    
+                    // Only analyze frames if user asks a question about what they're seeing
+                    let transcription = liveAIService.voiceService.transcriptionText.lowercased()
+                    let cameraQueries = ["what do you see", "what's this", "identify", "what is", "tell me about", "look at", "analyze"]
+                    
+                    if cameraQueries.contains(where: { transcription.contains($0) }) && !liveAIService.isProcessing {
+                        Task {
+                            await liveAIService.processCameraFrame(image, userContext: transcription)
+                        }
+                    }
                 }
+            } else {
+                cameraService.disableFrameCapture()
             }
-            hasUserSpoken = !newText.isEmpty
+        }
+        .onChange(of: liveAIService.wakeWordService.wakeWordDetected) { _, detected in
+            if detected {
+                // Visual feedback for wake word detection
+                print("✅ Wake word detected in view")
+            }
         }
     }
     
@@ -468,10 +483,18 @@ struct LiveAIInteractionView: View {
     // MARK: - Methods
     
     private func setupLiveSession() {
-        liveAIService.startLiveSession()
-        
-        // Auto-greet the user as specified
+        // Request all necessary permissions
         Task {
+            // Request voice permissions
+            await liveAIService.voiceService.requestPermissions()
+            
+            // Request wake word permissions
+            await liveAIService.wakeWordService.requestPermissions()
+            
+            // Start the live session
+            liveAIService.startLiveSession()
+            
+            // Auto-greet the user as specified
             try? await Task.sleep(nanoseconds: 1_000_000_000) // 1 second delay
             await liveAIService.performAutoGreeting()
         }

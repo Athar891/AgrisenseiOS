@@ -235,7 +235,7 @@ struct FarmerDashboardContent: View {
         VStack(spacing: 20) {
             // Crop Health Overview
             CropHealthSection()
-            
+
             // Quick Actions
             QuickActionsSection(
                 showingAddCrop: $showingAddCrop,
@@ -243,12 +243,111 @@ struct FarmerDashboardContent: View {
                 showingMarketPrices: $showingMarketPrices,
                 showingSoilTest: $showingSoilTest
             )
+
+            // Government Schemes Section
+            GovernmentSchemesSection()
         }
         .sheet(isPresented: $showingAddCrop) { AddCropView() }
         .sheet(isPresented: $showingWeather) { WeatherView() }
         .sheet(isPresented: $showingMarketPrices) { MarketPricesView() }
         .sheet(isPresented: $showingSoilTest) { SoilTestView() }
     }
+// Government Schemes Section
+struct GovernmentScheme: Identifiable {
+    let id = UUID()
+    let name: String
+    let description: String
+    let url: URL
+}
+
+struct GovernmentSchemesSection: View {
+    @EnvironmentObject var localizationManager: LocalizationManager
+    // Static list of schemes
+    private let schemes: [GovernmentScheme] = [
+        GovernmentScheme(
+            name: "PM-Kisan Samman Nidhi",
+            description: "Direct income support for farmers. Receive up to ₹6,000 per year.",
+            url: URL(string: "https://pmkisan.gov.in/")!
+        ),
+        GovernmentScheme(
+            name: "Pradhan Mantri Fasal Bima Yojana",
+            description: "Crop insurance for farmers against natural calamities.",
+            url: URL(string: "https://pmfby.gov.in/")!
+        ),
+        GovernmentScheme(
+            name: "Soil Health Card Scheme",
+            description: "Get your soil tested and receive recommendations for better yield.",
+            url: URL(string: "https://soilhealth.dac.gov.in/")!
+        ),
+        GovernmentScheme(
+            name: "Kisan Credit Card (KCC)",
+            description: "Easy access to credit for farmers at low interest rates.",
+            url: URL(string: "https://www.pmkisan.gov.in/Documents/KCC.pdf")!
+        ),
+        GovernmentScheme(
+            name: "National Food Security Mission",
+            description: "Increase production of rice, wheat, pulses, and coarse cereals.",
+            url: URL(string: "https://nfsm.gov.in/")!
+        )
+    ]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Government Schemes")
+                .font(.headline)
+                .fontWeight(.semibold)
+            Text("Discover government initiatives that support farmers.")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 16) {
+                    ForEach(schemes) { scheme in
+                        GovernmentSchemeCard(scheme: scheme)
+                    }
+                }
+            }
+        }
+        .padding()
+        .background(Color(.secondarySystemBackground))
+        .cornerRadius(16)
+        .shadow(color: Color.primary.opacity(0.1), radius: 4, x: 0, y: 2)
+    }
+}
+
+struct GovernmentSchemeCard: View {
+    let scheme: GovernmentScheme
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(scheme.name)
+                .font(.subheadline)
+                .fontWeight(.bold)
+                .foregroundColor(.primary)
+            Text(scheme.description)
+                .font(.caption)
+                .foregroundColor(.secondary)
+            Spacer()
+            Button(action: {
+                UIApplication.shared.open(scheme.url)
+            }) {
+                Text("Visit Official Site")
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.blue)
+                    .frame(maxWidth: .infinity)
+                    .padding(8)
+                    .background(Color(.tertiarySystemBackground))
+                    .cornerRadius(8)
+            }
+        }
+        .frame(width: 220, height: 140)
+        .padding()
+        .background(Color(.systemBackground))
+        .cornerRadius(12)
+        .shadow(color: Color.primary.opacity(0.08), radius: 2, x: 0, y: 1)
+    }
+}
 }
 
 struct SellerDashboardContent: View {

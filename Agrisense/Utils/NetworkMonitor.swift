@@ -122,7 +122,7 @@ class NetworkMonitor: ObservableObject {
     
     nonisolated private init() {
         Task { @MainActor in
-            self.startMonitoring()
+            await self.startMonitoring()
         }
     }
     

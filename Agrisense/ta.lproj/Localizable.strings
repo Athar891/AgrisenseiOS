@@ -110,6 +110,7 @@
 "business" = "வணிகம்";
 "enable_location_for_weather" = "வானிலைக்காக இடத்தை இயக்கவும்";
 "location_access_denied_settings" = "இட அணுகலை மறுத்தது. தயவுசெய்து அமைப்புகளில் இயக்கவும்.";
+"weather_unavailable" = "வானிலை கிடைக்கவில்லை";
 "dash_placeholder" = "-";
 "active_crops" = "செயலில் உள்ள பயிர்கள்";
 "harvest_ready" = "அறுவடை தயாராக உள்ளது";

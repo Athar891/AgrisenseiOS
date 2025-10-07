@@ -71,6 +71,18 @@ service cloud.firestore {
       }
     }
     
+    // Events collection - for agricultural events and workshops
+    match /events/{eventId} {
+      // Allow read for all authenticated users
+      allow read: if request.auth != null;
+      
+      // Allow create for authenticated users with valid data
+      allow create: if request.auth != null && validateEventData(request.resource.data);
+      
+      // Allow update/delete only for the event creator
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.createdBy;
+    }
+    
     // Default deny for all other collections
     match /{document=**} {
       allow read, write: if false;
@@ -117,5 +129,15 @@ service cloud.firestore {
       && (!('rating' in data) || data.rating is number)
       && (!('reviewCount' in data) || data.reviewCount is number)
       && (!('isActive' in data) || data.isActive is bool);
+  }
+  
+  function validateEventData(data) {
+    return data.keys().hasAll(['title', 'description', 'date', 'location', 'createdBy', 'createdAt'])
+      && data.title is string && data.title.size() > 0 && data.title.size() <= 200
+      && data.description is string && data.description.size() > 0 && data.description.size() <= 2000
+      && data.date is timestamp
+      && data.location is string && data.location.size() > 0
+      && data.createdBy is string && data.createdBy == request.auth.uid
+      && data.createdAt is timestamp;
   }
 }

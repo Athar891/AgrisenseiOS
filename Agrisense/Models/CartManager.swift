@@ -8,6 +8,7 @@
 import Foundation
 import Combine
 
+@MainActor
 class CartManager: ObservableObject {
     @Published var currentCart: Cart
     private let secureStorage = SecureStorage.shared

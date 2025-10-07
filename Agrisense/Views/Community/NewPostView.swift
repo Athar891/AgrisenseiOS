@@ -6,8 +6,12 @@
 //
 
 import SwiftUI
+#if canImport(FirebaseFirestore)
 import FirebaseFirestore
+#endif
+#if canImport(FirebaseAuth)
 import FirebaseAuth
+#endif
 import PhotosUI
 
 struct NewPostView: View {

@@ -188,13 +188,19 @@ class CameraService: NSObject, ObservableObject {
     }
     
     func startSession() {
-        guard isAuthorized && !session.isRunning else { return }
+        guard isAuthorized && !session.isRunning else { 
+            print("[CameraService] Cannot start - authorized: \(isAuthorized), running: \(session.isRunning)")
+            return 
+        }
+        
+        print("[CameraService] Starting camera session...")
         
         sessionQueue.async { [weak self] in
             guard let self = self else { return }
             
             // Verify session configuration before starting
             guard !self.session.inputs.isEmpty && !self.session.outputs.isEmpty else {
+                print("[CameraService] Session not configured - inputs: \(self.session.inputs.count), outputs: \(self.session.outputs.count)")
                 Task { @MainActor in
                     self.error = CameraError.sessionConfigurationFailed
                     self.canRetry = true
@@ -202,11 +208,19 @@ class CameraService: NSObject, ObservableObject {
                 return
             }
             
+            print("[CameraService] Starting session.startRunning()...")
             self.session.startRunning()
+            
+            // Give it a moment to start
+            Thread.sleep(forTimeInterval: 0.1)
             
             Task { @MainActor in
                 self.isSessionRunning = self.session.isRunning
-                if !self.session.isRunning {
+                if self.session.isRunning {
+                    print("[CameraService] ✅ Session started successfully")
+                    self.error = nil
+                } else {
+                    print("[CameraService] ❌ Session failed to start")
                     self.error = CameraError.sessionStartFailed
                     self.canRetry = true
                 }
@@ -284,14 +298,42 @@ class CameraService: NSObject, ObservableObject {
             self.session.commitConfiguration()
         }
     }
+    
+    // MARK: - Frame Capture for AI Analysis
+    
+    var onFrameCaptured: ((UIImage) -> Void)?
+    private var lastFrameTime: Date = Date.distantPast
+    private let frameInterval: TimeInterval = 1.0 // Capture 1 frame per second for AI
+    
+    func enableFrameCapture(callback: @escaping (UIImage) -> Void) {
+        onFrameCaptured = callback
+    }
+    
+    func disableFrameCapture() {
+        onFrameCaptured = nil
+    }
 }
 
 // MARK: - AVCaptureVideoDataOutputSampleBufferDelegate
 extension CameraService: @preconcurrency AVCaptureVideoDataOutputSampleBufferDelegate {
     nonisolated func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
-        // This method will be called for each frame captured
-        // We can process the video frames here for AI analysis
-        // For now, we'll just let the preview layer handle the display
+        // Convert sample buffer to UIImage
+        guard let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
+        
+        let ciImage = CIImage(cvPixelBuffer: imageBuffer)
+        let context = CIContext(options: nil)
+        
+        guard let cgImage = context.createCGImage(ciImage, from: ciImage.extent) else { return }
+        let image = UIImage(cgImage: cgImage)
+        
+        // Throttle frame capture for AI analysis - do this in main actor context
+        let now = Date()
+        Task { @MainActor [weak self] in
+            guard let self = self else { return }
+            guard now.timeIntervalSince(self.lastFrameTime) >= self.frameInterval else { return }
+            self.lastFrameTime = now
+            self.onFrameCaptured?(image)
+        }
     }
 }
 
@@ -308,7 +350,14 @@ struct CameraPreview: UIViewRepresentable {
     func updateUIView(_ uiView: CameraPreviewView, context: Context) {
         // Update the preview layer frame when view bounds change
         DispatchQueue.main.async {
-            uiView.previewLayer.frame = uiView.bounds
+            if uiView.previewLayer.frame != uiView.bounds {
+                uiView.previewLayer.frame = uiView.bounds
+            }
+            
+            // Ensure session is connected
+            if uiView.previewLayer.session !== uiView.session {
+                uiView.previewLayer.session = uiView.session
+            }
         }
     }
 }
@@ -317,9 +366,7 @@ struct CameraPreview: UIViewRepresentable {
 class CameraPreviewView: UIView {
     var session: AVCaptureSession? {
         didSet {
-            if let session = session {
-                previewLayer.session = session
-            }
+            setupSession()
         }
     }
     
@@ -343,13 +390,46 @@ class CameraPreviewView: UIView {
     
     private func setupPreviewLayer() {
         previewLayer.videoGravity = .resizeAspectFill
-        previewLayer.connection?.videoOrientation = .portrait
         backgroundColor = .black
+        
+        // Ensure proper orientation
+        DispatchQueue.main.async { [weak self] in
+            if let connection = self?.previewLayer.connection, connection.isVideoOrientationSupported {
+                connection.videoOrientation = .portrait
+            }
+        }
+    }
+    
+    private func setupSession() {
+        guard let session = session else { return }
+        
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            
+            // Set the session
+            self.previewLayer.session = session
+            
+            // Configure the preview layer
+            self.previewLayer.videoGravity = .resizeAspectFill
+            self.previewLayer.frame = self.bounds
+            
+            // Set video orientation
+            if let connection = self.previewLayer.connection, connection.isVideoOrientationSupported {
+                connection.videoOrientation = .portrait
+            }
+            
+            print("📹 Camera preview layer configured - session running: \\(session.isRunning)")
+        }
     }
     
     override func layoutSubviews() {
         super.layoutSubviews()
         previewLayer.frame = bounds
+        
+        // Ensure connection is properly oriented
+        if let connection = previewLayer.connection, connection.isVideoOrientationSupported {
+            connection.videoOrientation = .portrait
+        }
     }
 }
 
