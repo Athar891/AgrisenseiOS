@@ -377,3 +377,64 @@
 "live_ai_video_prompt" = "Show me what you'd like help with";
 "live_ai_tap_mic_prompt" = "Tap the mic and speak";
 "live_ai_ready_to_help" = "Ready to help with your farming needs";
+
+/* Community - Discussions */
+"loading_discussions" = "Loading discussions...";
+"error_loading_discussions" = "Error loading discussions";
+"retry" = "Retry";
+"no_discussions_yet" = "No discussions yet";
+"no_discussions_found" = "No discussions found";
+"be_first_discussion" = "Be the first to start a discussion!";
+"add_comment" = "Add a Comment";
+"commenting_on" = "Commenting on:";
+"your_comment" = "Your comment";
+"post_comment" = "Post Comment";
+"delete_post" = "Delete Post";
+"delete_post_confirmation" = "Are you sure you want to delete this post? This action cannot be undone.";
+"comments" = "Comments";
+"no_comments_yet" = "No comments yet. Be the first to comment.";
+"discussion" = "Discussion";
+
+/* Community - Categories */
+"category_all" = "All";
+"category_farming" = "Farming";
+"category_technology" = "Technology";
+"category_market" = "Market";
+"category_weather" = "Weather";
+"category_equipment" = "Equipment";
+"category_other" = "Other";
+
+/* Community - New Post */
+"post_details" = "Post Details";
+"title" = "Title";
+"whats_on_mind" = "What's on your mind?";
+"category" = "Category";
+"photo" = "Photo";
+"remove_photo" = "Remove Photo";
+"add_photo" = "Add Photo";
+"new_post" = "New Post";
+"post" = "Post";
+"uploading_image" = "Uploading Image...";
+"saving_post" = "Saving post...";
+"error_saving_post" = "Error Saving Post";
+
+/* Government Schemes */
+"government_schemes_title" = "Government Schemes";
+"government_schemes_subtitle" = "Discover government initiatives that support farmers.";
+"visit_official_site" = "Visit Official Site";
+
+/* Scheme Names */
+"scheme_pmkisan_name" = "PM-Kisan Samman Nidhi";
+"scheme_pmkisan_desc" = "Direct income support for farmers. Receive up to ₹6,000 per year.";
+
+"scheme_pmfby_name" = "Pradhan Mantri Fasal Bima Yojana";
+"scheme_pmfby_desc" = "Crop insurance for farmers against natural calamities.";
+
+"scheme_shc_name" = "Soil Health Card Scheme";
+"scheme_shc_desc" = "Get your soil tested and receive recommendations for better yield.";
+
+"scheme_kcc_name" = "Kisan Credit Card (KCC)";
+"scheme_kcc_desc" = "Easy access to credit for farmers at low interest rates.";
+
+"scheme_nfsm_name" = "National Food Security Mission";
+"scheme_nfsm_desc" = "Increase production of rice, wheat, pulses, and coarse cereals.";

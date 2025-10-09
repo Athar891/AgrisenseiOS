@@ -255,48 +255,49 @@ struct FarmerDashboardContent: View {
 // Government Schemes Section
 struct GovernmentScheme: Identifiable {
     let id = UUID()
-    let name: String
-    let description: String
+    let nameKey: String
+    let descriptionKey: String
     let url: URL
 }
 
 struct GovernmentSchemesSection: View {
     @EnvironmentObject var localizationManager: LocalizationManager
-    // Static list of schemes
+    
+    // Static list of schemes with localization keys
     private let schemes: [GovernmentScheme] = [
         GovernmentScheme(
-            name: "PM-Kisan Samman Nidhi",
-            description: "Direct income support for farmers. Receive up to ₹6,000 per year.",
+            nameKey: "scheme_pmkisan_name",
+            descriptionKey: "scheme_pmkisan_desc",
             url: URL(string: "https://pmkisan.gov.in/")!
         ),
         GovernmentScheme(
-            name: "Pradhan Mantri Fasal Bima Yojana",
-            description: "Crop insurance for farmers against natural calamities.",
+            nameKey: "scheme_pmfby_name",
+            descriptionKey: "scheme_pmfby_desc",
             url: URL(string: "https://pmfby.gov.in/")!
         ),
         GovernmentScheme(
-            name: "Soil Health Card Scheme",
-            description: "Get your soil tested and receive recommendations for better yield.",
+            nameKey: "scheme_shc_name",
+            descriptionKey: "scheme_shc_desc",
             url: URL(string: "https://soilhealth.dac.gov.in/")!
         ),
         GovernmentScheme(
-            name: "Kisan Credit Card (KCC)",
-            description: "Easy access to credit for farmers at low interest rates.",
+            nameKey: "scheme_kcc_name",
+            descriptionKey: "scheme_kcc_desc",
             url: URL(string: "https://www.pmkisan.gov.in/Documents/KCC.pdf")!
         ),
         GovernmentScheme(
-            name: "National Food Security Mission",
-            description: "Increase production of rice, wheat, pulses, and coarse cereals.",
+            nameKey: "scheme_nfsm_name",
+            descriptionKey: "scheme_nfsm_desc",
             url: URL(string: "https://nfsm.gov.in/")!
         )
     ]
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Government Schemes")
+            Text(localizationManager.localizedString(for: "government_schemes_title"))
                 .font(.headline)
                 .fontWeight(.semibold)
-            Text("Discover government initiatives that support farmers.")
+            Text(localizationManager.localizedString(for: "government_schemes_subtitle"))
                 .font(.subheadline)
                 .foregroundColor(.secondary)
 
@@ -316,22 +317,23 @@ struct GovernmentSchemesSection: View {
 }
 
 struct GovernmentSchemeCard: View {
+    @EnvironmentObject var localizationManager: LocalizationManager
     let scheme: GovernmentScheme
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(scheme.name)
+            Text(localizationManager.localizedString(for: scheme.nameKey))
                 .font(.subheadline)
                 .fontWeight(.bold)
                 .foregroundColor(.primary)
-            Text(scheme.description)
+            Text(localizationManager.localizedString(for: scheme.descriptionKey))
                 .font(.caption)
                 .foregroundColor(.secondary)
             Spacer()
             Button(action: {
                 UIApplication.shared.open(scheme.url)
             }) {
-                Text("Visit Official Site")
+                Text(localizationManager.localizedString(for: "visit_official_site"))
                     .font(.caption)
                     .fontWeight(.semibold)
                     .foregroundColor(.blue)

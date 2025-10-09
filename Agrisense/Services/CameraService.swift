@@ -25,16 +25,57 @@ class CameraService: NSObject, ObservableObject {
     private var videoOutput: AVCaptureVideoDataOutput?
     private var videoDevice: AVCaptureDevice?
     private var videoInput: AVCaptureDeviceInput?
-    private let maxSetupAttempts = 3
+    let maxSetupAttempts = 3
     private let sessionQueue = DispatchQueue(label: "com.agrisense.camera.session")
+    private var isSessionConfigured = false
+    private var isCheckingPermission = false
     
     override init() {
         super.init()
-        // Don't check permission immediately - wait for explicit user action
-        // This prevents premature permission requests
+        // Check initial authorization status without requesting permission
+        let status = AVCaptureDevice.authorizationStatus(for: .video)
+        isAuthorized = (status == .authorized)
+        permissionDenied = (status == .denied || status == .restricted)
+        
+        // Set up notification observer for app becoming active
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleAppBecameActive),
+            name: UIApplication.didBecomeActiveNotification,
+            object: nil
+        )
+    }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+    
+    @objc private func handleAppBecameActive() {
+        // Re-check permissions when app becomes active (user might have changed them in Settings)
+        let status = AVCaptureDevice.authorizationStatus(for: .video)
+        let wasAuthorized = isAuthorized
+        
+        Task { @MainActor in
+            self.isAuthorized = (status == .authorized)
+            self.permissionDenied = (status == .denied || status == .restricted)
+            
+            // If permission was just granted and camera is on, restart session
+            if !wasAuthorized && self.isAuthorized && self.isCameraOn {
+                if !self.isSessionConfigured {
+                    self.setupCamera()
+                }
+                if !self.session.isRunning {
+                    self.startSession()
+                }
+            }
+        }
     }
     
     func checkCameraPermission() {
+        // Prevent concurrent permission checks
+        guard !isCheckingPermission else { return }
+        isCheckingPermission = true
+        
         let status = AVCaptureDevice.authorizationStatus(for: .video)
         
         switch status {
@@ -42,18 +83,37 @@ class CameraService: NSObject, ObservableObject {
             isAuthorized = true
             permissionDenied = false
             canRetry = false
-            setupCamera()
+            isCheckingPermission = false
+            
+            // Configure session if not already configured
+            if !isSessionConfigured {
+                setupCamera()
+            }
+            // Start session if camera is on
+            if isCameraOn && !session.isRunning {
+                startSession()
+            }
             
         case .notDetermined:
             // Request camera permission
             Task { @MainActor in
+                print("[CameraService] Requesting camera permission...")
                 let granted = await AVCaptureDevice.requestAccess(for: .video)
+                
+                print("[CameraService] Permission granted: \(granted)")
                 self.isAuthorized = granted
                 self.permissionDenied = !granted
                 self.canRetry = !granted
+                self.isCheckingPermission = false
                 
                 if granted {
-                    self.setupCamera()
+                    // Configure and start session after permission granted
+                    if !self.isSessionConfigured {
+                        self.setupCamera()
+                    }
+                    if self.isCameraOn && !self.session.isRunning {
+                        self.startSession()
+                    }
                 }
             }
             
@@ -61,11 +121,15 @@ class CameraService: NSObject, ObservableObject {
             isAuthorized = false
             permissionDenied = true
             canRetry = true
+            isCheckingPermission = false
+            
+            print("[CameraService] Camera permission denied or restricted")
             
         @unknown default:
             isAuthorized = false
             permissionDenied = true
             canRetry = true
+            isCheckingPermission = false
         }
     }
     
@@ -87,9 +151,18 @@ class CameraService: NSObject, ObservableObject {
     
     func setupCamera() {
         guard isAuthorized else { 
+            print("[CameraService] Cannot setup camera - not authorized")
             canRetry = true
             return 
         }
+        
+        // Avoid duplicate configuration
+        guard !isSessionConfigured else {
+            print("[CameraService] Session already configured")
+            return
+        }
+        
+        print("[CameraService] Setting up camera session...")
         
         sessionQueue.async { [weak self] in
             guard let self = self else { return }
@@ -169,17 +242,20 @@ class CameraService: NSObject, ObservableObject {
                     throw CameraError.outputCreationFailed
                 }
                 
-                // Success - clear error state
+                // Success - clear error state and mark as configured
                 Task { @MainActor in
                     self.error = nil
                     self.canRetry = false
                     self.setupAttempts = 0
+                    self.isSessionConfigured = true
+                    print("[CameraService] ✅ Camera session configured successfully")
                 }
                 
             } catch {
                 Task { @MainActor in
                     self.error = error
                     self.canRetry = true
+                    print("[CameraService] ❌ Camera setup error: \(error.localizedDescription)")
                 }
             }
             
@@ -188,9 +264,28 @@ class CameraService: NSObject, ObservableObject {
     }
     
     func startSession() {
-        guard isAuthorized && !session.isRunning else { 
-            print("[CameraService] Cannot start - authorized: \(isAuthorized), running: \(session.isRunning)")
+        guard isAuthorized else { 
+            print("[CameraService] Cannot start - not authorized")
             return 
+        }
+        
+        guard !session.isRunning else {
+            print("[CameraService] Session already running")
+            Task { @MainActor in
+                self.isSessionRunning = true
+            }
+            return
+        }
+        
+        // Ensure session is configured before starting
+        guard isSessionConfigured else {
+            print("[CameraService] Session not configured, configuring now...")
+            setupCamera()
+            // Will start after configuration completes
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+                self?.startSession()
+            }
+            return
         }
         
         print("[CameraService] Starting camera session...")
@@ -200,10 +295,11 @@ class CameraService: NSObject, ObservableObject {
             
             // Verify session configuration before starting
             guard !self.session.inputs.isEmpty && !self.session.outputs.isEmpty else {
-                print("[CameraService] Session not configured - inputs: \(self.session.inputs.count), outputs: \(self.session.outputs.count)")
+                print("[CameraService] Session not properly configured - inputs: \(self.session.inputs.count), outputs: \(self.session.outputs.count)")
                 Task { @MainActor in
                     self.error = CameraError.sessionConfigurationFailed
                     self.canRetry = true
+                    self.isSessionConfigured = false
                 }
                 return
             }
@@ -212,7 +308,7 @@ class CameraService: NSObject, ObservableObject {
             self.session.startRunning()
             
             // Give it a moment to start
-            Thread.sleep(forTimeInterval: 0.1)
+            Thread.sleep(forTimeInterval: 0.15)
             
             Task { @MainActor in
                 self.isSessionRunning = self.session.isRunning
@@ -229,7 +325,12 @@ class CameraService: NSObject, ObservableObject {
     }
     
     func stopSession() {
-        guard session.isRunning else { return }
+        guard session.isRunning else {
+            print("[CameraService] Session not running, nothing to stop")
+            return
+        }
+        
+        print("[CameraService] Stopping camera session...")
         
         sessionQueue.async { [weak self] in
             guard let self = self else { return }
@@ -240,6 +341,7 @@ class CameraService: NSObject, ObservableObject {
             Task { @MainActor in
                 self.isSessionRunning = false
                 self.error = nil
+                print("[CameraService] ✅ Session stopped")
             }
         }
     }

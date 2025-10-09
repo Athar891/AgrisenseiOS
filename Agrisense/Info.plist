@@ -20,6 +20,10 @@
 	<string>AgriSense needs your location to provide accurate weather information and local market prices for your region.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>AgriSense needs your location to provide accurate weather information and local market prices for your region.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>AgriSense needs access to your camera to provide real-time crop analysis and AI-powered agricultural insights.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>AgriSense needs access to your microphone for voice interaction with Krishi AI assistant.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>

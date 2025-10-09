@@ -192,3 +192,63 @@
 "assistant_action_market_prices" = "காய்கறிகளின் தற்போதைய சந்தை விலைகள்";
 "assistant_action_irrigation" = "சிறந்த பாசன முறைகள்";
 "assistant_action_seasonal" = "பருவகால பயிர் பரிந்துரைகள்";
+
+/* Community - Discussions */
+"loading_discussions" = "விவாதங்கள் ஏற்றப்படுகின்றன...";
+"error_loading_discussions" = "விவாதங்கள் ஏற்றுவதில் பிழை";
+"no_discussions_yet" = "இன்னும் விவாதங்கள் இல்லை";
+"no_discussions_found" = "விவாதங்கள் எதுவும் கிடைக்கவில்லை";
+"be_first_discussion" = "முதலில் விவாதம் தொடங்குங்கள்!";
+"add_comment" = "கருத்து சேர்க்கவும்";
+"commenting_on" = "கருத்து தெரிவிக்கிறீர்கள்:";
+"your_comment" = "உங்கள் கருத்து";
+"post_comment" = "கருத்து இடுங்கள்";
+"delete_post" = "பதிவு நீக்கு";
+"delete_post_confirmation" = "நீங்கள் இந்த பதிவை நிச்சயமாக நீக்க விரும்புகிறீர்களா? இந்த செயலை மீண்டும் செய்ய முடியாது.";
+"comments" = "கருத்துகள்";
+"no_comments_yet" = "இன்னும் கருத்துகள் இல்லை. முதலில் கருத்து தெரிவிக்கவும்.";
+"discussion" = "விவாதம்";
+
+/* Community - Categories */
+"category_all" = "அனைத்தும்";
+"category_farming" = "விவசாயம்";
+"category_technology" = "தொழில்நுட்பம்";
+"category_market" = "சந்தை";
+"category_weather" = "வானிலை";
+"category_equipment" = "உபகரணங்கள்";
+"category_other" = "மற்றவை";
+
+/* Community - New Post */
+"post_details" = "பதிவு விவரங்கள்";
+"title" = "தலைப்பு";
+"whats_on_mind" = "உங்கள் மனதில் என்ன உள்ளது?";
+"category" = "வகை";
+"photo" = "புகைப்படம்";
+"remove_photo" = "புகைப்படத்தை நீக்கு";
+"add_photo" = "புகைப்படம் சேர்க்கவும்";
+"new_post" = "புதிய பதிவு";
+"post" = "பதிவிடு";
+"uploading_image" = "படம் பதிவேற்றப்படுகிறது...";
+"saving_post" = "பதிவு சேமிக்கப்படுகிறது...";
+"error_saving_post" = "பதிவை சேமிப்பதில் பிழை";
+
+/* Government Schemes */
+"government_schemes_title" = "அரசாங்க திட்டங்கள்";
+"government_schemes_subtitle" = "விவசாயிகளுக்கு ஆதரவு அளிக்கும் அரசாங்க முயற்சிகளைக் கண்டறியுங்கள்.";
+"visit_official_site" = "அதிகாரப்பூர்வ தளத்தைப் பார்க்கவும்";
+
+/* Scheme Names */
+"scheme_pmkisan_name" = "பிரதமர் கிசான் சம்மான் நிதி";
+"scheme_pmkisan_desc" = "விவசாயிகளுக்கு நேரடி வருமான ஆதரவு. ஆண்டுக்கு ₹6,000 வரை பெறுங்கள்.";
+
+"scheme_pmfby_name" = "பிரதமர் ஃபசல் பீமா யோஜனா";
+"scheme_pmfby_desc" = "இயற்கை பேரிடர்களுக்கு எதிராக விவசாயிகளுக்கான பயிர் காப்பீடு.";
+
+"scheme_shc_name" = "மண் ஆரோக்கிய அட்டை திட்டம்";
+"scheme_shc_desc" = "உங்கள் மண்ணைச் சோதித்து சிறந்த விளைச்சலுக்கான பரிந்துரைகளைப் பெறுங்கள்.";
+
+"scheme_kcc_name" = "கிசான் கிரெடிட் அட்டை (KCC)";
+"scheme_kcc_desc" = "குறைந்த வட்டி விகிதத்தில் விவசாயிகளுக்கான கடனுக்கு எளிய அணுகல்.";
+
+"scheme_nfsm_name" = "தேசிய உணவு பாதுகாப்பு திட்டம்";
+"scheme_nfsm_desc" = "அரிசி, கோதுமை, பருப்பு மற்றும் சிறு தானியங்களின் உற்பத்தியை அதிகரிக்கவும்.";

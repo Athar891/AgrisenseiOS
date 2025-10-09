@@ -302,7 +302,6 @@ class LiveAIService: ObservableObject, @preconcurrency ScreenRecordingDelegate {
         
         // First greeting: "hi"
         lastResponse = "hi"
-        currentSubtitle = "hi"
         await speakResponse("hi")
         
         // Wait 1.5 seconds then follow up
@@ -310,7 +309,6 @@ class LiveAIService: ObservableObject, @preconcurrency ScreenRecordingDelegate {
         
         // Second greeting: "how can I help you"
         lastResponse = "how can I help you"
-        currentSubtitle = "how can I help you"
         await speakResponse("how can I help you")
         
         // Return to listening state
@@ -326,7 +324,6 @@ class LiveAIService: ObservableObject, @preconcurrency ScreenRecordingDelegate {
             isScreenSharing = true
             screenShareError = nil
             lastResponse = "I can now see your screen. What would you like help with?"
-            currentSubtitle = "I can now see your screen. What would you like help with?"
             await speakResponse("I can now see your screen. What would you like help with?")
         } catch {
             screenShareError = error.localizedDescription
@@ -386,7 +383,6 @@ class LiveAIService: ObservableObject, @preconcurrency ScreenRecordingDelegate {
             let response = try await geminiService.sendMessage(context, context: aiContext)
             
             lastResponse = response.content
-            currentSubtitle = response.content
             await speakResponse(response.content)
             
             currentState = .standby
@@ -445,12 +441,6 @@ class LiveAIService: ObservableObject, @preconcurrency ScreenRecordingDelegate {
         isProcessing = true
         
         print("💬 Processing user input: \(userInput)")
-        
-        // Update subtitle with user's query if enabled
-        if subtitlesEnabled {
-            currentSubtitle = "You: \(userInput)"
-            try? await Task.sleep(nanoseconds: 1_000_000_000)
-        }
         
         // Create context for AI
         let context = buildLiveAIContext(voiceInput: userInput)
@@ -609,10 +599,8 @@ class LiveAIService: ObservableObject, @preconcurrency ScreenRecordingDelegate {
         // Clean text for natural speech (remove emojis, etc.)
         let cleanedText = cleanTextForSpeech(text)
         
-        // Update subtitle with original text (emojis ok for visual)
-        if subtitlesEnabled {
-            currentSubtitle = text
-        }
+        // Always update subtitle in background (but only shown if subtitlesEnabled)
+        currentSubtitle = text
         
         // **PAUSE voice transcription to prevent feedback loop**
         voiceService.pauseRecording()
@@ -631,12 +619,6 @@ class LiveAIService: ObservableObject, @preconcurrency ScreenRecordingDelegate {
         
         // Clear any transcription that accumulated during TTS
         voiceService.transcriptionText = ""
-        
-        // Clear subtitle after speaking
-        if subtitlesEnabled {
-            try? await Task.sleep(nanoseconds: 500_000_000)
-            currentSubtitle = ""
-        }
     }
     
     func processStaticImage(_ image: UIImage) async {
@@ -680,7 +662,6 @@ class LiveAIService: ObservableObject, @preconcurrency ScreenRecordingDelegate {
             let response = try await geminiService.sendMessageWithImage(prompt, image: image, context: aiContext)
             
             lastResponse = response.content
-            currentSubtitle = response.content
             await speakResponse(response.content)
             
             currentState = .standby

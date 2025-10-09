@@ -1,0 +1,155 @@
+{
+  "project": "AgriSense iOS",
+  "testScope": "comprehensive",
+  "targetPlatform": "ios",
+  "targets": [
+    {
+      "name": "UnitTests",
+      "type": "swift-test",
+      "testPath": "./AgrisenseTests"
+    },
+    {
+      "name": "UITests",
+      "type": "ui-test",
+      "testPath": "./AgrisenseUITests"
+    }
+  ],
+  "testSuites": [
+    {
+      "name": "ModelTests",
+      "description": "Tests for the model layer",
+      "tests": [
+        {
+          "name": "UserManagerTests",
+          "description": "Tests for UserManager class",
+          "testCases": [
+            "testUserInitialization",
+            "testSignUp",
+            "testSignIn",
+            "testSignOut",
+            "testUpdateProfile",
+            "testRateLimiting"
+          ]
+        },
+        {
+          "name": "CropManagerTests",
+          "description": "Tests for CropManager class",
+          "testCases": [
+            "testCropCreation",
+            "testCropUpdate",
+            "testCropDelete",
+            "testFetchingCrops"
+          ]
+        },
+        {
+          "name": "WeatherServiceTests",
+          "description": "Tests for WeatherService",
+          "testCases": [
+            "testWeatherDataFetching",
+            "testWeatherDataParsing"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "UtilityTests",
+      "description": "Tests for utility classes",
+      "tests": [
+        {
+          "name": "ImageCompressionTests",
+          "description": "Tests for image compression utility",
+          "testCases": [
+            "testCompressionUnder5MB",
+            "testCompressionQuality",
+            "testImageResizing"
+          ]
+        },
+        {
+          "name": "InputValidationTests",
+          "description": "Tests for input validation",
+          "testCases": [
+            "testEmailValidation",
+            "testPasswordValidation",
+            "testPhoneNumberValidation",
+            "testNameValidation"
+          ]
+        },
+        {
+          "name": "SecurityTests",
+          "description": "Security-related tests",
+          "testCases": [
+            "testSecureStorage",
+            "testNetworkSecurity"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "UIFlowTests",
+      "description": "Tests for UI flows",
+      "tests": [
+        {
+          "name": "AuthenticationFlowTests",
+          "description": "Tests for authentication flow",
+          "testCases": [
+            "testSignUpFlow",
+            "testSignInFlow",
+            "testPasswordResetFlow"
+          ]
+        },
+        {
+          "name": "DashboardTests",
+          "description": "Tests for dashboard functionality",
+          "testCases": [
+            "testDashboardLoading",
+            "testWeatherDisplay",
+            "testCropManagement"
+          ]
+        }
+      ]
+    }
+  ],
+  "mockConfig": {
+    "enabled": true,
+    "services": [
+      {
+        "name": "WeatherService",
+        "mockResponses": [
+          {
+            "request": "getCurrentWeather",
+            "response": {
+              "status": "success",
+              "data": {
+                "temperature": 25.5,
+                "humidity": 60,
+                "conditions": "Partly Cloudy"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "name": "FirebaseAuth",
+        "mockResponses": [
+          {
+            "request": "signIn",
+            "response": {
+              "status": "success",
+              "userId": "test-user-id"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "ciIntegration": {
+    "enabled": true,
+    "testOnPush": true,
+    "testOnPullRequest": true
+  },
+  "reporting": {
+    "enabled": true,
+    "format": ["html", "junit"],
+    "outputPath": "./test-reports"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "configurations" : [
+    {
+      "id" : "F4B12A40-2341-4D20-8F3E-99D3D47B729D",
+      "name" : "Configuration 1",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:Agrisense.xcodeproj",
+      "identifier" : "5C2F9A5C2B7D8E0900000001",
+      "name" : "Agrisense"
+    }
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:Agrisense.xcodeproj",
+        "identifier" : "5C2F9A7C2B7D8E0900000003",
+        "name" : "AgrisenseUITests"
+      }
+    }
+  ],
+  "version" : 1
+}

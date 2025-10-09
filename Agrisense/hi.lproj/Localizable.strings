@@ -358,3 +358,63 @@
 "live_ai_toggle_camera" = "कैमरा टॉगल करें";
 "live_ai_pause_session" = "सत्र रोकें";
 "live_ai_resume_session" = "सत्र जारी रखें";
+
+/* Community - Discussions */
+"loading_discussions" = "चर्चाएं लोड हो रही हैं...";
+"error_loading_discussions" = "चर्चाएं लोड करने में त्रुटि";
+"no_discussions_yet" = "अभी तक कोई चर्चा नहीं";
+"no_discussions_found" = "कोई चर्चा नहीं मिली";
+"be_first_discussion" = "पहले चर्चा शुरू करें!";
+"add_comment" = "टिप्पणी जोड़ें";
+"commenting_on" = "टिप्पणी कर रहे हैं:";
+"your_comment" = "आपकी टिप्पणी";
+"post_comment" = "टिप्पणी पोस्ट करें";
+"delete_post" = "पोस्ट हटाएं";
+"delete_post_confirmation" = "क्या आप वाकई इस पोस्ट को हटाना चाहते हैं? यह क्रिया पूर्ववत नहीं की जा सकती।";
+"comments" = "टिप्पणियां";
+"no_comments_yet" = "अभी तक कोई टिप्पणी नहीं। पहले टिप्पणी करें।";
+"discussion" = "चर्चा";
+
+/* Community - Categories */
+"category_all" = "सभी";
+"category_farming" = "खेती";
+"category_technology" = "तकनीक";
+"category_market" = "बाजार";
+"category_weather" = "मौसम";
+"category_equipment" = "उपकरण";
+"category_other" = "अन्य";
+
+/* Community - New Post */
+"post_details" = "पोस्ट विवरण";
+"title" = "शीर्षक";
+"whats_on_mind" = "आपके मन में क्या है?";
+"category" = "श्रेणी";
+"photo" = "फोटो";
+"remove_photo" = "फोटो हटाएं";
+"add_photo" = "फोटो जोड़ें";
+"new_post" = "नई पोस्ट";
+"post" = "पोस्ट करें";
+"uploading_image" = "छवि अपलोड हो रही है...";
+"saving_post" = "पोस्ट सहेजा जा रहा है...";
+"error_saving_post" = "पोस्ट सहेजने में त्रुटि";
+
+/* Government Schemes */
+"government_schemes_title" = "सरकारी योजनाएं";
+"government_schemes_subtitle" = "किसानों का समर्थन करने वाली सरकारी पहलों की खोज करें।";
+"visit_official_site" = "आधिकारिक साइट पर जाएं";
+
+/* Scheme Names */
+"scheme_pmkisan_name" = "प्रधानमंत्री किसान सम्मान निधि";
+"scheme_pmkisan_desc" = "किसानों के लिए प्रत्यक्ष आय सहायता। प्रति वर्ष ₹6,000 तक प्राप्त करें।";
+
+"scheme_pmfby_name" = "प्रधानमंत्री फसल बीमा योजना";
+"scheme_pmfby_desc" = "प्राकृतिक आपदाओं के खिलाफ किसानों के लिए फसल बीमा।";
+
+"scheme_shc_name" = "मृदा स्वास्थ्य कार्ड योजना";
+"scheme_shc_desc" = "अपनी मिट्टी का परीक्षण करवाएं और बेहतर उपज के लिए सिफारिशें प्राप्त करें।";
+
+"scheme_kcc_name" = "किसान क्रेडिट कार्ड (KCC)";
+"scheme_kcc_desc" = "कम ब्याज दरों पर किसानों के लिए ऋण तक आसान पहुंच।";
+
+"scheme_nfsm_name" = "राष्ट्रीय खाद्य सुरक्षा मिशन";
+"scheme_nfsm_desc" = "चावल, गेहूं, दालों और मोटे अनाज के उत्पादन में वृद्धि।";

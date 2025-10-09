@@ -45,24 +45,6 @@ struct LiveAIInteractionView: View {
                 
                 Spacer()
                 
-                // Subtitle overlay (if enabled)
-                if liveAIService.subtitlesEnabled && !liveAIService.currentSubtitle.isEmpty {
-                    subtitleOverlay
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 20)
-                }
-                
-                // AI Response Display (hide generic greetings)
-                if !liveAIService.lastResponse.isEmpty && 
-                   !liveAIService.subtitlesEnabled && 
-                   !isGenericGreeting(liveAIService.lastResponse) {
-                    aiResponseCard
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 20)
-                        .transition(.opacity.combined(with: .move(edge: .bottom)))
-                        .animation(.easeInOut(duration: 0.3), value: liveAIService.lastResponse)
-                }
-                
                 // Bottom Control Bar
                 bottomControlBar
                     .padding(.horizontal, 20)
@@ -84,17 +66,15 @@ struct LiveAIInteractionView: View {
         } message: {
             Text(localizationManager.localizedString(for: "live_ai_end_session_confirmation"))
         }
-        .alert("Permission Required", isPresented: $showPermissionDenied) {
-            Button("Settings") {
+        .alert("Camera Permission Required", isPresented: $showPermissionDenied) {
+            Button("Open Settings") {
                 if let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
                     UIApplication.shared.open(settingsUrl)
                 }
             }
-            Button("Cancel", role: .cancel) {
-                dismiss()
-            }
+            Button("Continue without Camera", role: .cancel) { }
         } message: {
-            Text(localizationManager.localizedString(for: "live_ai_camera_permission_denied"))
+            Text("AgriSense needs camera access to provide real-time crop analysis. You can enable it in Settings or continue with voice-only interaction.")
         }
         .sheet(isPresented: $showImagePicker) {
             LiveImagePicker(selectedImage: $selectedImage)
@@ -149,9 +129,11 @@ struct LiveAIInteractionView: View {
             
             Spacer()
             
-            // Subtitle toggle button
+            // Subtitle toggle button with animation
             Button(action: {
-                liveAIService.toggleSubtitles()
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                    liveAIService.toggleSubtitles()
+                }
             }) {
                 Image(systemName: liveAIService.subtitlesEnabled ? "captions.bubble.fill" : "captions.bubble")
                     .font(.system(size: 18, weight: .medium))
@@ -161,7 +143,9 @@ struct LiveAIInteractionView: View {
                         Circle()
                             .fill(.regularMaterial)
                     )
+                    .scaleEffect(liveAIService.subtitlesEnabled ? 1.0 : 0.95)
             }
+            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: liveAIService.subtitlesEnabled)
         }
         .padding(.horizontal, 20)
         .padding(.top, 20)
@@ -246,23 +230,33 @@ struct LiveAIInteractionView: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)
             
+            Text("Try toggling the camera off and on, or check if another app is using it.")
+                .font(.subheadline)
+                .foregroundColor(.gray)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 40)
+            
             if cameraService.canRetry {
                 Button(action: {
                     cameraService.retrySetup()
                 }) {
-                    Text("Retry (\(cameraService.setupAttempts)/3)")
-                        .font(.headline)
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 24)
-                        .padding(.vertical, 12)
-                        .background(Color.orange)
-                        .cornerRadius(8)
+                    HStack {
+                        Image(systemName: "arrow.clockwise")
+                        Text("Retry (\(cameraService.setupAttempts)/\(cameraService.maxSetupAttempts))")
+                    }
+                    .font(.headline)
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 12)
+                    .background(Color.orange)
+                    .cornerRadius(12)
                 }
             } else {
                 Text("Continuing with voice-only interaction")
                     .font(.caption)
                     .foregroundColor(.gray)
                     .multilineTextAlignment(.center)
+                    .padding(.top, 8)
             }
         }
     }
@@ -330,79 +324,6 @@ struct LiveAIInteractionView: View {
         }
     }
     
-    private var subtitleOverlay: some View {
-        VStack(spacing: 8) {
-            Text(liveAIService.currentSubtitle)
-                .font(.system(size: 16, weight: .medium))
-                .foregroundColor(.white)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 20)
-                .padding(.vertical, 12)
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color.black.opacity(0.75))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(Color.white.opacity(0.2), lineWidth: 1)
-                        )
-                )
-                .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
-        }
-        .transition(.opacity.combined(with: .move(edge: .bottom)))
-        .animation(.easeInOut(duration: 0.3), value: liveAIService.currentSubtitle)
-    }
-    
-    private var aiResponseCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Image(systemName: "brain.head.profile")
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(.green)
-                
-                Text("Krishi AI")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.green)
-                
-                Spacer()
-                
-                if liveAIService.isProcessing {
-                    ProgressView()
-                        .scaleEffect(0.8)
-                }
-            }
-            
-            // Only show meaningful responses, filter out generic greetings
-            if !isGenericGreeting(liveAIService.lastResponse) {
-                Text(liveAIService.lastResponse)
-                    .font(.system(size: 15))
-                    .foregroundColor(colorScheme == .dark ? .white : .black)
-                    .lineLimit(nil)
-            }
-        }
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(.regularMaterial)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .stroke(
-                            LinearGradient(
-                                colors: [Color.green.opacity(0.3), Color.clear],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 1
-                        )
-                )
-        )
-    }
-    
-    // Helper to filter out generic greeting messages
-    private func isGenericGreeting(_ text: String) -> Bool {
-        let lowercased = text.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
-        let genericPhrases = ["hi", "hello", "hey", "how can i help you", "how can i help", "how may i help"]
-        return genericPhrases.contains(lowercased)
-    }
     
     private var bottomControlBar: some View {
         HStack(spacing: 20) {
@@ -490,6 +411,19 @@ struct LiveAIInteractionView: View {
             
             // Request wake word permissions
             await liveAIService.wakeWordService.requestPermissions()
+            
+            // Check camera permission status (don't request yet, just check)
+            await MainActor.run {
+                let status = AVCaptureDevice.authorizationStatus(for: .video)
+                cameraService.isAuthorized = (status == .authorized)
+                cameraService.permissionDenied = (status == .denied || status == .restricted)
+                
+                // If already authorized, pre-configure the camera session
+                if cameraService.isAuthorized {
+                    print("[LiveAI] Camera already authorized, setting up session...")
+                    cameraService.setupCamera()
+                }
+            }
             
             // Start the live session
             liveAIService.startLiveSession()

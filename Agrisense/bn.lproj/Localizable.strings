@@ -192,3 +192,63 @@
 "assistant_action_market_prices" = "সবজির বর্তমান বাজার মূল্য";
 "assistant_action_irrigation" = "সেরা সেচ পদ্ধতি";
 "assistant_action_seasonal" = "মৌসুমি ফসলের সুপারিশ";
+
+/* Community - Discussions */
+"loading_discussions" = "আলোচনা লোড হচ্ছে...";
+"error_loading_discussions" = "আলোচনা লোড করতে ত্রুটি";
+"no_discussions_yet" = "এখনও কোনো আলোচনা নেই";
+"no_discussions_found" = "কোনো আলোচনা পাওয়া যায়নি";
+"be_first_discussion" = "প্রথম আলোচনা শুরু করুন!";
+"add_comment" = "মন্তব্য যোগ করুন";
+"commenting_on" = "মন্তব্য করছেন:";
+"your_comment" = "আপনার মন্তব্য";
+"post_comment" = "মন্তব্য পোস্ট করুন";
+"delete_post" = "পোস্ট মুছুন";
+"delete_post_confirmation" = "আপনি কি সত্যিই এই পোস্টটি মুছতে চান? এই কাজ পূর্বাবস্থায় ফেরানো যাবে না।";
+"comments" = "মন্তব্য";
+"no_comments_yet" = "এখনও কোনো মন্তব্য নেই। প্রথম মন্তব্য করুন।";
+"discussion" = "আলোচনা";
+
+/* Community - Categories */
+"category_all" = "সব";
+"category_farming" = "চাষাবাদ";
+"category_technology" = "প্রযুক্তি";
+"category_market" = "বাজার";
+"category_weather" = "আবহাওয়া";
+"category_equipment" = "সরঞ্জাম";
+"category_other" = "অন্যান্য";
+
+/* Community - New Post */
+"post_details" = "পোস্ট বিবরণ";
+"title" = "শিরোনাম";
+"whats_on_mind" = "আপনার মনে কী আছে?";
+"category" = "বিভাগ";
+"photo" = "ফটো";
+"remove_photo" = "ফটো সরান";
+"add_photo" = "ফটো যোগ করুন";
+"new_post" = "নতুন পোস্ট";
+"post" = "পোস্ট করুন";
+"uploading_image" = "ছবি আপলোড হচ্ছে...";
+"saving_post" = "পোস্ট সেভ হচ্ছে...";
+"error_saving_post" = "পোস্ট সেভ করতে ত্রুটি";
+
+/* Government Schemes */
+"government_schemes_title" = "সরকারি প্রকল্প";
+"government_schemes_subtitle" = "কৃষকদের সমর্থন করে এমন সরকারি উদ্যোগ আবিষ্কার করুন।";
+"visit_official_site" = "অফিসিয়াল সাইট দেখুন";
+
+/* Scheme Names */
+"scheme_pmkisan_name" = "প্রধানমন্ত্রী কিষাণ সম্মান নিধি";
+"scheme_pmkisan_desc" = "কৃষকদের জন্য সরাসরি আয় সহায়তা। প্রতি বছর ₹৬,০০০ পর্যন্ত পান।";
+
+"scheme_pmfby_name" = "প্রধানমন্ত্রী ফসল বীমা যোজনা";
+"scheme_pmfby_desc" = "প্রাকৃতিক দুর্যোগের বিরুদ্ধে কৃষকদের জন্য ফসল বীমা।";
+
+"scheme_shc_name" = "মাটি স্বাস্থ্য কার্ড প্রকল্প";
+"scheme_shc_desc" = "আপনার মাটি পরীক্ষা করান এবং ভালো ফলনের জন্য সুপারিশ পান।";
+
+"scheme_kcc_name" = "কিষাণ ক্রেডিট কার্ড (KCC)";
+"scheme_kcc_desc" = "কম সুদের হারে কৃষকদের জন্য ক্রেডিট সহজ অ্যাক্সেস।";
+
+"scheme_nfsm_name" = "জাতীয় খাদ্য সুরক্ষা মিশন";
+"scheme_nfsm_desc" = "চাল, গম, ডাল এবং মোটা শস্যের উৎপাদন বৃদ্ধি করুন।";

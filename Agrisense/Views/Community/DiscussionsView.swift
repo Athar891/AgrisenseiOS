@@ -23,6 +23,7 @@ struct DiscussionsView: View {
     @State private var discussions: [Discussion] = []
     @State private var isLoading = false
     @State private var errorMessage: String?
+    @EnvironmentObject var localizationManager: LocalizationManager
     
     var filteredDiscussions: [Discussion] {
         var filtered = discussions
@@ -66,7 +67,7 @@ struct DiscussionsView: View {
             ScrollView {
                 LazyVStack(spacing: 12) {
                     if isLoading {
-                        ProgressView("Loading discussions...")
+                        ProgressView(localizationManager.localizedString(for: "loading_discussions"))
                             .frame(maxWidth: .infinity, alignment: .center)
                             .padding(.top, 40)
                     } else if let errorMessage = errorMessage {
@@ -74,13 +75,13 @@ struct DiscussionsView: View {
                             Image(systemName: "exclamationmark.triangle")
                                 .font(.title2)
                                 .foregroundColor(.orange)
-                            Text("Error loading discussions")
+                            Text(localizationManager.localizedString(for: "error_loading_discussions"))
                                 .font(.headline)
                             Text(errorMessage)
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                                 .multilineTextAlignment(.center)
-                            Button("Retry") {
+                            Button(localizationManager.localizedString(for: "retry")) {
                                 fetchDiscussions()
                             }
                             .buttonStyle(.bordered)
@@ -92,11 +93,11 @@ struct DiscussionsView: View {
                             Image(systemName: "bubble.left.and.bubble.right")
                                 .font(.title2)
                                 .foregroundColor(.secondary)
-                            Text(searchText.isEmpty ? "No discussions yet" : "No discussions found")
+                            Text(searchText.isEmpty ? localizationManager.localizedString(for: "no_discussions_yet") : localizationManager.localizedString(for: "no_discussions_found"))
                                 .font(.headline)
                                 .foregroundColor(.secondary)
                             if searchText.isEmpty {
-                                Text("Be the first to start a discussion!")
+                                Text(localizationManager.localizedString(for: "be_first_discussion"))
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                             }
@@ -215,10 +216,11 @@ struct CategoryChip: View {
     let category: DiscussionCategory
     let isSelected: Bool
     let action: () -> Void
+    @EnvironmentObject var localizationManager: LocalizationManager
 
     var body: some View {
         Button(action: action) {
-            Text(category.displayName)
+            Text(category.localizedName(localizationManager: localizationManager))
                 .font(.subheadline)
                 .fontWeight(.medium)
                 .foregroundColor(isSelected ? .white : .primary)
@@ -242,6 +244,7 @@ struct DiscussionCard: View {
     @State private var showDeleteAlert = false
     @State private var showShareSheet = false
     @EnvironmentObject var userManager: UserManager
+    @EnvironmentObject var localizationManager: LocalizationManager
     
     // Function to handle deleting a post
     private func deletePost() {
@@ -369,7 +372,7 @@ struct DiscussionCard: View {
                     if isCurrentUserAuthor {
                         Menu {
                             Button(role: .destructive, action: { showDeleteAlert = true }) {
-                                Label("Delete Post", systemImage: "trash")
+                                Label(localizationManager.localizedString(for: "delete_post"), systemImage: "trash")
                             }
                         } label: {
                             Image(systemName: "ellipsis")
@@ -378,7 +381,7 @@ struct DiscussionCard: View {
                         }
                     }
                     
-                    Text(discussion.category.displayName)
+                    Text(discussion.category.localizedName(localizationManager: localizationManager))
                         .font(.caption)
                         .fontWeight(.medium)
                         .foregroundColor(.green)
@@ -459,7 +462,7 @@ struct DiscussionCard: View {
                 }
                 .sheet(isPresented: $showCommentSheet) {
                     VStack(spacing: 16) {
-                        Text("Add a Comment")
+                        Text(localizationManager.localizedString(for: "add_comment"))
                             .font(.headline)
                             .padding(.top)
                         
@@ -467,7 +470,7 @@ struct DiscussionCard: View {
                         
                         ScrollView {
                             VStack(alignment: .leading, spacing: 8) {
-                                Text("Commenting on:")
+                                Text(localizationManager.localizedString(for: "commenting_on"))
                                     .font(.subheadline)
                                     .foregroundColor(.secondary)
                                 
@@ -478,7 +481,7 @@ struct DiscussionCard: View {
                                 Divider()
                                     .padding(.vertical, 8)
                                 
-                                TextField("Your comment", text: $newComment, axis: .vertical)
+                                TextField(localizationManager.localizedString(for: "your_comment"), text: $newComment, axis: .vertical)
                                     .textFieldStyle(RoundedBorderTextFieldStyle())
                                     .lineLimit(3...5)
                             }
@@ -488,14 +491,14 @@ struct DiscussionCard: View {
                         Spacer()
                         
                         HStack {
-                            Button("Cancel") {
+                            Button(localizationManager.localizedString(for: "cancel")) {
                                 showCommentSheet = false
                             }
                             .buttonStyle(.bordered)
                             
                             Spacer()
                             
-                            Button("Post Comment") {
+                            Button(localizationManager.localizedString(for: "post_comment")) {
                                 addComment()
                             }
                             .buttonStyle(.borderedProminent)
@@ -513,13 +516,13 @@ struct DiscussionCard: View {
                         ShareSheet(items: [discussion.title, discussion.content])
                     }
                 }
-                .alert("Delete Post", isPresented: $showDeleteAlert) {
-                    Button("Cancel", role: .cancel) {}
-                    Button("Delete", role: .destructive) {
+                .alert(localizationManager.localizedString(for: "delete_post"), isPresented: $showDeleteAlert) {
+                    Button(localizationManager.localizedString(for: "cancel"), role: .cancel) {}
+                    Button(localizationManager.localizedString(for: "delete"), role: .destructive) {
                         deletePost()
                     }
                 } message: {
-                    Text("Are you sure you want to delete this post? This action cannot be undone.")
+                    Text(localizationManager.localizedString(for: "delete_post_confirmation"))
                 }
                 .onAppear {
                     isLiked = discussion.isLiked
@@ -551,6 +554,7 @@ struct DiscussionDetailView: View {
     @State private var comments: [Comment] = []
     @State private var loadingComments = false
     @EnvironmentObject var userManager: UserManager
+    @EnvironmentObject var localizationManager: LocalizationManager
     
     init(discussion: Discussion) {
         self.discussion = discussion
@@ -758,13 +762,13 @@ struct DiscussionDetailView: View {
                     
                     // Replies / Comments
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("Comments")
+                        Text(localizationManager.localizedString(for: "comments"))
                             .font(.headline)
 
                         if loadingComments {
                             ProgressView()
                         } else if comments.isEmpty {
-                            Text("No comments yet. Be the first to comment.")
+                            Text(localizationManager.localizedString(for: "no_comments_yet"))
                                 .foregroundColor(.secondary)
                         } else {
                             ForEach(comments) { comment in
@@ -793,11 +797,11 @@ struct DiscussionDetailView: View {
                 }
                 .padding()
             }
-            .navigationTitle("Discussion")
+            .navigationTitle(localizationManager.localizedString(for: "discussion"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Done") {
+                    Button(localizationManager.localizedString(for: "done")) {
                         dismiss()
                     }
                 }
@@ -813,7 +817,7 @@ struct DiscussionDetailView: View {
             }
             .sheet(isPresented: $showCommentSheet) {
                 VStack(spacing: 16) {
-                    Text("Add a Comment")
+                    Text(localizationManager.localizedString(for: "add_comment"))
                         .font(.headline)
                         .padding(.top)
                     
@@ -821,7 +825,7 @@ struct DiscussionDetailView: View {
                     
                     ScrollView {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("Commenting on:")
+                            Text(localizationManager.localizedString(for: "commenting_on"))
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
                             
@@ -832,7 +836,7 @@ struct DiscussionDetailView: View {
                             Divider()
                                 .padding(.vertical, 8)
                             
-                            TextField("Your comment", text: $newComment, axis: .vertical)
+                            TextField(localizationManager.localizedString(for: "your_comment"), text: $newComment, axis: .vertical)
                                 .textFieldStyle(RoundedBorderTextFieldStyle())
                                 .lineLimit(3...5)
                         }
@@ -842,14 +846,14 @@ struct DiscussionDetailView: View {
                     Spacer()
                     
                     HStack {
-                        Button("Cancel") {
+                        Button(localizationManager.localizedString(for: "cancel")) {
                             showCommentSheet = false
                         }
                         .buttonStyle(.bordered)
                         
                         Spacer()
                         
-                        Button("Post Comment") {
+                        Button(localizationManager.localizedString(for: "post_comment")) {
                             addComment()
                         }
                         .buttonStyle(.borderedProminent)
@@ -867,13 +871,13 @@ struct DiscussionDetailView: View {
                     ShareSheet(items: [discussion.title, discussion.content])
                 }
             }
-            .alert("Delete Post", isPresented: $showDeleteAlert) {
-                Button("Cancel", role: .cancel) {}
-                Button("Delete", role: .destructive) {
+            .alert(localizationManager.localizedString(for: "delete_post"), isPresented: $showDeleteAlert) {
+                Button(localizationManager.localizedString(for: "cancel"), role: .cancel) {}
+                Button(localizationManager.localizedString(for: "delete"), role: .destructive) {
                     deletePost()
                 }
             } message: {
-                Text("Are you sure you want to delete this post? This action cannot be undone.")
+                Text(localizationManager.localizedString(for: "delete_post_confirmation"))
             }
             .onAppear { loadComments() }
         }

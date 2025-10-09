@@ -192,3 +192,63 @@
 "assistant_action_market_prices" = "కూరగాయల ప్రస్తుత మార్కెట్ ధరలు";
 "assistant_action_irrigation" = "ఉత్తమ నీటిపారుదల పద్ధతులు";
 "assistant_action_seasonal" = "ఋతువారీ పంట సిఫార్సులు";
+
+/* Community - Discussions */
+"loading_discussions" = "చర్చలు లోడ్ అవుతున్నాయి...";
+"error_loading_discussions" = "చర్చలను లోడ్ చేయడంలో లోపం";
+"no_discussions_yet" = "ఇంకా చర్చలు లేవు";
+"no_discussions_found" = "చర్చలు కనుగొనబడలేదు";
+"be_first_discussion" = "మొదటి చర్చను ప్రారంభించండి!";
+"add_comment" = "వ్యాఖ్య జోడించండి";
+"commenting_on" = "వ్యాఖ్యానిస్తున్నారు:";
+"your_comment" = "మీ వ్యాఖ్య";
+"post_comment" = "వ్యాఖ్య పోస్ట్ చేయండి";
+"delete_post" = "పోస్ట్ తొలగించండి";
+"delete_post_confirmation" = "మీరు నిజంగా ఈ పోస్ట్‌ను తొలగించాలనుకుంటున్నారా? ఈ చర్య తిరిగి పొందలేము.";
+"comments" = "వ్యాఖ్యలు";
+"no_comments_yet" = "ఇంకా వ్యాఖ్యలు లేవు. మొదటి వ్యాఖ్య చేయండి.";
+"discussion" = "చర్చ";
+
+/* Community - Categories */
+"category_all" = "అన్నీ";
+"category_farming" = "వ్యవసాయం";
+"category_technology" = "సాంకేతికత";
+"category_market" = "మార్కెట్";
+"category_weather" = "వాతావరణం";
+"category_equipment" = "పరికరాలు";
+"category_other" = "ఇతరములు";
+
+/* Community - New Post */
+"post_details" = "పోస్ట్ వివరాలు";
+"title" = "శీర్షిక";
+"whats_on_mind" = "మీ మనస్సులో ఏముంది?";
+"category" = "వర్గం";
+"photo" = "ఫోటో";
+"remove_photo" = "ఫోటోను తొలగించండి";
+"add_photo" = "ఫోటో జోడించండి";
+"new_post" = "కొత్త పోస్ట్";
+"post" = "పోస్ట్ చేయండి";
+"uploading_image" = "చిత్రం అప్‌లోడ్ అవుతోంది...";
+"saving_post" = "పోస్ట్ సేవ్ చేయబడుతోంది...";
+"error_saving_post" = "పోస్ట్ సేవ్ చేయడంలో లోపం";
+
+/* Government Schemes */
+"government_schemes_title" = "ప్రభుత్వ పథకాలు";
+"government_schemes_subtitle" = "రైతులకు మద్దతు ఇచ్చే ప్రభుత్వ కార్యక్రమాలను కనుగొనండి.";
+"visit_official_site" = "అధికారిక సైట్‌ను సందర్శించండి";
+
+/* Scheme Names */
+"scheme_pmkisan_name" = "ప్రధాన మంత్రి కిసాన్ సమ్మన్ నిధి";
+"scheme_pmkisan_desc" = "రైతులకు ప్రత్యక్ష ఆదాయ మద్దతు. సంవత్సరానికి ₹6,000 వరకు పొందండి.";
+
+"scheme_pmfby_name" = "ప్రధాన మంత్రి ఫసల్ బీమా యోజన";
+"scheme_pmfby_desc" = "ప్రకృతి విపత్తులకు వ్యతిరేకంగా రైతులకు పంట భీమా.";
+
+"scheme_shc_name" = "మట్టి ఆరోగ్య కార్డు పథకం";
+"scheme_shc_desc" = "మీ మట్టిని పరీక్షించి మెరుగైన దిగుబడికి సిఫార్సులను పొందండి.";
+
+"scheme_kcc_name" = "కిసాన్ క్రెడిట్ కార్డ్ (KCC)";
+"scheme_kcc_desc" = "తక్కువ వడ్డీ రేట్లలో రైతులకు క్రెడిట్‌కు సులభంగా ప్రాప్యత.";
+
+"scheme_nfsm_name" = "జాతీయ ఆహార భద్రతా మిషన్";
+"scheme_nfsm_desc" = "బియ్యం, గోధుమలు, పప్పుధాన్యాలు మరియు ముతక ధాన్యాల ఉత్పత్తిని పెంచండి.";

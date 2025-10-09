@@ -20,6 +20,7 @@ struct NewPostView: View {
     @State private var content = ""
     @State private var selectedCategory: DiscussionCategory = .farming
     @EnvironmentObject var userManager: UserManager
+    @EnvironmentObject var localizationManager: LocalizationManager
     @State private var isSaving = false
     @State private var saveError: String?
     @State private var selectedItem: PhotosPickerItem?
@@ -282,20 +283,20 @@ struct NewPostView: View {
     var body: some View {
         NavigationView {
             Form {
-                Section("Post Details") {
-                    TextField("Title", text: $title)
+                Section(localizationManager.localizedString(for: "post_details")) {
+                    TextField(localizationManager.localizedString(for: "title"), text: $title)
                     
-                    TextField("What's on your mind?", text: $content, axis: .vertical)
+                    TextField(localizationManager.localizedString(for: "whats_on_mind"), text: $content, axis: .vertical)
                         .lineLimit(5...10)
                     
-                    Picker("Category", selection: $selectedCategory) {
+                    Picker(localizationManager.localizedString(for: "category"), selection: $selectedCategory) {
                         ForEach(DiscussionCategory.allCases.filter { $0 != .all }, id: \.self) { category in
-                            Text(category.displayName).tag(category)
+                            Text(category.localizedName(localizationManager: localizationManager)).tag(category)
                         }
                     }
                 }
                 
-                Section("Photo") {
+                Section(localizationManager.localizedString(for: "photo")) {
                     VStack {
                         if let selectedImageData = selectedImageData, let uiImage = UIImage(data: selectedImageData) {
                             Image(uiImage: uiImage)
@@ -304,7 +305,7 @@ struct NewPostView: View {
                                 .frame(maxHeight: 200)
                                 .cornerRadius(8)
                             
-                            Button("Remove Photo") {
+                            Button(localizationManager.localizedString(for: "remove_photo")) {
                                 self.selectedImageData = nil
                                 self.selectedItem = nil
                             }
@@ -316,7 +317,7 @@ struct NewPostView: View {
                                 matching: .images,
                                 photoLibrary: .shared()
                             ) {
-                                Label("Add Photo", systemImage: "photo")
+                                Label(localizationManager.localizedString(for: "add_photo"), systemImage: "photo")
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, 8)
                             }
@@ -336,18 +337,18 @@ struct NewPostView: View {
                     }
                 }
             }
-            .navigationTitle("New Post")
+            .navigationTitle(localizationManager.localizedString(for: "new_post"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
+                    Button(localizationManager.localizedString(for: "cancel")) {
                         dismiss()
                     }
                     .disabled(isSaving)
                 }
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Post") {
+                    Button(localizationManager.localizedString(for: "post")) {
                         savePost()
                     }
                     .disabled(title.isEmpty || content.isEmpty || isSaving)
@@ -357,11 +358,11 @@ struct NewPostView: View {
                 if isSaving {
                     VStack {
                         if isUploading {
-                            ProgressView("Uploading Image...", value: uploadProgress, total: 1.0)
+                            ProgressView(localizationManager.localizedString(for: "uploading_image"), value: uploadProgress, total: 1.0)
                                 .progressViewStyle(LinearProgressViewStyle())
                                 .padding()
                         } else {
-                            ProgressView("Saving post...")
+                            ProgressView(localizationManager.localizedString(for: "saving_post"))
                         }
                     }
                     .frame(maxWidth: 200)
@@ -371,8 +372,8 @@ struct NewPostView: View {
                     .shadow(radius: 10)
                 }
             }
-            .alert("Error Saving Post", isPresented: Binding<Bool>(get: { saveError != nil }, set: { _ in saveError = nil })) {
-                Button("OK", role: .cancel) {}
+            .alert(localizationManager.localizedString(for: "error_saving_post"), isPresented: Binding<Bool>(get: { saveError != nil }, set: { _ in saveError = nil })) {
+                Button(localizationManager.localizedString(for: "ok"), role: .cancel) {}
             } message: {
                 Text(saveError ?? "Unknown error")
             }

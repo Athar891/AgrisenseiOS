@@ -34,6 +34,25 @@ enum DiscussionCategory: String, CaseIterable {
             return "Other"
         }
     }
+    
+    func localizedName(localizationManager: LocalizationManager) -> String {
+        switch self {
+        case .all:
+            return localizationManager.localizedString(for: "category_all")
+        case .farming:
+            return localizationManager.localizedString(for: "category_farming")
+        case .technology:
+            return localizationManager.localizedString(for: "category_technology")
+        case .market:
+            return localizationManager.localizedString(for: "category_market")
+        case .weather:
+            return localizationManager.localizedString(for: "category_weather")
+        case .equipment:
+            return localizationManager.localizedString(for: "category_equipment")
+        case .other:
+            return localizationManager.localizedString(for: "category_other")
+        }
+    }
 }
 
 struct Discussion: Identifiable {
