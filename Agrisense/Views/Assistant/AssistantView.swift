@@ -56,7 +56,13 @@ struct AssistantView: View {
     @State private var typingTimers: [UUID: Timer] = [:]
     @State private var typingIndex: [UUID: Int] = [:]
     
-    init() {
+    // Initial message support
+    let initialMessage: String?
+    @State private var hasProcessedInitialMessage = false
+    
+    init(initialMessage: String? = nil) {
+        self.initialMessage = initialMessage
+        
         // Initialize Gemini AI service with API key from .env or environment
         let apiKey = Secrets.geminiAPIKey
         if apiKey != "YOUR_GEMINI_API_KEY_HERE" && !apiKey.isEmpty {
@@ -162,6 +168,16 @@ struct AssistantView: View {
                     // Dismiss keyboard when tapping outside text field
                     dismissKeyboard()
                     isTextFieldFocused = false
+                }
+                .onAppear {
+                    // Process initial message if provided
+                    if let initialMessage = initialMessage, !hasProcessedInitialMessage {
+                        hasProcessedInitialMessage = true
+                        // Small delay to ensure view is fully loaded
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            sendMessage(initialMessage)
+                        }
+                    }
                 }
             }
             

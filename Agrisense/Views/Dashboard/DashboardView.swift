@@ -319,35 +319,65 @@ struct GovernmentSchemesSection: View {
 struct GovernmentSchemeCard: View {
     @EnvironmentObject var localizationManager: LocalizationManager
     let scheme: GovernmentScheme
+    @State private var showAssistant = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(localizationManager.localizedString(for: scheme.nameKey))
-                .font(.subheadline)
-                .fontWeight(.bold)
-                .foregroundColor(.primary)
-            Text(localizationManager.localizedString(for: scheme.descriptionKey))
-                .font(.caption)
-                .foregroundColor(.secondary)
-            Spacer()
-            Button(action: {
-                UIApplication.shared.open(scheme.url)
-            }) {
-                Text(localizationManager.localizedString(for: "visit_official_site"))
+        ZStack(alignment: .topTrailing) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(localizationManager.localizedString(for: scheme.nameKey))
+                    .font(.subheadline)
+                    .fontWeight(.bold)
+                    .foregroundColor(.primary)
+                    .padding(.trailing, 28) // Make space for star button
+                
+                Text(localizationManager.localizedString(for: scheme.descriptionKey))
                     .font(.caption)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.blue)
-                    .frame(maxWidth: .infinity)
-                    .padding(8)
-                    .background(Color(.tertiarySystemBackground))
-                    .cornerRadius(8)
+                    .foregroundColor(.secondary)
+                
+                Spacer()
+                
+                Button(action: {
+                    UIApplication.shared.open(scheme.url)
+                }) {
+                    Text(localizationManager.localizedString(for: "visit_official_site"))
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.blue)
+                        .frame(maxWidth: .infinity)
+                        .padding(8)
+                        .background(Color(.tertiarySystemBackground))
+                        .cornerRadius(8)
+                }
             }
+            .frame(width: 220, height: 140)
+            .padding()
+            .background(Color(.systemBackground))
+            .cornerRadius(12)
+            .shadow(color: Color.primary.opacity(0.08), radius: 2, x: 0, y: 1)
+            
+            // Star button in top-right corner
+            Button(action: {
+                showAssistant = true
+            }) {
+                Image(systemName: "star.fill")
+                    .font(.system(size: 16))
+                    .foregroundColor(.yellow)
+                    .frame(width: 32, height: 32)
+                    .background(Color(.systemBackground))
+                    .clipShape(Circle())
+                    .shadow(color: Color.primary.opacity(0.1), radius: 2, x: 0, y: 1)
+            }
+            .padding(8)
         }
-        .frame(width: 220, height: 140)
-        .padding()
-        .background(Color(.systemBackground))
-        .cornerRadius(12)
-        .shadow(color: Color.primary.opacity(0.08), radius: 2, x: 0, y: 1)
+        .sheet(isPresented: $showAssistant) {
+            AssistantView(initialMessage: createSchemeQuery())
+                .environmentObject(localizationManager)
+        }
+    }
+    
+    private func createSchemeQuery() -> String {
+        let schemeName = localizationManager.localizedString(for: scheme.nameKey)
+        return "Please provide a comprehensive summary of the \(schemeName) government scheme for farmers, including eligibility criteria, benefits, and how to apply."
     }
 }
 }
