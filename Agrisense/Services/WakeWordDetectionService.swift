@@ -3,7 +3,7 @@
 //  Agrisense
 //
 //  Created by GitHub Copilot on 05/10/25.
-//  Wake word detection for "Hey Krishi" voice activation
+//  Wake word detection for "Krishi AI" voice activation
 //
 
 import Foundation
@@ -27,7 +27,7 @@ class WakeWordDetectionService: NSObject, ObservableObject {
     private var isStarting = false
     
     // Wake word configuration
-    private let wakeWords = ["hey krishi", "hey krishna", "krishi", "krishna"]
+    private let wakeWords = ["krishi ai", "krishi a i", "krishy ai", "krishi"]
     private let confidenceThreshold: Float = 0.6
     private var lastDetectionTime = Date.distantPast
     private let detectionCooldown: TimeInterval = 3.0 // Prevent rapid re-triggers
@@ -89,7 +89,7 @@ class WakeWordDetectionService: NSObject, ObservableObject {
             
             try await startWakeWordRecognition()
             
-            print("🎤 Wake word detection started - listening for 'Hey Krishi'")
+            print("🎤 Wake word detection started - listening for 'Krishi AI'")
         } catch {
             isListening = false
             errorMessage = "Failed to start wake word detection: \(error.localizedDescription)"

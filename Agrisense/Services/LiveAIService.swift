@@ -29,9 +29,15 @@ class LiveAIService: ObservableObject, @preconcurrency ScreenRecordingDelegate {
     private let geminiService: GeminiAIService
     let voiceService = VoiceTranscriptionService()  // Make this public for view access
     let ttsService = EnhancedTTSService()  // Enhanced TTS with interruption support
-    let wakeWordService = WakeWordDetectionService()  // Wake word detection for "Hey Krishi"
+    let wakeWordService = WakeWordDetectionService()  // Wake word detection for "Krishi AI"
+    private let webSearchService = WebSearchService()  // Web search for links and information
     private var lastUserInput: String = ""
     private var hasPerformedGreeting = false
+    
+    // Conversation Memory (Short-term context awareness)
+    private var conversationHistory: [ConversationTurn] = []
+    private let maxHistoryTurns = 5  // Keep last 5 exchanges for context
+    
     private let screenRecordingService = ScreenRecordingService()
     private var transcriptionMonitorTask: Task<Void, Never>?
     private var autoProcessTask: Task<Void, Never>?
@@ -55,7 +61,7 @@ class LiveAIService: ObservableObject, @preconcurrency ScreenRecordingDelegate {
         wakeWordService.onWakeWordDetected = { [weak self] in
             Task { @MainActor [weak self] in
                 guard let self = self else { return }
-                print("🎤 'Hey Krishi' detected - activating assistant")
+                print("🎤 'Krishi AI' detected - activating assistant")
                 
                 // If not active, start the session (but wake word is already running)
                 if !self.isActive {
@@ -214,6 +220,9 @@ class LiveAIService: ObservableObject, @preconcurrency ScreenRecordingDelegate {
         subtitlesEnabled = false
         currentSubtitle = ""
         audioLevel = 0.0
+        
+        // Clear conversation history
+        clearConversationHistory()
         
         // Cancel monitoring tasks
         transcriptionMonitorTask?.cancel()
@@ -442,8 +451,17 @@ class LiveAIService: ObservableObject, @preconcurrency ScreenRecordingDelegate {
         
         print("💬 Processing user input: \(userInput)")
         
-        // Create context for AI
-        let context = buildLiveAIContext(voiceInput: userInput)
+        // Detect if user needs web search (links, products, schemes, research)
+        let needsWebSearch = detectWebSearchIntent(in: userInput)
+        var webSearchResults: [WebSearchResult] = []
+        
+        if needsWebSearch {
+            print("🔍 Web search detected - fetching relevant links")
+            webSearchResults = await performContextualWebSearch(for: userInput)
+        }
+        
+        // Create context for AI (with web search results if available)
+        let context = buildLiveAIContext(voiceInput: userInput, webResults: webSearchResults)
         
         do {
             currentState = .responding
@@ -476,6 +494,9 @@ class LiveAIService: ObservableObject, @preconcurrency ScreenRecordingDelegate {
             lastResponse = response.content
             
             print("✅ AI Response: \(response.content)")
+            
+            // Save to conversation history for context awareness
+            addToConversationHistory(userInput: userInput, aiResponse: response.content)
             
             // Speak the response (with interruption support)
             await speakResponse(response.content)
@@ -544,12 +565,121 @@ class LiveAIService: ObservableObject, @preconcurrency ScreenRecordingDelegate {
         }
     }
     
-    private func buildLiveAIContext(voiceInput: String) -> String {
-        var context = "You are Krishi AI, an agricultural assistant. The user asked: '\(voiceInput)'. "
-        context += "Provide helpful, concise agricultural advice. Keep responses under 100 words for voice interaction. "
-        context += "IMPORTANT: Do not use emojis or special characters in your response as it will be spoken aloud. Use plain text only."
+    // MARK: - Web Search Integration
+    
+    /// Detect if user's query requires web search
+    private func detectWebSearchIntent(in query: String) -> Bool {
+        let lowercaseQuery = query.lowercased()
+        
+        let searchKeywords = [
+            "buy", "purchase", "where to find", "where can i get", "link", "website",
+            "government scheme", "subsidy", "yojana", "pmkisan", "loan",
+            "research", "article", "study", "paper", "guide",
+            "price", "market", "selling", "shop", "store",
+            "information about", "details of", "more about"
+        ]
+        
+        return searchKeywords.contains { lowercaseQuery.contains($0) }
+    }
+    
+    /// Perform contextual web search based on query intent
+    private func performContextualWebSearch(for query: String) async -> [WebSearchResult] {
+        let lowercaseQuery = query.lowercased()
+        
+        // Detect specific search types
+        if lowercaseQuery.contains("buy") || lowercaseQuery.contains("purchase") || lowercaseQuery.contains("shop") {
+            // Product search
+            let productKeywords = extractProductKeywords(from: query)
+            return await webSearchService.searchProducts(productName: productKeywords)
+        }
+        else if lowercaseQuery.contains("government") || lowercaseQuery.contains("scheme") || 
+                lowercaseQuery.contains("subsidy") || lowercaseQuery.contains("yojana") || 
+                lowercaseQuery.contains("loan") {
+            // Government schemes search
+            return await webSearchService.searchGovernmentSchemes(topic: query)
+        }
+        else if lowercaseQuery.contains("research") || lowercaseQuery.contains("article") || 
+                lowercaseQuery.contains("study") || lowercaseQuery.contains("guide") {
+            // Research/educational content search
+            return await webSearchService.searchResearch(topic: query)
+        }
+        else {
+            // General agricultural search
+            return await webSearchService.search(query: "\(query) agriculture farming india")
+        }
+    }
+    
+    /// Extract product keywords from natural language query
+    private func extractProductKeywords(from query: String) -> String {
+        // Remove common filler words
+        var keywords = query.lowercased()
+        let fillerWords = ["where can i", "how do i", "i want to", "i need to", "can you help me", 
+                          "buy", "purchase", "find", "get", "looking for"]
+        
+        for filler in fillerWords {
+            keywords = keywords.replacingOccurrences(of: filler, with: "")
+        }
+        
+        return keywords.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+    
+    private func buildLiveAIContext(voiceInput: String, webResults: [WebSearchResult] = []) -> String {
+        var context = "You are Krishi AI, an expert agricultural assistant with deep knowledge of farming practices, crop management, soil health, weather patterns, pest control, government schemes, and modern agricultural technologies.\n\n"
+        
+        // Add conversation history for context awareness
+        if !conversationHistory.isEmpty {
+            context += "Recent conversation context:\n"
+            for (index, turn) in conversationHistory.enumerated() {
+                context += "[\(index + 1)] User: \(turn.userInput)\n"
+                context += "    AI: \(turn.aiResponse)\n"
+            }
+            context += "\n"
+        }
+        
+        // Add web search results if available
+        if !webResults.isEmpty {
+            context += "Web search results for additional context:\n"
+            for (index, result) in webResults.enumerated() {
+                context += "[\(index + 1)] \(result.title)\n"
+                context += "    URL: \(result.url)\n"
+                context += "    Summary: \(result.snippet)\n"
+            }
+            context += "\nYou can reference these links in your response when relevant. Mention them naturally like 'You can find more information at [source]' or 'For purchasing, check [link]'\n\n"
+        }
+        
+        context += "Current user question: '\(voiceInput)'\n\n"
+        context += "CRITICAL RESPONSE FORMATTING RULES:\n"
+        context += "1. Length: Keep responses between 50-80 words for natural speech\n"
+        context += "2. Absolutely NO emojis, asterisks, bullet points, or special characters\n"
+        context += "3. Write in flowing paragraphs with complete sentences\n"
+        context += "4. Use only basic punctuation: periods, commas, question marks\n"
+        context += "5. Avoid redundant phrases like 'Here's a breakdown' or 'In summary'\n"
+        context += "6. Start with the most important information first\n"
+        context += "7. Use conversational, natural language as if speaking to someone\n"
+        context += "8. Add proper spacing between ideas for readability\n"
+        context += "9. If conversation history exists, use it to provide contextual answers\n"
+        context += "10. When mentioning links, integrate them naturally in the text\n"
         
         return context
+    }
+    
+    /// Add conversation turn to history for context awareness
+    private func addToConversationHistory(userInput: String, aiResponse: String) {
+        let turn = ConversationTurn(userInput: userInput, aiResponse: aiResponse)
+        conversationHistory.append(turn)
+        
+        // Keep only the last N turns to prevent context overflow
+        if conversationHistory.count > maxHistoryTurns {
+            conversationHistory.removeFirst()
+        }
+        
+        print("💬 Conversation history updated: \(conversationHistory.count) turns stored")
+    }
+    
+    /// Clear conversation history when session ends
+    private func clearConversationHistory() {
+        conversationHistory.removeAll()
+        print("🗑️ Conversation history cleared")
     }
     
     /// Clean text for natural speech by removing emojis, bullet points, and excessive punctuation
@@ -570,13 +700,46 @@ class LiveAIService: ObservableObject, @preconcurrency ScreenRecordingDelegate {
             emojiRanges.contains { $0.contains(scalar) }
         }
         
-        // Replace bullet points and special markers with natural pause
-        cleaned = cleaned.replacingOccurrences(of: "•", with: ",")
-        cleaned = cleaned.replacingOccurrences(of: "◦", with: ",")
-        cleaned = cleaned.replacingOccurrences(of: "▪", with: ",")
+        // Remove markdown bold/italic formatting
+        cleaned = cleaned.replacingOccurrences(of: "**", with: "")
+        cleaned = cleaned.replacingOccurrences(of: "__", with: "")
+        cleaned = cleaned.replacingOccurrences(of: "*", with: "")
+        cleaned = cleaned.replacingOccurrences(of: "_", with: "")
+        
+        // Remove markdown headers
+        cleaned = cleaned.replacingOccurrences(of: "###", with: "")
+        cleaned = cleaned.replacingOccurrences(of: "##", with: "")
+        cleaned = cleaned.replacingOccurrences(of: "#", with: "")
+        
+        // Replace bullet points and special markers with natural pauses
+        cleaned = cleaned.replacingOccurrences(of: "•", with: "")
+        cleaned = cleaned.replacingOccurrences(of: "◦", with: "")
+        cleaned = cleaned.replacingOccurrences(of: "▪", with: "")
+        cleaned = cleaned.replacingOccurrences(of: "○", with: "")
+        cleaned = cleaned.replacingOccurrences(of: "●", with: "")
+        
+        // Replace special dashes and arrows
         cleaned = cleaned.replacingOccurrences(of: "→", with: "to")
         cleaned = cleaned.replacingOccurrences(of: "–", with: "-")
         cleaned = cleaned.replacingOccurrences(of: "—", with: "-")
+        cleaned = cleaned.replacingOccurrences(of: "=>", with: "")
+        
+        // Remove redundant phrases that AI sometimes adds
+        let redundantPhrases = [
+            "Here's a breakdown:",
+            "Here is a breakdown:",
+            "In summary,",
+            "To summarize,",
+            "Let me break this down:",
+            "Here's what you need to know:",
+            "Let's go through it:",
+            "Here are the details:",
+            "Let me explain:"
+        ]
+        
+        for phrase in redundantPhrases {
+            cleaned = cleaned.replacingOccurrences(of: phrase, with: "", options: .caseInsensitive)
+        }
         
         // Clean up excessive punctuation
         cleaned = cleaned.replacingOccurrences(of: "!!!", with: ".")
@@ -586,8 +749,28 @@ class LiveAIService: ObservableObject, @preconcurrency ScreenRecordingDelegate {
         cleaned = cleaned.replacingOccurrences(of: "...", with: ".")
         cleaned = cleaned.replacingOccurrences(of: "…", with: ".")
         
+        // Remove section dividers
+        cleaned = cleaned.replacingOccurrences(of: "---", with: "")
+        cleaned = cleaned.replacingOccurrences(of: "___", with: "")
+        cleaned = cleaned.replacingOccurrences(of: "***", with: "")
+        
+        // Clean up line breaks and convert to natural sentence flow
+        // Replace multiple newlines with a single space for continuous speech
+        cleaned = cleaned.replacingOccurrences(of: "\n\n", with: ". ")
+        cleaned = cleaned.replacingOccurrences(of: "\n", with: " ")
+        
         // Remove multiple spaces
         cleaned = cleaned.replacingOccurrences(of: "  +", with: " ", options: .regularExpression)
+        
+        // Fix spacing around punctuation
+        cleaned = cleaned.replacingOccurrences(of: " .", with: ".")
+        cleaned = cleaned.replacingOccurrences(of: " ,", with: ",")
+        cleaned = cleaned.replacingOccurrences(of: " :", with: ":")
+        cleaned = cleaned.replacingOccurrences(of: " ;", with: ";")
+        
+        // Ensure proper spacing after punctuation
+        cleaned = cleaned.replacingOccurrences(of: "\\.([A-Z])", with: ". $1", options: .regularExpression)
+        cleaned = cleaned.replacingOccurrences(of: ",([A-Za-z])", with: ", $1", options: .regularExpression)
         
         // Trim whitespace
         cleaned = cleaned.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -682,4 +865,19 @@ enum LiveAIState {
     case thinking
     case responding
     case paused
+}
+
+// MARK: - Conversation Memory Models
+struct ConversationTurn {
+    let userInput: String
+    let aiResponse: String
+    let timestamp: Date
+    let topic: String?  // Optional topic extraction for better context
+    
+    init(userInput: String, aiResponse: String, topic: String? = nil) {
+        self.userInput = userInput
+        self.aiResponse = aiResponse
+        self.timestamp = Date()
+        self.topic = topic
+    }
 }
