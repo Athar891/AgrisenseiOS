@@ -252,3 +252,17 @@
 
 "scheme_nfsm_name" = "জাতীয় খাদ্য সুরক্ষা মিশন";
 "scheme_nfsm_desc" = "চাল, গম, ডাল এবং মোটা শস্যের উৎপাদন বৃদ্ধি করুন।";
+
+/* Profile */
+"profile" = "প্রোফাইল";
+"edit_profile" = "প্রোফাইল সম্পাদনা করুন";
+"order_history" = "অর্ডার ইতিহাস";
+"settings" = "সেটিংস";
+"help_support" = "সাহায্য এবং সমর্থন";
+"logout" = "লগআউট";
+"logout_confirmation" = "লগআউট নিশ্চিতকরণ";
+"logout_message" = "আপনি কি নিশ্চিত যে আপনি লগআউট করতে চান?";
+"farmer" = "কৃষক";
+"seller" = "বিক্রেতা";
+"total_sales" = "মোট বিক্রয়";
+"products" = "পণ্য";

@@ -273,6 +273,18 @@
 "start_shopping_prompt" = "Start shopping in the marketplace to see your orders here";
 
 /* Profile */
+"profile" = "Profile";
+"edit_profile" = "Edit Profile";
+"order_history" = "Order History";
+"settings" = "Settings";
+"help_support" = "Help & Support";
+"logout" = "Logout";
+"logout_confirmation" = "Logout Confirmation";
+"logout_message" = "Are you sure you want to logout?";
+"farmer" = "Farmer";
+"seller" = "Seller";
+"total_sales" = "Total Sales";
+"products" = "Products";
 "settings_view_placeholder" = "Settings View";
 "profile_image_updated" = "Profile image updated successfully!";
 "done" = "Done";

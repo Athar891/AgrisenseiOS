@@ -272,6 +272,18 @@
 "start_shopping_prompt" = "ऑर्डर देखने के लिए मार्केटप्लेस से खरीदारी शुरू करें";
 
 /* Profile */
+"profile" = "प्रोफ़ाइल";
+"edit_profile" = "प्रोफ़ाइल संपादित करें";
+"order_history" = "ऑर्डर इतिहास";
+"settings" = "सेटिंग्स";
+"help_support" = "मदद और सहायता";
+"logout" = "लॉगआउट";
+"logout_confirmation" = "लॉगआउट पुष्टि";
+"logout_message" = "क्या आप वाकई लॉगआउट करना चाहते हैं?";
+"farmer" = "किसान";
+"seller" = "विक्रेता";
+"total_sales" = "कुल बिक्री";
+"products" = "उत्पाद";
 "settings_view_placeholder" = "सेटिंग्स व्यू";
 "profile_image_updated" = "प्रोफ़ाइल छवि सफलतापूर्वक अपडेट हुई!";
 "done" = "हो गया";
