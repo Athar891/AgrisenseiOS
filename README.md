@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![AgriSense Logo](screenshots/logo.png)
+![AgriSense Logo](/Users/athar/Documents/AgriSense(iOS)/Agrisense/Assets.xcassets/AppIcon.appiconset/87.png)
 
 **An intelligent AI-powered agricultural assistant for modern farmers**
 
@@ -59,8 +59,8 @@ The crown jewel of AgriSense - an advanced voice-powered AI assistant with revol
 - Automatic silence detection (1.2s threshold)
 - Seamless state management (Standby → Listening → Thinking → Responding)
 
-![Live AI Assistant](screenshots/live_ai_assistant.png)
-![Voice Interaction](screenshots/voice_interaction.png)
+![Live AI Assistant](Screenshots/screenshots/live_ai_assistant.png)
+![Voice Interaction](Screenshots/screenshots/voice_interaction.png)
 
 ---
 
@@ -95,9 +95,9 @@ Your agricultural command center with real-time insights and actionable data.
   - View detailed market analysis
   - Navigate to weather details
 
-![Dashboard](screenshots/dashboard.png)
-![Weather View](screenshots/weather.png)
-![Market Prices](screenshots/market_prices.png)
+![Dashboard](Screenshots/screenshots/dashboard.png)
+![Weather View](Screenshots/screenshots/weather.png)
+![Market Prices](Screenshots/screenshots/market_prices.png)
 
 ---
 
@@ -137,9 +137,9 @@ Professional-grade crop tracking and management tools.
   - pH and moisture analysis
   - Fertilizer recommendations
 
-![Crop Management](screenshots/crop_management.png)
-![Add Crop](screenshots/add_crop.png)
-![Crop Details](screenshots/crop_details.png)
+![Crop Management](Screenshots/screenshots/crop_management.png)
+![Add Crop](Screenshots/screenshots/add_crop.png)
+![Crop Details](Screenshots/screenshots/crop_details.png)
 
 ---
 
@@ -181,9 +181,9 @@ A comprehensive e-commerce platform for agricultural products and supplies.
   - User data protection
   - Rate limiting to prevent abuse
 
-![Marketplace](screenshots/marketplace.png)
-![Product Details](screenshots/product_details.png)
-![Shopping Cart](screenshots/cart.png)
+![Marketplace](Screenshots/screenshots/marketplace.png)
+![Product Details](Screenshots/screenshots/product_details.png)
+![Shopping Cart](Screenshots/screenshots/cart.png)
 
 ---
 
@@ -220,10 +220,10 @@ Connect with fellow farmers, agricultural experts, and enthusiasts.
   - Technology adoption groups
   - Knowledge sharing platforms
 
-![Community](screenshots/community.png)
-![Discussions](screenshots/discussions.png)
-![Events](screenshots/events.png)
-![Experts](screenshots/experts.png)
+![Community](Screenshots/screenshots/community.png)
+![Discussions](Screenshots/screenshots/discussions.png)
+![Events](Screenshots/screenshots/events.png)
+![Experts](Screenshots/screenshots/experts.png)
 
 ---
 
@@ -264,8 +264,8 @@ Personalized experience with comprehensive user management.
   - Audio and voice settings
   - Accessibility options
 
-![Profile](screenshots/profile.png)
-![Settings](screenshots/settings.png)
+![Profile](Screenshots/screenshots/profile.png)
+![Settings](Screenshots/screenshots/settings.png)
 
 ---
 
@@ -273,37 +273,37 @@ Personalized experience with comprehensive user management.
 
 ### Onboarding & Authentication
 <div align="center">
-<img src="screenshots/splash_screen.png" width="250"/>
-<img src="screenshots/login.png" width="250"/>
-<img src="screenshots/signup.png" width="250"/>
+<img src="Screenshots/screenshots/splash_screen.png" width="250"/>
+<img src="Screenshots/screenshots/choose_role.png" width="250"/>
+<img src="Screenshots/screenshots/login.png" width="250"/>
 </div>
 
 ### Core Features
 <div align="center">
-<img src="screenshots/dashboard_overview.png" width="250"/>
-<img src="screenshots/ai_assistant_orb.png" width="250"/>
-<img src="screenshots/crop_list.png" width="250"/>
+<img src="Screenshots/screenshots/dashboard.png" width="250"/>
+<img src="Screenshots/screenshots/assistant.png" width="250"/>
+<img src="Screenshots/screenshots/crop_management.png" width="250"/>
 </div>
 
 ### AI Assistant in Action
 <div align="center">
-<img src="screenshots/ai_listening.png" width="250"/>
-<img src="screenshots/ai_thinking.png" width="250"/>
-<img src="screenshots/ai_responding.png" width="250"/>
+<img src="Screenshots/screenshots/assistant.png" width="250"/>
+<img src="Screenshots/screenshots/ai_transcription.png" width="250"/>
+<img src="Screenshots/screenshots/ai_discussion.png" width="250"/>
 </div>
 
 ### Marketplace & Shopping
 <div align="center">
-<img src="screenshots/product_catalog.png" width="250"/>
-<img src="screenshots/cart_view.png" width="250"/>
-<img src="screenshots/checkout.png" width="250"/>
+<img src="Screenshots/screenshots/marketplace.png" width="250"/>
+<img src="Screenshots/screenshots/product_details.png" width="250"/>
+<img src="Screenshots/screenshots/cart.png" width="250"/>
 </div>
 
 ### Community Features
 <div align="center">
-<img src="screenshots/discussion_feed.png" width="250"/>
-<img src="screenshots/event_details.png" width="250"/>
-<img src="screenshots/expert_profile.png" width="250"/>
+<img src="Screenshots/screenshots/community.png" width="250"/>
+<img src="Screenshots/screenshots/events.png" width="250"/>
+<img src="Screenshots/screenshots/experts.png" width="250"/>
 </div>
 
 ---
@@ -794,7 +794,7 @@ SOFTWARE.
 **Athar Reza**
 - GitHub: [@Athar891](https://github.com/Athar891)
 - Email: [contact@agrisense.app](mailto:contact@agrisense.app)
-- LinkedIn: [Athar Reza](https://linkedin.com/in/athar-reza)
+- LinkedIn: [Athar Reza](www.linkedin.com/in/mdathar1)
 
 ---
 
