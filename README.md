@@ -806,7 +806,6 @@ SOFTWARE.
 **Athar Reza**
 - GitHub: [@Athar891](https://github.com/Athar891)
 - Email: [contact@agrisense.app](mailto:contact@agrisense.app)
-- LinkedIn: [Athar Reza](www.linkedin.com/in/mdathar1)
 
 ---
 
