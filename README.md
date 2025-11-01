@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![AgriSense Logo](Agrisense/Assets.xcassets/AppIcon.appiconset/108.png)
+<img src="Agrisense/Assets.xcassets/AppIcon.appiconset/108.png" width="150" alt="AgriSense Logo"/>
 
 **An intelligent AI-powered agricultural assistant for modern farmers**
 
@@ -59,8 +59,10 @@ The crown jewel of AgriSense - an advanced voice-powered AI assistant with revol
 - Automatic silence detection (1.2s threshold)
 - Seamless state management (Standby → Listening → Thinking → Responding)
 
-![Live AI Assistant](Screenshots/screenshots/live_ai_assistant.png)
-![Voice Interaction](Screenshots/screenshots/voice_interaction.png)
+<div align="center">
+<img src="Screenshots/screenshots/live_ai_assistant.png" width="350"/>
+<img src="Screenshots/screenshots/voice_interaction.png" width="350"/>
+</div>
 
 ---
 
@@ -95,9 +97,11 @@ Your agricultural command center with real-time insights and actionable data.
   - View detailed market analysis
   - Navigate to weather details
 
-![Dashboard](Screenshots/screenshots/dashboard.png)
-![Weather View](Screenshots/screenshots/weather.png)
-![Market Prices](Screenshots/screenshots/market_prices.png)
+<div align="center">
+<img src="Screenshots/screenshots/dashboard.png" width="250"/>
+<img src="Screenshots/screenshots/weather.png" width="250"/>
+<img src="Screenshots/screenshots/market_prices.png" width="250"/>
+</div>
 
 ---
 
@@ -137,9 +141,11 @@ Professional-grade crop tracking and management tools.
   - pH and moisture analysis
   - Fertilizer recommendations
 
-![Crop Management](Screenshots/screenshots/crop_management.png)
-![Add Crop](Screenshots/screenshots/add_crop.png)
-![Crop Details](Screenshots/screenshots/crop_details.png)
+<div align="center">
+<img src="Screenshots/screenshots/crop_management.png" width="250"/>
+<img src="Screenshots/screenshots/add_crop.png" width="250"/>
+<img src="Screenshots/screenshots/crop_details.png" width="250"/>
+</div>
 
 ---
 
@@ -181,9 +187,11 @@ A comprehensive e-commerce platform for agricultural products and supplies.
   - User data protection
   - Rate limiting to prevent abuse
 
-![Marketplace](Screenshots/screenshots/marketplace.png)
-![Product Details](Screenshots/screenshots/product_details.png)
-![Shopping Cart](Screenshots/screenshots/cart.png)
+<div align="center">
+<img src="Screenshots/screenshots/marketplace.png" width="250"/>
+<img src="Screenshots/screenshots/product_details.png" width="250"/>
+<img src="Screenshots/screenshots/cart.png" width="250"/>
+</div>
 
 ---
 
@@ -220,10 +228,12 @@ Connect with fellow farmers, agricultural experts, and enthusiasts.
   - Technology adoption groups
   - Knowledge sharing platforms
 
-![Community](Screenshots/screenshots/community.png)
-![Discussions](Screenshots/screenshots/discussions.png)
-![Events](Screenshots/screenshots/events.png)
-![Experts](Screenshots/screenshots/experts.png)
+<div align="center">
+<img src="Screenshots/screenshots/community.png" width="200"/>
+<img src="Screenshots/screenshots/discussions.png" width="200"/>
+<img src="Screenshots/screenshots/events.png" width="200"/>
+<img src="Screenshots/screenshots/experts.png" width="200"/>
+</div>
 
 ---
 
@@ -264,8 +274,10 @@ Personalized experience with comprehensive user management.
   - Audio and voice settings
   - Accessibility options
 
-![Profile](Screenshots/screenshots/profile.png)
-![Settings](Screenshots/screenshots/settings.png)
+<div align="center">
+<img src="Screenshots/screenshots/profile.png" width="350"/>
+<img src="Screenshots/screenshots/settings.png" width="350"/>
+</div>
 
 ---
 
@@ -280,30 +292,30 @@ Personalized experience with comprehensive user management.
 
 ### Core Features
 <div align="center">
-<img src="Screenshots/screenshots/dashboard.png" width="50"/>
-<img src="Screenshots/screenshots/assistant.png" width="50"/>
-<img src="Screenshots/screenshots/crop_management.png" width="50"/>
+<img src="Screenshots/screenshots/dashboard.png" width="250"/>
+<img src="Screenshots/screenshots/assistant.png" width="250"/>
+<img src="Screenshots/screenshots/crop_management.png" width="250"/>
 </div>
 
 ### AI Assistant in Action
 <div align="center">
-<img src="Screenshots/screenshots/assistant.png" width="50"/>
-<img src="Screenshots/screenshots/ai_transcription.png" width="50"/>
-<img src="Screenshots/screenshots/ai_discussion.png" width="50"/>
+<img src="Screenshots/screenshots/assistant.png" width="250"/>
+<img src="Screenshots/screenshots/ai_transcription.png" width="250"/>
+<img src="Screenshots/screenshots/ai_discussion.png" width="250"/>
 </div>
 
 ### Marketplace & Shopping
 <div align="center">
-<img src="Screenshots/screenshots/marketplace.png" width="50"/>
-<img src="Screenshots/screenshots/product_details.png" width="50"/>
-<img src="Screenshots/screenshots/cart.png" width="50"/>
+<img src="Screenshots/screenshots/marketplace.png" width="250"/>
+<img src="Screenshots/screenshots/product_details.png" width="250"/>
+<img src="Screenshots/screenshots/cart.png" width="250"/>
 </div>
 
 ### Community Features
 <div align="center">
-<img src="Screenshots/screenshots/community.png" width="50"/>
-<img src="Screenshots/screenshots/events.png" width="50"/>
-<img src="Screenshots/screenshots/experts.png" width="50"/>
+<img src="Screenshots/screenshots/community.png" width="250"/>
+<img src="Screenshots/screenshots/events.png" width="250"/>
+<img src="Screenshots/screenshots/experts.png" width="250"/>
 </div>
 
 ---
