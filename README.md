@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![AgriSense Logo](/Users/athar/Documents/AgriSense(iOS)/Agrisense/Assets.xcassets/AppIcon.appiconset/87.png)
+![AgriSense Logo](Agrisense/Assets.xcassets/AppIcon.appiconset/108.png)
 
 **An intelligent AI-powered agricultural assistant for modern farmers**
 
@@ -280,30 +280,30 @@ Personalized experience with comprehensive user management.
 
 ### Core Features
 <div align="center">
-<img src="Screenshots/screenshots/dashboard.png" width="250"/>
-<img src="Screenshots/screenshots/assistant.png" width="250"/>
-<img src="Screenshots/screenshots/crop_management.png" width="250"/>
+<img src="Screenshots/screenshots/dashboard.png" width="50"/>
+<img src="Screenshots/screenshots/assistant.png" width="50"/>
+<img src="Screenshots/screenshots/crop_management.png" width="50"/>
 </div>
 
 ### AI Assistant in Action
 <div align="center">
-<img src="Screenshots/screenshots/assistant.png" width="250"/>
-<img src="Screenshots/screenshots/ai_transcription.png" width="250"/>
-<img src="Screenshots/screenshots/ai_discussion.png" width="250"/>
+<img src="Screenshots/screenshots/assistant.png" width="50"/>
+<img src="Screenshots/screenshots/ai_transcription.png" width="50"/>
+<img src="Screenshots/screenshots/ai_discussion.png" width="50"/>
 </div>
 
 ### Marketplace & Shopping
 <div align="center">
-<img src="Screenshots/screenshots/marketplace.png" width="250"/>
-<img src="Screenshots/screenshots/product_details.png" width="250"/>
-<img src="Screenshots/screenshots/cart.png" width="250"/>
+<img src="Screenshots/screenshots/marketplace.png" width="50"/>
+<img src="Screenshots/screenshots/product_details.png" width="50"/>
+<img src="Screenshots/screenshots/cart.png" width="50"/>
 </div>
 
 ### Community Features
 <div align="center">
-<img src="Screenshots/screenshots/community.png" width="250"/>
-<img src="Screenshots/screenshots/events.png" width="250"/>
-<img src="Screenshots/screenshots/experts.png" width="250"/>
+<img src="Screenshots/screenshots/community.png" width="50"/>
+<img src="Screenshots/screenshots/events.png" width="50"/>
+<img src="Screenshots/screenshots/experts.png" width="50"/>
 </div>
 
 ---
