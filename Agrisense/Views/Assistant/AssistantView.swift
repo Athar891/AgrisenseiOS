@@ -621,35 +621,10 @@ struct MessageInputView: View {
             // Main input container
             HStack(spacing: 12) {
                 // Integrated search bar with all controls
-                HStack(spacing: 12) {
-                    // Plus button inside search bar (now enabled)
-                    Button(action: onAttachment) {
-                        Image(systemName: "plus")
-                            .font(.system(size: 18, weight: .medium))
-                            .foregroundColor(.green)
-                            .frame(width: 28, height: 28)
-                    }
-                    
-                    // Tools button
-                    Button(action: onQuickActions) {
-                        HStack(spacing: 6) {
-                            Image(systemName: "slider.horizontal.3")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(.green)
-                            
-                            Text(localizationManager.localizedString(for: "assistant_tools"))
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(.green)
-                        }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(Color.green.opacity(0.1))
-                        .cornerRadius(16)
-                    }
-                    
-                    // Attached documents display and text input area
+                VStack(alignment: .leading, spacing: 12) {
+                    // Text input area at the top - "Ask me anything" as placeholder
                     VStack(alignment: .leading, spacing: 8) {
-                        // Display attached documents
+                        // Display attached documents above text field
                         if !attachedDocuments.isEmpty {
                             ScrollView(.horizontal, showsIndicators: false) {
                                 HStack(spacing: 8) {
@@ -662,49 +637,69 @@ struct MessageInputView: View {
                             }
                         }
                         
-                        // Text input
+                        // Text input with "Ask me anything" as placeholder
                         TextField(localizationManager.localizedString(for: "assistant_input_placeholder"), text: $text, axis: .vertical)
                             .textFieldStyle(PlainTextFieldStyle())
+                            .font(.system(size: 16, weight: .medium))
                             .foregroundColor(.primary)
                             .lineLimit(1...4)
                             .focused(isTextFieldFocused)
                             .frame(minHeight: 20)
                     }
+                    .padding(.leading, 4)
                     
-                    Spacer(minLength: 0)
-                    
-                    // Right side controls
-                    HStack(spacing: 8) {
-                        // Voice input button
-                        Button(action: onVoiceRecord) {
-                            Image(systemName: isListening ? "stop.circle.fill" : "mic.fill")
-                                .font(.system(size: 16, weight: .medium))
-                                .foregroundColor(isListening ? .red : .secondary)
+                    HStack(spacing: 12) {
+                        // Plus button
+                        Button(action: onAttachment) {
+                            Image(systemName: "plus")
+                                .font(.system(size: 18, weight: .medium))
+                                .foregroundColor(.green)
                                 .frame(width: 28, height: 28)
                         }
                         
-                        // Live Interaction / Send button
-                        Button(action: {
-                            if text.isEmpty {
-                                // Launch live interaction when text is empty
-                                onLiveInteraction()
-                            } else {
-                                // Send message when text is present
-                                onSend(text)
-                                #if canImport(UIKit)
-                                UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-                                #endif
-                                isTextFieldFocused.wrappedValue = false
-                            }
-                        }) {
-                            Image(systemName: text.isEmpty ? "waveform.path.ecg" : "arrow.up")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundColor(.white)
-                                .frame(width: 32, height: 32)
-                                .background(text.isEmpty ? Color.blue : Color.green)
-                                .clipShape(Circle())
+                        // Tools button (icon only, no text label)
+                        Button(action: onQuickActions) {
+                            Image(systemName: "slider.horizontal.3")
+                                .font(.system(size: 18, weight: .medium))
+                                .foregroundColor(.green)
+                                .frame(width: 28, height: 28)
                         }
-                        .animation(.easeInOut(duration: 0.2), value: text.isEmpty)
+                        
+                        Spacer(minLength: 0)
+                        
+                        // Right side controls
+                        HStack(spacing: 8) {
+                            // Voice input button
+                            Button(action: onVoiceRecord) {
+                                Image(systemName: isListening ? "stop.circle.fill" : "mic.fill")
+                                    .font(.system(size: 16, weight: .medium))
+                                    .foregroundColor(isListening ? .red : .secondary)
+                                    .frame(width: 28, height: 28)
+                            }
+                            
+                            // Live Interaction / Send button
+                            Button(action: {
+                                if text.isEmpty {
+                                    // Launch live interaction when text is empty
+                                    onLiveInteraction()
+                                } else {
+                                    // Send message when text is present
+                                    onSend(text)
+                                    #if canImport(UIKit)
+                                    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                                    #endif
+                                    isTextFieldFocused.wrappedValue = false
+                                }
+                            }) {
+                                Image(systemName: text.isEmpty ? "waveform.path.ecg" : "arrow.up")
+                                    .font(.system(size: 16, weight: .bold))
+                                    .foregroundColor(.white)
+                                    .frame(width: 32, height: 32)
+                                    .background(text.isEmpty ? Color.blue : Color.green)
+                                    .clipShape(Circle())
+                            }
+                            .animation(.easeInOut(duration: 0.2), value: text.isEmpty)
+                        }
                     }
                 }
                 .padding(.horizontal, 16)

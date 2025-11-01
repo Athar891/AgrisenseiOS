@@ -17,7 +17,6 @@ struct OrderHistoryView: View {
     
     enum OrderStatusFilter: String, CaseIterable {
         case all = "all"
-        case active = "active"
         case delivered = "delivered"
         case cancelled = "cancelled"
         
@@ -33,8 +32,6 @@ struct OrderHistoryView: View {
         switch selectedFilter {
         case .all:
             break
-        case .active:
-            orders = orders.filter { $0.isActive }
         case .delivered:
             orders = orders.filter { $0.status == .delivered }
         case .cancelled:
@@ -52,13 +49,6 @@ struct OrderHistoryView: View {
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
-                // Order Summary Stats
-                if let summary = orderManager.orderSummary {
-                    OrderSummaryStatsView(summary: summary)
-                        .padding()
-                        .background(Color(.systemGray6))
-                }
-                
                 // Search and Filter
                 VStack(spacing: 12) {
                     // Search Bar
@@ -287,7 +277,6 @@ struct EmptyOrdersView: View {
     private var emptyTitle: String {
         switch filter {
         case .all: return "No orders yet"
-        case .active: return "No active orders"
         case .delivered: return "No delivered orders"
         case .cancelled: return "No cancelled orders"
         }
@@ -296,7 +285,6 @@ struct EmptyOrdersView: View {
     private var emptyMessage: String {
         switch filter {
         case .all: return "Start shopping in the marketplace to see your orders here"
-        case .active: return "You don't have any active orders at the moment"
         case .delivered: return "No orders have been delivered yet"
         case .cancelled: return "No orders have been cancelled"
         }

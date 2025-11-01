@@ -17,6 +17,9 @@ struct EditProfileView: View {
     @State private var phoneNumber: String = ""
     @State private var location: String = ""
     @State private var selectedPhoto: PhotosPickerItem?
+    @State private var profileImage: UIImage?
+    @State private var imageForCropping: UIImage?
+    @State private var showImageCropper = false
     @State private var isUploading = false
     @State private var showError = false
     @State private var errorMessage = ""
@@ -37,7 +40,49 @@ struct EditProfileView: View {
                                 ))
                                 .frame(width: 100, height: 100)
                             
-                            if let user = userManager.currentUser {
+                            // Display profile image if available
+                            if let profileImage = profileImage {
+                                Image(uiImage: profileImage)
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(width: 100, height: 100)
+                                    .clipShape(Circle())
+                            } else if let user = userManager.currentUser, let imageURL = user.profileImage, !imageURL.isEmpty {
+                                AsyncImage(url: URL(string: imageURL)) { phase in
+                                    switch phase {
+                                    case .success(let image):
+                                        image
+                                            .resizable()
+                                            .scaledToFill()
+                                            .frame(width: 100, height: 100)
+                                            .clipShape(Circle())
+                                    case .failure(let error):
+                                        VStack {
+                                            Text(user.name.prefix(1).uppercased())
+                                                .font(.system(size: 40, weight: .bold))
+                                                .foregroundColor(.white)
+                                            #if DEBUG
+                                            Text("Load failed")
+                                                .font(.caption2)
+                                                .foregroundColor(.red)
+                                            #endif
+                                        }
+                                    case .empty:
+                                        VStack {
+                                            Text(user.name.prefix(1).uppercased())
+                                                .font(.system(size: 40, weight: .bold))
+                                                .foregroundColor(.white)
+                                            ProgressView()
+                                                .tint(.white)
+                                                .scaleEffect(0.7)
+                                        }
+                                    @unknown default:
+                                        Text(user.name.prefix(1).uppercased())
+                                            .font(.system(size: 40, weight: .bold))
+                                            .foregroundColor(.white)
+                                    }
+                                }
+                            } else if let user = userManager.currentUser {
                                 Text(user.name.prefix(1).uppercased())
                                     .font(.system(size: 40, weight: .bold))
                                     .foregroundColor(.white)
@@ -116,6 +161,23 @@ struct EditProfileView: View {
                     location = user.location ?? ""
                 }
             }
+            .onChange(of: selectedPhoto) { newValue in
+                Task {
+                    if let newValue = newValue {
+                        await loadImageForCropping(from: newValue)
+                    }
+                }
+            }
+            .sheet(isPresented: $showImageCropper) {
+                if let image = imageForCropping {
+                    ImageCropperView(image: image) { croppedImage in
+                        Task {
+                            await uploadCroppedImage(croppedImage)
+                        }
+                    }
+                    .environmentObject(localizationManager)
+                }
+            }
             .overlay {
                 if isUploading {
                     ZStack {
@@ -156,6 +218,95 @@ struct EditProfileView: View {
                     errorMessage = error.localizedDescription
                     showError = true
                 }
+            }
+        }
+    }
+    
+    private func loadImageForCropping(from item: PhotosPickerItem) async {
+        do {
+            // Load the image data from PhotosPickerItem
+            guard let data = try await item.loadTransferable(type: Data.self) else {
+                await MainActor.run {
+                    errorMessage = "Failed to load selected image"
+                    showError = true
+                }
+                return
+            }
+            
+            #if DEBUG
+            print("✅ Image data loaded successfully, size: \(data.count) bytes")
+            // Check file signature
+            let bytes = [UInt8](data.prefix(12))
+            print("📋 File signature: \(bytes.prefix(8).map { String(format: "%02X", $0) }.joined(separator: " "))")
+            #endif
+            
+            // Create UIImage from data
+            guard let uiImage = UIImage(data: data) else {
+                await MainActor.run {
+                    errorMessage = "Failed to process selected image. Please try a different image."
+                    showError = true
+                }
+                return
+            }
+            
+            #if DEBUG
+            print("✅ UIImage created successfully, size: \(uiImage.size)")
+            #endif
+            
+            // Show cropper
+            await MainActor.run {
+                imageForCropping = uiImage
+                showImageCropper = true
+            }
+            
+        } catch {
+            #if DEBUG
+            print("❌ Error loading image: \(error.localizedDescription)")
+            if let nsError = error as NSError? {
+                print("❌ Error domain: \(nsError.domain), code: \(nsError.code)")
+            }
+            #endif
+            await MainActor.run {
+                errorMessage = error.localizedDescription
+                showError = true
+            }
+        }
+    }
+    
+    private func uploadCroppedImage(_ croppedImage: UIImage) async {
+        await MainActor.run {
+            isUploading = true
+        }
+        
+        do {
+            // Update local preview
+            await MainActor.run {
+                profileImage = croppedImage
+            }
+            
+            // Upload to Cloudinary
+            let imageUrl = try await userManager.uploadProfileImage(croppedImage)
+            
+            #if DEBUG
+            print("✅ Image uploaded successfully to: \(imageUrl)")
+            print("✅ Current user profile image: \(userManager.currentUser?.profileImage ?? "nil")")
+            #endif
+            
+            await MainActor.run {
+                isUploading = false
+            }
+        } catch {
+            #if DEBUG
+            print("❌ Error uploading image: \(error.localizedDescription)")
+            if let nsError = error as NSError? {
+                print("❌ Error domain: \(nsError.domain), code: \(nsError.code)")
+            }
+            #endif
+            await MainActor.run {
+                profileImage = nil
+                errorMessage = error.localizedDescription
+                showError = true
+                isUploading = false
             }
         }
     }

@@ -95,6 +95,19 @@ struct ProfileView: View {
                 // Initialize OrderManager with current user's ID
                 if let userId = userManager.currentUser?.id {
                     orderManager = OrderManager(userId: userId)
+                    #if DEBUG
+                    print("📱 ProfileView appeared")
+                    print("👤 Current user ID: \(userId)")
+                    print("🖼️ Profile image URL: \(userManager.currentUser?.profileImage ?? "nil")")
+                    #endif
+                    // Refresh user data from Firestore to ensure profile image is up to date
+                    Task {
+                        await userManager.loadUserFromFirestore(userId)
+                        #if DEBUG
+                        print("♻️ User data refreshed")
+                        print("🖼️ Profile image URL after refresh: \(userManager.currentUser?.profileImage ?? "nil")")
+                        #endif
+                    }
                 }
             }
             .sheet(isPresented: $showingEditProfile) {
@@ -129,6 +142,7 @@ struct ProfileView: View {
 struct ProfileHeaderView: View {
     @EnvironmentObject var userManager: UserManager
     @EnvironmentObject var localizationManager: LocalizationManager
+    @State private var imageKey = UUID()
     
     var body: some View {
         VStack(spacing: 16) {
@@ -143,14 +157,49 @@ struct ProfileHeaderView: View {
                     .frame(width: 100, height: 100)
                 
                 if let user = userManager.currentUser {
-                    Text(user.name.prefix(1).uppercased())
-                        .font(.system(size: 40, weight: .bold))
-                        .foregroundColor(.white)
+                    if let imageURL = user.profileImage, !imageURL.isEmpty {
+                        #if DEBUG
+                        let _ = print("🖼️ Loading profile image from: \(imageURL)")
+                        #endif
+                        AsyncImage(url: URL(string: imageURL)) { phase in
+                            switch phase {
+                            case .success(let image):
+                                image
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(width: 100, height: 100)
+                                    .clipShape(Circle())
+                            case .failure(let error):
+                                VStack {
+                                    Text(user.name.prefix(1).uppercased())
+                                        .font(.system(size: 40, weight: .bold))
+                                        .foregroundColor(.white)
+                                }
+                            case .empty:
+                                VStack {
+                                    ProgressView()
+                                        .tint(.white)
+                                }
+                            @unknown default:
+                                Text(user.name.prefix(1).uppercased())
+                                    .font(.system(size: 40, weight: .bold))
+                                    .foregroundColor(.white)
+                            }
+                        }
+                        .id(imageKey)
+                    } else {
+                        Text(user.name.prefix(1).uppercased())
+                            .font(.system(size: 40, weight: .bold))
+                            .foregroundColor(.white)
+                    }
                 } else {
                     Image(systemName: "person.fill")
                         .font(.system(size: 40))
                         .foregroundColor(.white)
                 }
+            }
+            .onChange(of: userManager.currentUser?.profileImage) { _ in
+                imageKey = UUID()
             }
             
             // User Info

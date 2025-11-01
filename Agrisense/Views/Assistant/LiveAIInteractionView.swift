@@ -113,6 +113,14 @@ struct LiveAIInteractionView: View {
                 print("✅ Wake word detected in view")
             }
         }
+        .onChange(of: liveAIService.currentSubtitle) { _, newSubtitle in
+            // Force view update when subtitle changes
+            print("📝 Subtitle updated: \(newSubtitle.prefix(50))")
+        }
+        .onChange(of: liveAIService.ttsService.isSpeaking) { _, isSpeaking in
+            // Force view update when TTS state changes
+            print("🔊 TTS speaking state: \(isSpeaking)")
+        }
     }
     
     // MARK: - Computed Properties
@@ -133,6 +141,7 @@ struct LiveAIInteractionView: View {
             Button(action: {
                 withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
                     liveAIService.toggleSubtitles()
+                    print("🎬 Subtitles toggled: \(liveAIService.subtitlesEnabled)")
                 }
             }) {
                 Image(systemName: liveAIService.subtitlesEnabled ? "captions.bubble.fill" : "captions.bubble")
@@ -141,9 +150,9 @@ struct LiveAIInteractionView: View {
                     .frame(width: 40, height: 40)
                     .background(
                         Circle()
-                            .fill(.regularMaterial)
+                            .fill(colorScheme == .dark ? Color.white.opacity(0.2) : Color.black.opacity(0.1))
                     )
-                    .scaleEffect(liveAIService.subtitlesEnabled ? 1.0 : 0.95)
+                    .scaleEffect(liveAIService.subtitlesEnabled ? 1.05 : 0.95)
             }
             .animation(.spring(response: 0.3, dampingFraction: 0.7), value: liveAIService.subtitlesEnabled)
         }
@@ -174,7 +183,9 @@ struct LiveAIInteractionView: View {
     private var statusText: String {
         switch liveAIService.currentState {
         case .standby:
-            return localizationManager.localizedString(for: "live_ai_standby")
+            return liveAIService.voiceService.isRecording ? 
+                   localizationManager.localizedString(for: "live_ai_listening_continuous") : 
+                   localizationManager.localizedString(for: "live_ai_standby")
         case .listening:
             return localizationManager.localizedString(for: "live_ai_listening")
         case .thinking:
@@ -187,32 +198,45 @@ struct LiveAIInteractionView: View {
     }
     
     private var centralContent: some View {
-        Group {
-            if cameraService.permissionDenied {
-                // Camera permission denied message with retry options
-                cameraPermissionDeniedView
-            } else if cameraService.error != nil {
-                // Camera error with retry option
-                cameraErrorView
-            } else if cameraService.isCameraOn && cameraService.isAuthorized {
-                // Live camera feed
-                CameraPreview(session: cameraService.session)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16)
-                            .stroke(
-                                LinearGradient(
-                                    colors: [Color.green.opacity(0.3), Color.blue.opacity(0.3)],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ),
-                                lineWidth: 2
-                            )
-                    )
-                    .padding(.horizontal, 20)
-            } else {
-                // Standby Animation (ChatGPT-style sphere)
-                standbyAnimationView
+        ZStack {
+            Group {
+                if cameraService.permissionDenied {
+                    // Camera permission denied message with retry options
+                    cameraPermissionDeniedView
+                } else if cameraService.error != nil {
+                    // Camera error with retry option
+                    cameraErrorView
+                } else if cameraService.isCameraOn && cameraService.isAuthorized {
+                    // Live camera feed
+                    CameraPreview(session: cameraService.session)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16)
+                                .stroke(
+                                    LinearGradient(
+                                        colors: [.blue.opacity(0.5), .purple.opacity(0.5)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    lineWidth: 2
+                                )
+                        )
+                        .padding(.horizontal, 20)
+                } else {
+                    // Standby Animation (ChatGPT-style sphere)
+                    standbyAnimationView
+                }
+            }
+            
+            // YouTube-style subtitles overlay at bottom
+            if liveAIService.subtitlesEnabled && !currentSubtitle.isEmpty {
+                VStack {
+                    Spacer()
+                    subtitleView
+                        .padding(.bottom, 100)
+                }
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .animation(.spring(response: 0.3, dampingFraction: 0.8), value: currentSubtitle)
             }
         }
     }
@@ -263,13 +287,95 @@ struct LiveAIInteractionView: View {
     
     private var standbyAnimationView: some View {
         VStack(spacing: 30) {
-            // Lottie-Based Animated Orb
+            // Lottie-Based Animated Orb with enhanced state transitions
             LottieOrbAnimation(
                 currentState: liveAIService.currentState,
                 audioLevel: liveAIService.audioLevel,
                 isListening: liveAIService.currentState == .listening
             )
+            .animation(.spring(response: 0.5, dampingFraction: 0.7), value: liveAIService.currentState)
+            
+            // State text indicator below orb
+            Text(stateDescription)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(stateColor)
+                .opacity(0.8)
+                .animation(.easeInOut(duration: 0.3), value: liveAIService.currentState)
         }
+    }
+    
+    private var stateDescription: String {
+        // If user is speaking while AI state is responding, show interruption
+        if liveAIService.currentState == .listening && 
+           !liveAIService.voiceService.transcriptionText.isEmpty {
+            return "Listening to you..."
+        }
+        
+        switch liveAIService.currentState {
+        case .standby:
+            return "Ready to listen"
+        case .listening:
+            return "Listening..."
+        case .thinking:
+            return "Thinking..."
+        case .responding:
+            return "Speaking..."
+        case .paused:
+            return "Paused"
+        }
+    }
+    
+    private var stateColor: Color {
+        switch liveAIService.currentState {
+        case .standby:
+            return .green
+        case .listening:
+            return .blue
+        case .thinking:
+            return .orange
+        case .responding:
+            return .purple
+        case .paused:
+            return .gray
+        }
+    }
+    
+    // YouTube-style subtitle view
+    private var subtitleView: some View {
+        Text(currentSubtitle)
+            .font(.system(size: 16, weight: .medium))
+            .foregroundColor(.white)
+            .multilineTextAlignment(.center)
+            .lineLimit(3)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 12)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color.black.opacity(0.8))
+            )
+            .padding(.horizontal, 40)
+            .shadow(color: .black.opacity(0.3), radius: 5, x: 0, y: 2)
+            .transition(.move(edge: .bottom).combined(with: .opacity))
+    }
+    
+    private var currentSubtitle: String {
+        guard liveAIService.subtitlesEnabled else { return "" }
+        
+        // Show AI response when speaking
+        if liveAIService.ttsService.isSpeaking && !liveAIService.currentSubtitle.isEmpty {
+            return "🤖 \(liveAIService.currentSubtitle)"
+        }
+        // Show user transcription when listening
+        else if liveAIService.currentState == .listening && !liveAIService.voiceService.transcriptionText.isEmpty {
+            return "👤 \(liveAIService.voiceService.transcriptionText)"
+        }
+        // Show thinking state
+        else if liveAIService.currentState == .thinking {
+            return "💭 Thinking..."
+        }
+        
+        return ""
     }
     
     private var cameraPermissionDeniedView: some View {

@@ -122,12 +122,33 @@ struct FallbackCircleAnimation: View {
     
     @State private var pulseScale: CGFloat = 1.0
     @State private var rotationAngle: Double = 0
+    @State private var ringScale: CGFloat = 1.0
     
     var body: some View {
         ZStack {
-            // Outer glow/shadow
+            // Dynamic colored rings based on state
+            ForEach(0..<3) { index in
+                Circle()
+                    .stroke(stateColor.opacity(0.3 - Double(index) * 0.1), lineWidth: 2)
+                    .frame(width: CGFloat(200 + index * 40), height: CGFloat(200 + index * 40))
+                    .scaleEffect(ringScale + CGFloat(index) * 0.05)
+                    .opacity(isActiveState ? 1.0 : 0.3)
+            }
+            
+            // Outer glow/shadow with state color
             Circle()
-                .fill(Color.white.opacity(0.3))
+                .fill(
+                    RadialGradient(
+                        colors: [
+                            stateColor.opacity(0.4),
+                            stateColor.opacity(0.1),
+                            Color.clear
+                        ],
+                        center: .center,
+                        startRadius: 90,
+                        endRadius: 130
+                    )
+                )
                 .frame(width: 260, height: 260)
                 .blur(radius: 20)
                 .scaleEffect(pulseScale)
@@ -136,17 +157,17 @@ struct FallbackCircleAnimation: View {
             Circle()
                 .fill(Color.white)
                 .frame(width: 180, height: 180)
-                .shadow(color: .black.opacity(0.2), radius: 15, x: 0, y: 8)
+                .shadow(color: stateColor.opacity(0.3), radius: 15, x: 0, y: 8)
                 .shadow(color: .white.opacity(0.8), radius: 10, x: 0, y: -5)
                 .scaleEffect(dynamicScale)
             
-            // Inner gradient overlay
+            // Inner gradient overlay with state color
             Circle()
                 .fill(
                     RadialGradient(
                         colors: [
-                            Color.white.opacity(0.8),
-                            Color.white.opacity(0.4),
+                            Color.white.opacity(0.9),
+                            stateColor.opacity(0.2),
                             Color.clear
                         ],
                         center: .center,
@@ -161,6 +182,34 @@ struct FallbackCircleAnimation: View {
         .onAppear {
             startAnimations()
         }
+        .onChange(of: currentState) { _, _ in
+            // Animate state changes
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                ringScale = 1.1
+            }
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.7).delay(0.1)) {
+                ringScale = 1.0
+            }
+        }
+    }
+    
+    private var stateColor: Color {
+        switch currentState {
+        case .standby:
+            return .green
+        case .listening:
+            return .blue
+        case .thinking:
+            return .orange
+        case .responding:
+            return .purple
+        case .paused:
+            return .gray
+        }
+    }
+    
+    private var isActiveState: Bool {
+        currentState != .standby && currentState != .paused
     }
     
     private var dynamicScale: CGFloat {
@@ -187,17 +236,55 @@ struct FallbackCircleAnimation: View {
     }
     
     private func startAnimations() {
-        // Gentle pulse
+        // Dynamic pulse based on state
+        let pulseDuration: Double = {
+            switch currentState {
+            case .standby:
+                return 2.5
+            case .listening:
+                return 1.2
+            case .thinking:
+                return 0.8
+            case .responding:
+                return 1.0
+            case .paused:
+                return 3.0
+            }
+        }()
+        
         withAnimation(
-            Animation.easeInOut(duration: 2.5)
+            Animation.easeInOut(duration: pulseDuration)
                 .repeatForever(autoreverses: true)
         ) {
-            pulseScale = 1.1
+            pulseScale = currentState == .thinking ? 1.15 : 1.1
         }
         
-        // Slow rotation
+        // Ring pulse for active states
         withAnimation(
-            Animation.linear(duration: 20)
+            Animation.easeInOut(duration: 1.5)
+                .repeatForever(autoreverses: true)
+        ) {
+            ringScale = 1.05
+        }
+        
+        // Rotation speed based on state
+        let rotationDuration: Double = {
+            switch currentState {
+            case .standby:
+                return 20.0
+            case .listening:
+                return 15.0
+            case .thinking:
+                return 8.0
+            case .responding:
+                return 12.0
+            case .paused:
+                return 30.0
+            }
+        }()
+        
+        withAnimation(
+            Animation.linear(duration: rotationDuration)
                 .repeatForever(autoreverses: false)
         ) {
             rotationAngle = 360

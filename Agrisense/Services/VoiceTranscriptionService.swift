@@ -126,15 +126,25 @@ class VoiceTranscriptionService: NSObject, ObservableObject {
             if !audioEngine.isRunning {
                 try audioEngine.start()
                 // Allow audio to stabilize
-                try await Task.sleep(nanoseconds: 100_000_000) // 100ms
+                try await Task.sleep(nanoseconds: 150_000_000) // 150ms for better stability
             }
             
             isPaused = false
-            print("[VoiceTranscription] ▶️ Resumed (TTS finished)")
+            print("[VoiceTranscription] ▶️ Resumed - ready for continuous listening")
         } catch {
             print("[VoiceTranscription] ❌ Failed to resume: \(error)")
+            // Try to restart recording completely if resume fails
             isPaused = false
+            await restartRecording()
         }
+    }
+    
+    /// Restart recording if pause/resume fails
+    private func restartRecording() async {
+        print("[VoiceTranscription] 🔄 Restarting recording for continuous listening")
+        stopRecording()
+        try? await Task.sleep(nanoseconds: 200_000_000) // 200ms delay
+        await startRecording()
     }
     
     func stopRecording() {

@@ -372,6 +372,7 @@
 /* Live AI Interaction */
 "live_ai_title" = "Live";
 "live_ai_standby" = "Standby";
+"live_ai_listening_continuous" = "Ready (Listening)";
 "live_ai_listening" = "Listening";
 "live_ai_thinking" = "Thinking";
 "live_ai_responding" = "Responding";
@@ -450,3 +451,11 @@
 
 "scheme_nfsm_name" = "National Food Security Mission";
 "scheme_nfsm_desc" = "Increase production of rice, wheat, pulses, and coarse cereals.";
+
+/* Image Cropper */
+"crop_image" = "Crop Image";
+"choose" = "Choose";
+"move_and_scale" = "Move and scale to adjust";
+"pinch_to_zoom" = "Pinch to zoom";
+"drag_to_move" = "Drag to move";
+"processing" = "Processing...";

@@ -11,7 +11,7 @@ struct DashboardView: View {
     @EnvironmentObject var userManager: UserManager
     @EnvironmentObject var appState: AppState
     @EnvironmentObject var localizationManager: LocalizationManager
-    @StateObject private var marketPriceManager = MarketPriceManager()
+    @StateObject private var dashboardMandiPriceManager = DashboardMandiPriceManager()
     @State private var showingNotifications = false
     
     var body: some View {
@@ -22,7 +22,7 @@ struct DashboardView: View {
                     DashboardHeader()
                     
                     // Quick Stats Cards
-                    DashboardQuickStatsSection(marketPriceManager: marketPriceManager)
+                    DashboardQuickStatsSection(dashboardMandiPriceManager: dashboardMandiPriceManager)
                     
                     // Main Content based on User Type
                     if userManager.currentUser?.userType == .farmer {
@@ -164,7 +164,7 @@ struct WeatherWidget: View {
 struct DashboardQuickStatsSection: View {
     @EnvironmentObject var userManager: UserManager
     @EnvironmentObject var localizationManager: LocalizationManager
-    @ObservedObject var marketPriceManager: MarketPriceManager
+    @ObservedObject var dashboardMandiPriceManager: DashboardMandiPriceManager
 
     private var activeCropsCount: Int {
         userManager.currentUser?.crops.filter { $0.currentGrowthStage != .harvest }.count ?? 0
@@ -180,7 +180,7 @@ struct DashboardQuickStatsSection: View {
                 DashboardStatCard(title: localizationManager.localizedString(for: "active_crops"), value: "\(activeCropsCount)", icon: "leaf.fill", color: .green)
                 DashboardStatCard(title: localizationManager.localizedString(for: "harvest_ready"), value: "\(harvestReadyCount)", icon: "scissors", color: .orange)
                 DashboardStatCard(title: localizationManager.localizedString(for: "soil_health"), value: "85%", icon: "drop.fill", color: .blue)
-                DashboardStatCard(title: marketPriceManager.currentCropName, value: marketPriceManager.currentMarketPrice, icon: "indianrupeesign.circle.fill", color: .purple)
+                DashboardStatCard(title: dashboardMandiPriceManager.currentCommodityName, value: dashboardMandiPriceManager.currentPrice, icon: "indianrupeesign.circle.fill", color: .purple)
             } else {
                 DashboardStatCard(title: localizationManager.localizedString(for: "active_listings"), value: "8", icon: "tag.fill", color: .green)
                 DashboardStatCard(title: localizationManager.localizedString(for: "orders_today"), value: "5", icon: "cart.fill", color: .blue)

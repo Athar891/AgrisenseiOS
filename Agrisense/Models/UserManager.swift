@@ -237,20 +237,30 @@ class UserManager: ObservableObject {
             throw NSError(domain: "RateLimitError", code: 429, userInfo: [NSLocalizedDescriptionKey: errorMessage])
         }
         
+        // Basic validation - only check dimensions (cropper handles aspect ratio)
+        let imageSize = image.size
+        if imageSize.width < 50 || imageSize.height < 50 {
+            let errorMessage = "Image is too small. Please select a larger image."
+            profileUpdateError = errorMessage
+            throw NSError(domain: "ImageValidationError", code: 0, userInfo: [NSLocalizedDescriptionKey: errorMessage])
+        }
+        
+        if imageSize.width > 8192 || imageSize.height > 8192 {
+            let errorMessage = "Image is too large. Please select a smaller image."
+            profileUpdateError = errorMessage
+            throw NSError(domain: "ImageValidationError", code: 0, userInfo: [NSLocalizedDescriptionKey: errorMessage])
+        }
+        
+        // Process and compress the image
         guard let imageData = flattenImageForUpload(image) else {
             let errorMessage = "Failed to process image for upload. Please try a different image."
             profileUpdateError = errorMessage
             throw NSError(domain: "ImageProcessingError", code: 0, userInfo: [NSLocalizedDescriptionKey: errorMessage])
         }
         
-        // Validate image with security checks
-        do {
-            _ = try ImageValidator.validate(imageData: imageData, config: .profile)
-        } catch {
-            let errorMessage = "Invalid image. Please use a valid JPEG or PNG file."
-            profileUpdateError = errorMessage
-            throw NSError(domain: "ImageValidationError", code: 0, userInfo: [NSLocalizedDescriptionKey: errorMessage])
-        }
+        #if DEBUG
+        print("✅ Image processed successfully, size: \(imageData.count) bytes")
+        #endif
         
         do {
             // Upload image to Cloudinary with timestamp to ensure unique URL
@@ -291,25 +301,62 @@ class UserManager: ObservableObject {
     private func flattenImageForUpload(_ image: UIImage) -> Data? {
         // Target up to 5 MB for profile images
         let maxKB = 5 * 1024
+        
+        #if DEBUG
+        print("📸 Original image size: \(image.size), scale: \(image.scale)")
+        #endif
+        
+        // Use ImageCompressor to get optimized JPEG data
         guard let compressedData = ImageCompressor.compressImageData(image, maxSizeKB: maxKB) else {
+            #if DEBUG
+            print("❌ Failed to compress image data")
+            #endif
             return nil
         }
-
-        // Redraw to standard sRGB color space to avoid color/profile issues
-        if let uiImage = UIImage(data: compressedData) {
-            let renderer = UIGraphicsImageRenderer(size: uiImage.size)
-            let flattenedImage = renderer.image { _ in
-                uiImage.draw(in: CGRect(origin: .zero, size: uiImage.size))
-            }
-            // Return JPEG data (already compressed)
-            return flattenedImage.jpegData(compressionQuality: 0.9) ?? compressedData
+        
+        #if DEBUG
+        print("✅ Compressed image data size: \(compressedData.count) bytes")
+        
+        // Verify JPEG magic bytes
+        let bytes = [UInt8](compressedData.prefix(3))
+        if bytes.count >= 3 && bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF {
+            print("✅ Valid JPEG magic bytes confirmed")
+        } else {
+            print("⚠️ JPEG magic bytes not found: \(bytes.map { String(format: "%02X", $0) }.joined(separator: " "))")
         }
-
+        #endif
+        
+        // Return the compressed JPEG data directly without additional processing
+        // The ImageCompressor already produces valid JPEG data
         return compressedData
     }
 
     private func uploadToCloudinary(imageData: Data, fileName: String) async throws -> String {
+        // Validate Cloudinary configuration
+        guard cloudinaryCloudName != "YOUR_CLOUD_NAME_HERE" && !cloudinaryCloudName.isEmpty else {
+            let errorMessage = "Cloudinary is not configured. Please set cloudinaryCloudName in Secrets.swift"
+            #if DEBUG
+            print("❌ \(errorMessage)")
+            print("📋 Get your cloud name from: https://cloudinary.com/console")
+            #endif
+            throw NSError(domain: "CloudinaryError", code: 0, userInfo: [NSLocalizedDescriptionKey: errorMessage])
+        }
+        
+        guard !cloudinaryUploadPreset.isEmpty else {
+            let errorMessage = "Cloudinary upload preset is not configured. Please set cloudinaryUploadPreset in Secrets.swift"
+            #if DEBUG
+            print("❌ \(errorMessage)")
+            #endif
+            throw NSError(domain: "CloudinaryError", code: 0, userInfo: [NSLocalizedDescriptionKey: errorMessage])
+        }
+        
         let url = URL(string: "https://api.cloudinary.com/v1_1/\(cloudinaryCloudName)/image/upload")!
+        
+        #if DEBUG
+        print("☁️ Uploading to Cloudinary: \(cloudinaryCloudName)")
+        print("📤 Upload preset: \(cloudinaryUploadPreset)")
+        print("📁 File name: \(fileName)")
+        #endif
         
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -344,11 +391,38 @@ class UserManager: ObservableObject {
         
         guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
             let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
-            var errorMessage = "Upload failed with status code: \(statusCode)"
-            if let responseData = String(data: data, encoding: .utf8) {
-                errorMessage += "\nResponse: \(responseData)"
+            var errorMessage = "Upload failed"
+            
+            // Parse Cloudinary error response
+            if let responseString = String(data: data, encoding: .utf8),
+               let responseData = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let error = responseData["error"] as? [String: Any],
+               let message = error["message"] as? String {
+                errorMessage = message
+                
+                #if DEBUG
+                print("❌ Cloudinary Error Response:")
+                print("   Status Code: \(statusCode)")
+                print("   Message: \(message)")
+                print("   Full Response: \(responseString)")
+                #endif
+                
+                // Provide helpful user-facing messages
+                if statusCode == 401 {
+                    errorMessage = "Image upload is not configured properly. Please contact support."
+                } else if statusCode == 400 {
+                    errorMessage = "Invalid image format. Please try a different image."
+                }
+            } else {
+                #if DEBUG
+                if let responseString = String(data: data, encoding: .utf8) {
+                    print("❌ Upload failed with status code: \(statusCode)")
+                    print("   Response: \(responseString)")
+                }
+                #endif
+                errorMessage = "Failed to upload image. Please try again."
             }
-            print(errorMessage) // Print detailed error to console
+            
             throw NSError(domain: "CloudinaryError", code: statusCode, userInfo: [NSLocalizedDescriptionKey: errorMessage])
         }
         
