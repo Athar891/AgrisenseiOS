@@ -175,16 +175,10 @@ struct CartItemRow: View {
             Spacer()
             
             // Total Price
-            VStack(alignment: .trailing) {
-                Text(item.formattedTotalPrice)
-                    .font(.subheadline)
-                    .fontWeight(.bold)
-                    .foregroundColor(.primary)
-                
-                Text("\(item.quantity) \(item.unit)")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
+            Text(item.formattedTotalPrice)
+                .font(.subheadline)
+                .fontWeight(.bold)
+                .foregroundColor(.primary)
         }
         .padding()
         .background(Color(.systemBackground))

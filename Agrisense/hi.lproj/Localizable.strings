@@ -164,7 +164,7 @@
 "product_details_title" = "उत्पाद विवरण";
 "item_added_single" = "आइटम कार्ट में जोड़ा गया!";
 "item_added_plural" = "आइटम कार्ट में जोड़े गए!";
-"items_added_message" = "%d %@ का(की) %@ कार्ट में जोड़ा गया है.";
+"items_added_message" = "%d %@ कार्ट में जोड़ा गया है.";
 "cannot_add_to_cart" = "कार्ट में जोड़ना संभव नहीं";
 "not_enough_stock" = "पर्याप्त स्टॉक उपलब्ध नहीं है। केवल %d आइटम शेष हैं.";
 "has" = "है";

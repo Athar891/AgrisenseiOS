@@ -129,13 +129,9 @@ struct EditProfileView: View {
                         .autocapitalization(.words)
                 }
                 
-                Section {
-                    HStack {
-                        Text(localizationManager.localizedString(for: "email_address_label"))
-                        Spacer()
-                        Text(userManager.currentUser?.email ?? "")
-                            .foregroundColor(.secondary)
-                    }
+                Section(header: Text(localizationManager.localizedString(for: "email_address_label"))) {
+                    Text(userManager.currentUser?.email ?? "")
+                        .foregroundColor(.secondary)
                 }
             }
             .navigationTitle(localizationManager.localizedString(for: "edit_profile"))

@@ -874,7 +874,7 @@ struct ProductDetailView: View {
             .alert(addedQuantity == 1 ? localizationManager.localizedString(for: "item_added_single") : localizationManager.localizedString(for: "item_added_plural"), isPresented: $showingAddedToCartAlert) {
                 Button(localizationManager.localizedString(for: "ok")) { }
             } message: {
-                Text(String(format: localizationManager.localizedString(for: "items_added_message"), addedQuantity, product.unit, product.name, addedQuantity == 1 ? localizationManager.localizedString(for: "has") : localizationManager.localizedString(for: "have")))
+                Text(String(format: localizationManager.localizedString(for: "items_added_message"), addedQuantity, product.name))
             }
             .alert(localizationManager.localizedString(for: "cannot_add_to_cart"), isPresented: $showingStockAlert) {
                 Button(localizationManager.localizedString(for: "ok")) { }

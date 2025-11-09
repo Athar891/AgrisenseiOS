@@ -209,10 +209,6 @@ struct ProfileHeaderView: View {
                         .font(.title2)
                         .fontWeight(.bold)
                     
-                    Text(user.email)
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                    
                     // User Type Badge
                     HStack(spacing: 4) {
                         Image(systemName: user.userType == .farmer ? "leaf.fill" : "cart.fill")
