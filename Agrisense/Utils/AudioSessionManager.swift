@@ -41,12 +41,12 @@ class AudioSessionManager {
         }
         
         do {
-            // If TTS is active, use playAndRecord; otherwise just record
+            // If TTS is active, use playAndRecord with speaker; otherwise just record
             if activeServices.contains(.tts) {
                 try audioSession.setCategory(.playAndRecord, mode: .measurement, options: [.duckOthers, .allowBluetooth, .defaultToSpeaker])
             } else {
-                // .defaultToSpeaker is ONLY valid with .playAndRecord category
-                try audioSession.setCategory(.record, mode: .measurement, options: [.duckOthers, .allowBluetooth])
+                // For wake word + voice, use playAndRecord for compatibility
+                try audioSession.setCategory(.playAndRecord, mode: .measurement, options: [.duckOthers, .allowBluetooth])
             }
             
             try audioSession.setActive(true, options: .notifyOthersOnDeactivation)

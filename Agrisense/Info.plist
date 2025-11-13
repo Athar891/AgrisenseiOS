@@ -24,6 +24,12 @@
 	<string>AgriSense needs access to your camera to provide real-time crop analysis and AI-powered agricultural insights.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>AgriSense needs access to your microphone for voice interaction with Krishi AI assistant.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>AgriSense uses speech recognition for voice commands and wake word detection ("Krishi AI").</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>audio</string>
+	</array>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>

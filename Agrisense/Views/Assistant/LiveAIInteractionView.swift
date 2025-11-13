@@ -121,6 +121,12 @@ struct LiveAIInteractionView: View {
             // Force view update when TTS state changes
             print("🔊 TTS speaking state: \(isSpeaking)")
         }
+        .onChange(of: liveAIService.voiceService.transcriptionText) { _, newText in
+            // Force view update when transcription changes (real-time subtitle updates)
+            if liveAIService.subtitlesEnabled && !newText.isEmpty {
+                print("📝 Real-time transcription: \(newText.prefix(50))")
+            }
+        }
     }
     
     // MARK: - Computed Properties
@@ -366,13 +372,17 @@ struct LiveAIInteractionView: View {
         if liveAIService.ttsService.isSpeaking && !liveAIService.currentSubtitle.isEmpty {
             return "🤖 \(liveAIService.currentSubtitle)"
         }
-        // Show user transcription when listening
-        else if liveAIService.currentState == .listening && !liveAIService.voiceService.transcriptionText.isEmpty {
+        // Show user transcription in real-time (word by word) whenever there's any text
+        else if !liveAIService.voiceService.transcriptionText.isEmpty {
             return "👤 \(liveAIService.voiceService.transcriptionText)"
         }
         // Show thinking state
         else if liveAIService.currentState == .thinking {
             return "💭 Thinking..."
+        }
+        // Show standby hint
+        else if liveAIService.currentState == .standby && liveAIService.voiceService.isRecording {
+            return "🎤 Listening... (say \"Krishi AI\" or start speaking)"
         }
         
         return ""

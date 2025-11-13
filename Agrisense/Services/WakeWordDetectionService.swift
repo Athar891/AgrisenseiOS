@@ -47,12 +47,14 @@ class WakeWordDetectionService: NSObject, ObservableObject {
     }
     
     func requestPermissions() async {
+        print("[WakeWord] Requesting permissions...")
         // Request speech recognition permission
         let speechStatus = await withCheckedContinuation { continuation in
             SFSpeechRecognizer.requestAuthorization { status in
                 continuation.resume(returning: status)
             }
         }
+        print("[WakeWord] Speech recognition status: \(speechStatus.rawValue)")
         
         // Request microphone permission
         let audioStatus = await withCheckedContinuation { continuation in
@@ -60,9 +62,11 @@ class WakeWordDetectionService: NSObject, ObservableObject {
                 continuation.resume(returning: granted)
             }
         }
+        print("[WakeWord] Microphone status: \(audioStatus)")
         
         await MainActor.run {
             hasPermission = speechStatus == .authorized && audioStatus
+            print("[WakeWord] Final permission: \(hasPermission)")
             if !hasPermission {
                 errorMessage = "Microphone and speech recognition permissions are required for wake word detection."
             }
@@ -70,23 +74,36 @@ class WakeWordDetectionService: NSObject, ObservableObject {
     }
     
     func startListening() async {
+        print("[WakeWord] startListening called")
         guard hasPermission else {
+            print("[WakeWord] No permission, requesting...")
             await requestPermissions()
             return
         }
         
-        guard !isListening && !isStarting else { return }
+        // If already listening, just return success
+        if isListening {
+            print("[WakeWord] Already listening - no need to restart")
+            return
+        }
+        
+        guard !isStarting else { 
+            print("[WakeWord] Start already in progress")
+            return 
+        }
         
         isStarting = true
         defer { isStarting = false }
         
         do {
+            print("[WakeWord] Setting up audio session...")
             try await setupAudioSession()
             
             isListening = true
             wakeWordDetected = false
             errorMessage = nil
             
+            print("[WakeWord] Starting recognition...")
             try await startWakeWordRecognition()
             
             print("🎤 Wake word detection started - listening for 'Krishi AI'")
@@ -107,6 +124,9 @@ class WakeWordDetectionService: NSObject, ObservableObject {
     func stopListening() {
         guard isListening else { return }
         
+        isListening = false
+        wakeWordDetected = false
+        
         // Stop recognition first
         recognitionRequest?.endAudio()
         recognitionTask?.cancel()
@@ -125,9 +145,6 @@ class WakeWordDetectionService: NSObject, ObservableObject {
             // Reset audio engine to prevent pipe errors
             audioEngine.reset()
         }
-        
-        isListening = false
-        wakeWordDetected = false
         
         // Release audio session
         AudioSessionManager.shared.releaseAudioSession(service: .wakeWordDetection)
@@ -151,7 +168,13 @@ class WakeWordDetectionService: NSObject, ObservableObject {
         }
         
         recognitionRequest.shouldReportPartialResults = true
-        recognitionRequest.requiresOnDeviceRecognition = false // Use server for better accuracy
+        // Try on-device first, but allow fallback to server if not available
+        if #available(iOS 13.0, *) {
+            recognitionRequest.requiresOnDeviceRecognition = speechRecognizer?.supportsOnDeviceRecognition ?? false
+        } else {
+            recognitionRequest.requiresOnDeviceRecognition = false
+        }
+        print("🎤 Wake word using on-device: \(recognitionRequest.requiresOnDeviceRecognition)")
         
         // Configure audio engine
         let inputNode = audioEngine.inputNode
@@ -185,6 +208,9 @@ class WakeWordDetectionService: NSObject, ObservableObject {
         
         if !audioEngine.isRunning {
             try audioEngine.start()
+            print("🎤 Audio engine started for wake word detection")
+        } else {
+            print("ℹ️ Audio engine already running for wake word detection")
         }
         
         // Allow audio buffers to stabilize
@@ -197,19 +223,27 @@ class WakeWordDetectionService: NSObject, ObservableObject {
             Task { @MainActor in
                 if let result = result {
                     let transcription = result.bestTranscription.formattedString.lowercased()
+                    print("[WakeWord] Heard: '\(transcription)'")
                     
                     // Check for wake word with cooldown
-                    if self.containsWakeWord(transcription) && 
-                       Date().timeIntervalSince(self.lastDetectionTime) > self.detectionCooldown {
-                        
-                        print("✅ Wake word detected: \(transcription)")
-                        self.wakeWordDetected = true
-                        self.lastDetectionTime = Date()
-                        
-                        // Trigger callback
-                        self.onWakeWordDetected?()
-                        
-                        // Reset after a short delay to continue listening
+                    if self.containsWakeWord(transcription) {
+                        let timeSinceLastDetection = Date().timeIntervalSince(self.lastDetectionTime)
+                        if timeSinceLastDetection > self.detectionCooldown {
+                            print("✅ Wake word detected: \(transcription)")
+                            self.wakeWordDetected = true
+                            self.lastDetectionTime = Date()
+                            
+                            // Trigger callback
+                            print("[WakeWord] Triggering callback...")
+                            self.onWakeWordDetected?()
+                            print("[WakeWord] Callback triggered")
+                        } else {
+                            print("[WakeWord] Cooldown active (\(String(format: "%.1f", timeSinceLastDetection))s / \(self.detectionCooldown)s)")
+                        }
+                    }
+                    
+                    // Reset after a short delay to continue listening
+                    if result.isFinal {
                         try? await Task.sleep(nanoseconds: 500_000_000)
                         self.wakeWordDetected = false
                     }
@@ -223,15 +257,28 @@ class WakeWordDetectionService: NSObject, ObservableObject {
                                              error.localizedDescription.contains("cancel")
                     
                     if !isCancellationError && nsError.domain != "kAFAssistantErrorDomain" {
-                        print("⚠️ Wake word recognition error: \(error.localizedDescription)")
+                        print("⚠️ Wake word recognition error: \(error.localizedDescription) [Code: \(nsError.code)]")
                     }
                     
-                    // Restart recognition on error (except permission errors)
+                    // Restart recognition on error (except permission errors and during shutdown)
                     if self.isListening && !self.isStarting {
+                        print("🔄 Attempting to restart wake word detection after error...")
                         try? await Task.sleep(nanoseconds: 1_000_000_000) // Wait 1 second
-                        if self.isListening {
-                            self.stopListening()
-                            await self.startListening()
+                        if self.isListening { // Check again after delay
+                            do {
+                                // Clean restart without stopping completely
+                                self.recognitionTask?.cancel()
+                                self.recognitionTask = nil
+                                self.recognitionRequest = nil
+                                
+                                try await self.startWakeWordRecognition()
+                                print("✅ Wake word detection restarted successfully")
+                            } catch {
+                                print("❌ Failed to restart wake word detection: \(error)")
+                                await MainActor.run {
+                                    self.errorMessage = "Wake word detection failed: \(error.localizedDescription)"
+                                }
+                            }
                         }
                     }
                 }
