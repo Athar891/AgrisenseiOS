@@ -26,6 +26,7 @@
 "community_events" = "ఈవెంట్లు";
 "community_experts" = "నిపుణులు";
 "community_groups" = "గ్రూపులు";
+"community_wholesalers" = "టోకు వ్యాపారులు";
 
 /* Search & UI Elements */
 "search_community" = "కమ్యూనిటీని వెతకండి...";
@@ -187,6 +188,7 @@
 "assistant_input_placeholder" = "ఏదైనా అడగండి...";
 "assistant_missing_api_key" = "నేను ప్రస్తుతం అమర్చబడుతున్నాను. పూర్తిస్థాయి AI సామర్థ్యాలను వినియోగించడానికి మీ Gemini API key ను చేర్చండి.";
 "assistant_generic_error" = "లోపం జరిగింది: %@. దయచేసి తిరిగి ప్రయత్నించండి.";
+"assistant_query_stopped" = "ప్రతిస్పందన ఉత్పత్తి ఆపివేయబడింది.";
 "assistant_action_weather" = "వ్యవసాయానికి వాతావరణ సూచన ఏమిటి?";
 "assistant_action_disease" = "పంట రోగాలను ఎలా గుర్తించాలి?";
 "assistant_action_market_prices" = "కూరగాయల ప్రస్తుత మార్కెట్ ధరలు";

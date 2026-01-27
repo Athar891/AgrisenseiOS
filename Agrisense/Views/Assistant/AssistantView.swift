@@ -56,6 +56,12 @@ struct AssistantView: View {
     @State private var typingTimers: [UUID: Timer] = [:]
     @State private var typingIndex: [UUID: Int] = [:]
     
+    // Query execution control
+    @State private var currentQueryTask: Task<Void, Never>?
+    @State private var isQueryCancelled = false
+    @State private var isTypingResponse = false
+    @State private var currentTypingMessageId: UUID?
+    
     // Initial message support
     let initialMessage: String?
     @State private var hasProcessedInitialMessage = false
@@ -65,8 +71,15 @@ struct AssistantView: View {
         
         // Initialize Gemini AI service with API key from .env or environment
         let apiKey = Secrets.geminiAPIKey
+        print("[AssistantView] API Key loaded: \(apiKey.prefix(10))...")
+        print("[AssistantView] API Key length: \(apiKey.count)")
+        print("[AssistantView] API Key is placeholder: \(apiKey == "YOUR_GEMINI_API_KEY_HERE")")
+        
         if apiKey != "YOUR_GEMINI_API_KEY_HERE" && !apiKey.isEmpty {
             _geminiService = State(initialValue: GeminiAIService(apiKey: apiKey))
+            print("[AssistantView] ✅ GeminiAIService initialized successfully")
+        } else {
+            print("[AssistantView] ❌ API Key not configured properly")
         }
     }
     
@@ -147,12 +160,14 @@ struct AssistantView: View {
                         text: $messageText,
                         isTextFieldFocused: $isTextFieldFocused,
                         isListening: isListening,
+                        isQueryInProgress: isWaitingForResponse || isTypingResponse,
                         attachedDocuments: $attachedDocuments,
                         onSend: sendMessage,
                         onQuickActions: { showingQuickActions.toggle() },
                         onAttachment: { showDocumentPicker = true },
                         onVoiceRecord: toggleVoiceRecording,
-                        onLiveInteraction: { showLiveInteraction = true }
+                        onLiveInteraction: { showLiveInteraction = true },
+                        onStopQuery: stopCurrentQuery
                     )
                 }
                 .background(Color(.systemBackground))
@@ -223,10 +238,16 @@ struct AssistantView: View {
         displayedMessages[message.id] = ""
         typingIndex[message.id] = 0
         
+        // Track that we're typing a response
+        isTypingResponse = true
+        currentTypingMessageId = message.id
+        
         // Create timer for typing effect
         let timer = Timer.scheduledTimer(withTimeInterval: 0.03, repeats: true) { [self] timer in
             guard let currentIndex = typingIndex[message.id] else {
                 timer.invalidate()
+                isTypingResponse = false
+                currentTypingMessageId = nil
                 return
             }
             
@@ -241,13 +262,49 @@ struct AssistantView: View {
                 typingTimers.removeValue(forKey: message.id)
                 typingIndex.removeValue(forKey: message.id)
                 displayedMessages[message.id] = message.content
+                isTypingResponse = false
+                currentTypingMessageId = nil
             }
         }
         
         typingTimers[message.id] = timer
     }
     
+    private func stopCurrentQuery() {
+        // Cancel the current query task
+        currentQueryTask?.cancel()
+        currentQueryTask = nil
+        isQueryCancelled = true
+        isWaitingForResponse = false
+        
+        // Stop any ongoing typing effect and show full content immediately
+        if let typingMessageId = currentTypingMessageId {
+            if let timer = typingTimers[typingMessageId] {
+                timer.invalidate()
+                typingTimers.removeValue(forKey: typingMessageId)
+            }
+            // Show the full message content immediately
+            if let messageIndex = messages.firstIndex(where: { $0.id == typingMessageId }) {
+                displayedMessages[typingMessageId] = messages[messageIndex].content
+            }
+            typingIndex.removeValue(forKey: typingMessageId)
+            currentTypingMessageId = nil
+        }
+        isTypingResponse = false
+        
+        // Add a system message indicating the query was stopped
+        let stoppedMessage = SimpleMessage(
+            content: localizationManager.localizedString(for: "assistant_query_stopped"),
+            isUser: false
+        )
+        messages.append(stoppedMessage)
+        displayedMessages[stoppedMessage.id] = stoppedMessage.content
+    }
+    
     private func sendMessage(_ text: String) {
+        // Prevent multiple simultaneous queries
+        guard !isWaitingForResponse else { return }
+        
         let userMessage = SimpleMessage(content: text, isUser: true)
         
         // Disable animations when adding first message
@@ -259,15 +316,22 @@ struct AssistantView: View {
         
         messageText = ""
         isWaitingForResponse = true
+        isQueryCancelled = false
         
         // Dismiss keyboard after sending message
         dismissKeyboard()
         isTextFieldFocused = false
         
-        // Call Gemini AI service
-        Task {
+        // Call Gemini AI service with cancellation support
+        currentQueryTask = Task {
             do {
+                // Check for cancellation before proceeding
+                guard !Task.isCancelled else {
+                    return
+                }
+                
                 guard let service = geminiService else {
+                    print("[AssistantView] ❌ GeminiService is nil - API key not configured")
                     // Fallback if service is not initialized
                     let fallbackResponse = SimpleMessage(
                         content: localizationManager.localizedString(for: "assistant_missing_api_key"),
@@ -276,11 +340,20 @@ struct AssistantView: View {
                     messages.append(fallbackResponse)
                     startTypingEffect(for: fallbackResponse)
                     isWaitingForResponse = false
+                    currentQueryTask = nil
                     return
                 }
                 
+                print("[AssistantView] 📤 Sending message: \(text.prefix(50))...")
                 let context = AIContext.current()
                 let response = try await service.sendMessage(text, context: context)
+                
+                // Check for cancellation after receiving response
+                guard !Task.isCancelled else {
+                    return
+                }
+                
+                print("[AssistantView] ✅ Received response: \(response.content.prefix(50))...")
                 
                 let aiResponse = SimpleMessage(
                     content: response.content,
@@ -289,7 +362,52 @@ struct AssistantView: View {
                 messages.append(aiResponse)
                 startTypingEffect(for: aiResponse)
                 isWaitingForResponse = false
+                currentQueryTask = nil
+            } catch let error as AIError {
+                // Don't show error if query was cancelled
+                guard !Task.isCancelled else {
+                    return
+                }
+                
+                print("[AssistantView] ❌ AIError occurred: \(error)")
+                print("[AssistantView] Error description: \(error.errorDescription ?? "unknown")")
+                
+                // Provide more specific error messages
+                let errorContent: String
+                switch error {
+                case .rateLimitExceeded:
+                    errorContent = "I'm currently experiencing high demand. All available AI models are temporarily rate-limited. Please wait a few moments and try again."
+                case .serviceUnavailable:
+                    errorContent = "I'm having trouble connecting to my AI service. This might be due to high demand or network issues. Please try again in a moment."
+                case .invalidResponse:
+                    errorContent = "I received an unexpected response. Please try rephrasing your question."
+                case .timeout:
+                    errorContent = "The request took too long. Please try again."
+                case .networkError(let networkError):
+                    errorContent = "Network error: \(networkError.localizedDescription). Please check your connection."
+                default:
+                    let errorTemplate = localizationManager.localizedString(for: "assistant_generic_error")
+                    errorContent = String(format: errorTemplate, error.errorDescription ?? "Unknown error")
+                }
+                
+                let errorMessage = SimpleMessage(
+                    content: errorContent,
+                    isUser: false
+                )
+                messages.append(errorMessage)
+                startTypingEffect(for: errorMessage)
+                isWaitingForResponse = false
+                currentQueryTask = nil
             } catch {
+                // Don't show error if query was cancelled
+                guard !Task.isCancelled else {
+                    return
+                }
+                
+                print("[AssistantView] ❌ Unknown error: \(error)")
+                print("[AssistantView] Error type: \(type(of: error))")
+                print("[AssistantView] Error details: \(error.localizedDescription)")
+                
                 let errorTemplate = localizationManager.localizedString(for: "assistant_generic_error")
                 let errorMessage = SimpleMessage(
                     content: String(format: errorTemplate, error.localizedDescription),
@@ -298,6 +416,7 @@ struct AssistantView: View {
                 messages.append(errorMessage)
                 startTypingEffect(for: errorMessage)
                 isWaitingForResponse = false
+                currentQueryTask = nil
             }
         }
     }
@@ -608,12 +727,14 @@ struct MessageInputView: View {
     @Binding var text: String
     var isTextFieldFocused: FocusState<Bool>.Binding
     let isListening: Bool
+    let isQueryInProgress: Bool
     @Binding var attachedDocuments: [AttachedDocument]
     let onSend: (String) -> Void
     let onQuickActions: () -> Void
     let onAttachment: () -> Void
     let onVoiceRecord: () -> Void
     let onLiveInteraction: () -> Void
+    let onStopQuery: () -> Void
     @EnvironmentObject var localizationManager: LocalizationManager
     
     var body: some View {
@@ -645,41 +766,49 @@ struct MessageInputView: View {
                             .lineLimit(1...4)
                             .focused(isTextFieldFocused)
                             .frame(minHeight: 20)
+                            .disabled(isQueryInProgress)
+                            .opacity(isQueryInProgress ? 0.6 : 1.0)
                     }
                     .padding(.leading, 4)
                     
                     HStack(spacing: 12) {
-                        // Plus button
+                        // Plus button (disabled during query)
                         Button(action: onAttachment) {
                             Image(systemName: "plus")
                                 .font(.system(size: 18, weight: .medium))
-                                .foregroundColor(.green)
+                                .foregroundColor(isQueryInProgress ? .gray : .green)
                                 .frame(width: 28, height: 28)
                         }
+                        .disabled(isQueryInProgress)
                         
-                        // Tools button (icon only, no text label)
+                        // Tools button (disabled during query)
                         Button(action: onQuickActions) {
                             Image(systemName: "slider.horizontal.3")
                                 .font(.system(size: 18, weight: .medium))
-                                .foregroundColor(.green)
+                                .foregroundColor(isQueryInProgress ? .gray : .green)
                                 .frame(width: 28, height: 28)
                         }
+                        .disabled(isQueryInProgress)
                         
                         Spacer(minLength: 0)
                         
                         // Right side controls
                         HStack(spacing: 8) {
-                            // Voice input button
+                            // Voice input button (disabled during query)
                             Button(action: onVoiceRecord) {
                                 Image(systemName: isListening ? "stop.circle.fill" : "mic.fill")
                                     .font(.system(size: 16, weight: .medium))
-                                    .foregroundColor(isListening ? .red : .secondary)
+                                    .foregroundColor(isListening ? .red : (isQueryInProgress ? .gray : .secondary))
                                     .frame(width: 28, height: 28)
                             }
+                            .disabled(isQueryInProgress)
                             
-                            // Live Interaction / Send button
+                            // Live Interaction / Stop / Send button
                             Button(action: {
-                                if text.isEmpty {
+                                if isQueryInProgress {
+                                    // Stop the current query
+                                    onStopQuery()
+                                } else if text.isEmpty {
                                     // Launch live interaction when text is empty
                                     onLiveInteraction()
                                 } else {
@@ -691,14 +820,15 @@ struct MessageInputView: View {
                                     isTextFieldFocused.wrappedValue = false
                                 }
                             }) {
-                                Image(systemName: text.isEmpty ? "waveform.path.ecg" : "arrow.up")
+                                Image(systemName: isQueryInProgress ? "stop.fill" : (text.isEmpty ? "waveform.path.ecg" : "arrow.up"))
                                     .font(.system(size: 16, weight: .bold))
                                     .foregroundColor(.white)
                                     .frame(width: 32, height: 32)
-                                    .background(text.isEmpty ? Color.blue : Color.green)
+                                    .background(isQueryInProgress ? Color.red : (text.isEmpty ? Color.blue : Color.green))
                                     .clipShape(Circle())
                             }
                             .animation(.easeInOut(duration: 0.2), value: text.isEmpty)
+                            .animation(.easeInOut(duration: 0.2), value: isQueryInProgress)
                         }
                     }
                 }

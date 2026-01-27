@@ -37,6 +37,8 @@ struct CommunityView: View {
                         ExpertsView()
                     case .groups:
                         GroupsView()
+                    case .wholesalers:
+                        WholesalersView()
                     }
                 }
                 .animation(.easeInOut(duration: 0.3), value: selectedTab)
@@ -81,6 +83,7 @@ enum CommunityTab: String, CaseIterable {
     case events = "events"
     case experts = "experts"
     case groups = "groups"
+    case wholesalers = "wholesalers"
     
     func title(localizationManager: LocalizationManager) -> String {
         switch self {
@@ -92,6 +95,8 @@ enum CommunityTab: String, CaseIterable {
             return localizationManager.localizedString(for: "community_experts")
         case .groups:
             return localizationManager.localizedString(for: "community_groups")
+        case .wholesalers:
+            return localizationManager.localizedString(for: "community_wholesalers")
         }
     }
     
@@ -105,6 +110,8 @@ enum CommunityTab: String, CaseIterable {
             return "person.badge.plus"
         case .groups:
             return "person.3.fill"
+        case .wholesalers:
+            return "cart.fill"
         }
     }
 }

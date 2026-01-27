@@ -139,6 +139,15 @@ struct DiscussionsView: View {
                     isLoading = false
                     
                     if let error = error {
+                        let nsError = error as NSError
+                        // Handle network connectivity errors gracefully
+                        if nsError.domain == "io.grpc" || nsError.code == 14 {
+                            print("⚠️ Network connectivity changed, retrying...")
+                            // Don't show error to user for transient network issues
+                            // Firestore will automatically retry
+                            return
+                        }
+                        
                         print("❌ Error fetching discussions: \(error)")
                         errorMessage = error.localizedDescription
                         return

@@ -226,6 +226,9 @@ struct DashboardStatCard: View {
 }
 
 struct FarmerDashboardContent: View {
+    @EnvironmentObject var userManager: UserManager
+    @EnvironmentObject var localizationManager: LocalizationManager
+    
     @State private var showingAddCrop = false
     @State private var showingWeather = false
     @State private var showingMarketPrices = false
@@ -247,7 +250,11 @@ struct FarmerDashboardContent: View {
             // Government Schemes Section
             GovernmentSchemesSection()
         }
-        .sheet(isPresented: $showingAddCrop) { AddCropView() }
+        .sheet(isPresented: $showingAddCrop) {
+            AddCropView()
+                .environmentObject(userManager)
+                .environmentObject(localizationManager)
+        }
         .sheet(isPresented: $showingWeather) { WeatherView() }
         .sheet(isPresented: $showingMarketPrices) { MarketPricesView() }
         .sheet(isPresented: $showingSoilTest) { SoilTestView() }
@@ -397,6 +404,7 @@ struct SellerDashboardContent: View {
 struct CropHealthSection: View {
     @EnvironmentObject var userManager: UserManager
     @EnvironmentObject var localizationManager: LocalizationManager
+    @State private var isExpanded = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -411,16 +419,40 @@ struct CropHealthSection: View {
                     Text("\(cropsCount) crop\(cropsCount == 1 ? "" : "s")")
                         .font(.caption)
                         .foregroundColor(.secondary)
+                    
+                    Button(action: {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            isExpanded.toggle()
+                        }
+                    }) {
+                        Image(systemName: "chevron.down")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .rotationEffect(.degrees(isExpanded ? 180 : 0))
+                    }
                 }
             }
             
             if let crops = userManager.currentUser?.crops, !crops.isEmpty {
+                let activeCrops = crops.filter { !$0.isOverdue }
+                
                 VStack(spacing: 12) {
-                    ForEach(crops.filter { !$0.isOverdue }) { crop in
-                        NavigationLink(destination: CropDetailView(crop: crop)) {
-                            CropHealthRow(crop: crop)
+                    if isExpanded {
+                        // Show all crops when expanded
+                        ForEach(activeCrops) { crop in
+                            NavigationLink(destination: CropDetailView(crop: crop)) {
+                                CropHealthRow(crop: crop)
+                            }
+                            .buttonStyle(PlainButtonStyle())
                         }
-                        .buttonStyle(PlainButtonStyle())
+                    } else {
+                        // Show only the most recent crop when collapsed
+                        if let recentCrop = activeCrops.first {
+                            NavigationLink(destination: CropDetailView(crop: recentCrop)) {
+                                CropHealthRow(crop: recentCrop)
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                        }
                     }
                 }
             } else {

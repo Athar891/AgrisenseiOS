@@ -34,7 +34,7 @@ class LiveAIService: ObservableObject, @preconcurrency ScreenRecordingDelegate {
     private let geminiService: GeminiAIService
     let voiceService = VoiceTranscriptionService()  // Make this public for view access
     let ttsService = EnhancedTTSService()  // Enhanced TTS with interruption support
-    let wakeWordService = WakeWordDetectionService()  // Wake word detection for "Krishi AI"
+    let wakeWordService = WakeWordDetectionService()  // Wake word detection for "Please"
     private let webSearchService = WebSearchService()  // Web search for links and information
     private var lastUserInput: String = ""
     private var hasPerformedGreeting = false
@@ -48,8 +48,10 @@ class LiveAIService: ObservableObject, @preconcurrency ScreenRecordingDelegate {
     private var autoProcessTask: Task<Void, Never>?
     private var responseTimeoutTask: Task<Void, Never>?
     private var standbyTimeoutTask: Task<Void, Never>?
+    private var questionWaitTimeoutTask: Task<Void, Never>?  // Timeout for waiting for user question after wake word
     private let responseTimeout: TimeInterval = 15.0 // Increased to 15 seconds for reliable API responses
     private let standbyTimeout: TimeInterval = 10.0 // Return to standby after 10 seconds of no speech
+    private let questionWaitTimeout: TimeInterval = 5.0 // Time to wait for user question after wake word
     
     // Rate limit tracking
     private var lastRateLimitTime: Date?
@@ -69,7 +71,7 @@ class LiveAIService: ObservableObject, @preconcurrency ScreenRecordingDelegate {
         wakeWordService.onWakeWordDetected = { [weak self] in
             Task { @MainActor [weak self] in
                 guard let self = self else { return }
-                print("🎤 'Krishi AI' detected - activating assistant")
+                print("🎤 'Please' detected - activating assistant")
                 
                 // IMPORTANT: Pause wake word detection temporarily to let voice transcription capture the user's question
                 print("[LiveAI] Pausing wake word to capture user question...")
@@ -109,34 +111,47 @@ class LiveAIService: ObservableObject, @preconcurrency ScreenRecordingDelegate {
                     return
                 }
                 
-                // If already active and not speaking, acknowledge
+                // If already active and not speaking, wait for user's question
                 if !self.ttsService.isSpeaking && !self.isProcessing {
-                    print("👂 Acknowledging wake word")
+                    print("👂 Wake word detected - waiting for user's question")
                     
                     // Cancel any active standby timeout since user is interacting
                     self.cancelStandbyTimeout()
                     
-                    // CRITICAL: Clear transcription BEFORE speaking to prevent wake word phrase from triggering interruption
-                    self.voiceService.transcriptionText = ""
+                    // Store the current transcription before processing
+                    let currentTranscription = self.voiceService.transcriptionText.trimmingCharacters(in: .whitespacesAndNewlines)
+                    print("[LiveAI] Current transcription at wake word: '\(currentTranscription)'")
+                    
+                    // Remove the wake word "please" from the beginning of the transcription
+                    // This preserves the user's actual question if they said "please tell me about..."
+                    var questionText = currentTranscription.lowercased()
+                    let wakeWordsToRemove = ["please", "pleas", "plez", "plz"]
+                    for wakeWord in wakeWordsToRemove {
+                        if questionText.hasPrefix(wakeWord) {
+                            questionText = String(questionText.dropFirst(wakeWord.count)).trimmingCharacters(in: .whitespacesAndNewlines)
+                            break
+                        }
+                    }
+                    
+                    // If there's remaining text after removing wake word, keep it as the question start
+                    if !questionText.isEmpty {
+                        // Restore original case by finding the portion after wake word
+                        if let range = currentTranscription.range(of: questionText, options: .caseInsensitive) {
+                            let preservedQuestion = String(currentTranscription[range.lowerBound...])
+                            self.voiceService.transcriptionText = preservedQuestion
+                            print("[LiveAI] Preserved question text: '\(preservedQuestion)'")
+                        } else {
+                            self.voiceService.transcriptionText = questionText
+                            print("[LiveAI] Using processed question text: '\(questionText)'")
+                        }
+                    } else {
+                        // Only clear if there's nothing but the wake word
+                        self.voiceService.transcriptionText = ""
+                        print("[LiveAI] Cleared wake word, waiting for question")
+                    }
                     self.lastUserInput = ""
-                    print("[LiveAI] Cleared transcription buffer before acknowledgment")
                     
-                    // Give a tiny delay to ensure transcription buffer is clear
-                    try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
-                    
-                    self.lastResponse = "Yes? I'm listening"
-                    self.currentState = .listening
-                    await self.speakResponse("Yes? I'm listening", quick: true)
-                    
-                    // After acknowledgment completes, give audio session time to reconfigure
-                    try? await Task.sleep(nanoseconds: 200_000_000) // 200ms for audio session to stabilize
-                    
-                    // Clear transcription again after acknowledgment
-                    self.voiceService.transcriptionText = ""
-                    self.lastUserInput = ""
-                    print("[LiveAI] Ready to capture user question...")
-                    
-                    // Return to listening state (not standby yet)
+                    // Set state to listening immediately (no acknowledgment - just listen)
                     self.currentState = .listening
                     print("[LiveAI] State set to listening - waiting for user question")
                     
@@ -149,13 +164,13 @@ class LiveAIService: ObservableObject, @preconcurrency ScreenRecordingDelegate {
                         print("[LiveAI] Voice transcription already active")
                     }
                     
+                    // Start the question wait timeout - if no question in 5 seconds, return to standby
+                    self.startQuestionWaitTimeout()
+                    
                     // Restart auto-processing to ensure it's actively monitoring for user input
                     self.autoProcessTask?.cancel()
                     self.startAutoProcessing()
-                    print("[LiveAI] Auto-processing restarted - monitoring for user question")
-                    
-                    // DON'T start standby timeout yet - user just called the wake word
-                    // Timeout will start after they ask their question and AI responds
+                    print("[LiveAI] Auto-processing restarted - listening for user question")
                     
                     // DON'T restart wake word yet - let user ask their question
                     // Wake word will restart after AI responds and returns to standby
@@ -184,7 +199,7 @@ class LiveAIService: ObservableObject, @preconcurrency ScreenRecordingDelegate {
         if !fromWakeWord {
             Task {
                 if !wakeWordService.isListening {
-                    print("🎤 Starting wake word detection for 'Krishi AI'...")
+                    print("🎤 Starting wake word detection for 'Please'...")
                     await wakeWordService.requestPermissions()
                     await wakeWordService.startListening()
                     print("✅ Wake word detection active and listening")
@@ -220,10 +235,9 @@ class LiveAIService: ObservableObject, @preconcurrency ScreenRecordingDelegate {
         transcriptionMonitorTask = Task { @MainActor in
             var lastTranscription = ""
             var lastTranscriptionTime = Date()
-            var lastSpeakingCheck = Date()
             
             while !Task.isCancelled {
-                try? await Task.sleep(nanoseconds: 50_000_000) // Check every 0.05s (50ms) for faster interruption
+                try? await Task.sleep(nanoseconds: 100_000_000) // Check every 0.1s
                 
                 let currentTranscription = voiceService.transcriptionText.trimmingCharacters(in: .whitespacesAndNewlines)
                 
@@ -233,37 +247,17 @@ class LiveAIService: ObservableObject, @preconcurrency ScreenRecordingDelegate {
                 if transcriptionChanged {
                     lastTranscriptionTime = Date()
                     
-                    // Filter out wake word phrases to prevent false interruptions
-                    let isWakeWordPhrase = currentTranscription.lowercased().contains("krishi ai") || 
-                                          currentTranscription.lowercased().contains("rishi ai") ||
+                    // Filter out wake word phrases to prevent false state changes
+                    let isWakeWordPhrase = currentTranscription.lowercased().contains("hey ai") || 
+                                          currentTranscription.lowercased().contains("hay ai") ||
                                           currentTranscription.lowercased() == "hi" ||
                                           currentTranscription.lowercased() == "yes"
                     
-                    // If user starts speaking while AI is responding, interrupt IMMEDIATELY
-                    if ttsService.isSpeaking && !isWakeWordPhrase {
-                        // Only interrupt if this looks like genuine user input (at least 3 characters)
-                        // and it's not the AI's own speech being echoed
-                        let newText = currentTranscription
-                        let isEcho = lastResponse.lowercased().contains(newText.lowercased().prefix(20))
-                        
-                        if newText.count >= 3 && !isEcho {
-                            print("🎤 User interrupted AI (detected: '\(newText.prefix(30))...') - stopping TTS immediately")
-                            ttsService.stopSpeaking()
-                            currentState = .listening
-                            currentSubtitle = ""
-                            
-                            // If currently processing, cancel it
-                            if isProcessing {
-                                isProcessing = false
-                                responseTimeoutTask?.cancel()
-                                responseTimeoutTask = nil
-                            }
-                        } else if isEcho {
-                            print("🔇 Ignoring echo: '\(newText.prefix(20))...'")
-                        }
-                    }
+                    // Note: TTS interruption is no longer handled here since we pause transcription during TTS
+                    // Just handle state transitions for when user starts speaking
+                    
                     // If AI is in standby, switch to listening state
-                    else if currentState == .standby && !isWakeWordPhrase {
+                    if currentState == .standby && !isWakeWordPhrase && !ttsService.isSpeaking {
                         currentState = .listening
                         print("🎤 User started speaking")
                     }
@@ -278,21 +272,6 @@ class LiveAIService: ObservableObject, @preconcurrency ScreenRecordingDelegate {
                     
                     if isWakeWordPhrase {
                         print("🔇 Ignoring wake word phrase in monitoring: '\(currentTranscription)'")
-                    }
-                }
-                
-                // Periodic check to ensure we catch interruptions even if transcription didn't change
-                if ttsService.isSpeaking && Date().timeIntervalSince(lastSpeakingCheck) > 0.2 {
-                    lastSpeakingCheck = Date()
-                    if !currentTranscription.isEmpty && currentTranscription.count >= 3 {
-                        // Verify this is new input, not echo
-                        let isEcho = lastResponse.lowercased().contains(currentTranscription.lowercased().prefix(20))
-                        if currentTranscription != lastTranscription && !isEcho {
-                            print("🎤 Periodic check: User is speaking, stopping AI")
-                            ttsService.stopSpeaking()
-                            currentState = .listening
-                            currentSubtitle = ""
-                        }
                     }
                 }
                 
@@ -380,6 +359,8 @@ class LiveAIService: ObservableObject, @preconcurrency ScreenRecordingDelegate {
         responseTimeoutTask = nil
         standbyTimeoutTask?.cancel()
         standbyTimeoutTask = nil
+        questionWaitTimeoutTask?.cancel()
+        questionWaitTimeoutTask = nil
         
         // Stop TTS first
         ttsService.stopSpeaking()
@@ -432,6 +413,9 @@ class LiveAIService: ObservableObject, @preconcurrency ScreenRecordingDelegate {
                     
                     // Cancel standby timeout since user is speaking
                     cancelStandbyTimeout()
+                    
+                    // Cancel question wait timeout since user is speaking
+                    cancelQuestionWaitTimeout()
                     
                     // If user starts speaking while AI is talking, they're interrupting
                     if ttsService.isSpeaking {
@@ -1077,6 +1061,49 @@ class LiveAIService: ObservableObject, @preconcurrency ScreenRecordingDelegate {
         print("⏱️ Standby timeout cancelled - user activity detected")
     }
     
+    /// Start timeout for waiting for user question after wake word detection
+    /// If user doesn't speak within the timeout, return to standby mode
+    private func startQuestionWaitTimeout() {
+        // Cancel any existing timeout
+        questionWaitTimeoutTask?.cancel()
+        
+        // Start new timeout
+        questionWaitTimeoutTask = Task { @MainActor in
+            print("⏱️ Starting \(questionWaitTimeout)-second question wait timeout...")
+            try? await Task.sleep(nanoseconds: UInt64(questionWaitTimeout * 1_000_000_000))
+            
+            guard !Task.isCancelled else {
+                print("⏱️ Question wait timeout cancelled (user started speaking)")
+                return
+            }
+            
+            // Check if user hasn't spoken anything
+            if voiceService.transcriptionText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && 
+               currentState == .listening && !isProcessing && !ttsService.isSpeaking {
+                print("⏱️ No question detected after wake word - returning to standby mode")
+                
+                // Return to standby state
+                currentState = .standby
+                
+                // Restart wake word detection
+                if !wakeWordService.isListening {
+                    print("[LiveAI] Restarting wake word detection (no question received)...")
+                    await wakeWordService.startListening()
+                }
+                
+                // Start standby timeout
+                startStandbyTimeout()
+            }
+        }
+    }
+    
+    /// Cancel the question wait timeout (when user starts speaking)
+    private func cancelQuestionWaitTimeout() {
+        questionWaitTimeoutTask?.cancel()
+        questionWaitTimeoutTask = nil
+        print("⏱️ Question wait timeout cancelled - user is speaking")
+    }
+    
     private func speakResponse(_ text: String, quick: Bool = false) async {
         // Clean text for natural speech (remove emojis, etc.)
         let cleanedText = cleanTextForSpeech(text)
@@ -1086,72 +1113,54 @@ class LiveAIService: ObservableObject, @preconcurrency ScreenRecordingDelegate {
         // Always update subtitle (will be shown if subtitlesEnabled)
         currentSubtitle = cleanedText
         
-        // **KEEP voice transcription ACTIVE to detect user interruptions**
-        // Mark that we're in "TTS speaking" mode so we can filter feedback
+        // **PAUSE voice transcription during TTS to prevent self-echo**
+        // This is critical - the mic picks up TTS audio and creates feedback loop
+        let wasRecording = voiceService.isRecording
+        if wasRecording {
+            await voiceService.stopRecording()
+            print("🔇 Voice transcription paused during TTS")
+        }
+        
+        // Clear any accumulated transcription to prevent stale text from being processed
         let previousTranscription = voiceService.transcriptionText
+        voiceService.transcriptionText = ""
         
         // Small delay to let audio session transition smoothly
-        try? await Task.sleep(nanoseconds: 50_000_000) // 50ms
+        try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
         
         // Use enhanced TTS service with cleaned text for natural speech
         let rate: Float = quick ? 0.55 : 0.52
         ttsService.speak(cleanedText, language: "en-US", rate: rate)
         
-        print("🎙️ TTS started, monitoring for user interruptions...")
+        print("🎙️ TTS started, will resume listening after completion...")
         
-        // Wait for TTS to finish OR be interrupted by user
-        var wasInterrupted = false
+        // Wait for TTS to finish completely
         while ttsService.isSpeaking && !Task.isCancelled {
             try? await Task.sleep(nanoseconds: 100_000_000) // Check every 0.1s
-            
-            // Check if user started speaking (new transcription appeared)
-            let currentTranscription = voiceService.transcriptionText.trimmingCharacters(in: .whitespacesAndNewlines)
-            
-            // User is interrupting if:
-            // 1. New non-empty transcription appeared
-            // 2. It's different from what was there before TTS started
-            // 3. It's not just the AI's own words being picked up
-            if !currentTranscription.isEmpty && 
-               currentTranscription != previousTranscription &&
-               !cleanedText.lowercased().contains(currentTranscription.lowercased().prefix(20)) {
-                print("🎤 User interrupting! Transcription: '\(currentTranscription.prefix(30))...'")
-                wasInterrupted = true
-                break
-            }
-            
-            // Check if TTS was stopped externally (by transcription monitor)
-            if !ttsService.isSpeaking {
-                print("🎤 TTS stopped (likely by transcription monitor)")
-                wasInterrupted = true
-                break
-            }
         }
         
-        if wasInterrupted {
-            print("⚠️ AI was interrupted by user - preparing to process new input")
-            currentSubtitle = ""
-            currentState = .listening
-            
-            // Give user a moment to finish speaking, then auto-process will handle it
-            // Don't clear transcription - let it accumulate for processing
-            print("📝 Current transcription after interrupt: '\(voiceService.transcriptionText.prefix(50))...'")
-        } else {
-            print("✅ TTS finished naturally")
-            
-            // Small delay to let audio session stabilize
-            try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
-            
-            // Clear any transcription that accumulated during TTS (feedback/echo)
-            voiceService.transcriptionText = ""
-            
-            // Clear subtitle after a delay
-            try? await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds
-            if currentSubtitle == cleanedText {
-                currentSubtitle = ""
-            }
-            
-            print("✅ Ready for next user input (continuous listening active)")
+        print("✅ TTS finished, resuming voice transcription")
+        
+        // Resume voice transcription after TTS completes
+        // Give audio session time to reconfigure for recording
+        try? await Task.sleep(nanoseconds: 300_000_000) // 300ms
+        
+        if wasRecording && isActive && !isPaused {
+            await voiceService.startRecording()
+            isListening = true
+            print("🎤 Voice transcription resumed after TTS")
         }
+        
+        // Clear any residual echo that might have been picked up
+        voiceService.transcriptionText = ""
+        
+        // Clear subtitle after a delay
+        try? await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds
+        if currentSubtitle == cleanedText {
+            currentSubtitle = ""
+        }
+        
+        print("✅ Ready for next user input (continuous listening active)")
     }
     
     func processStaticImage(_ image: UIImage) async {

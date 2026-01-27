@@ -1,6 +1,7 @@
 import SwiftUI
 import PhotosUI
 import UIKit
+import CoreLocation
 
 @MainActor
 struct AddCropView: View {
@@ -8,17 +9,9 @@ struct AddCropView: View {
     @EnvironmentObject var userManager: UserManager
     @EnvironmentObject var localizationManager: LocalizationManager
     @StateObject private var cropManager = CropManager()
+    @StateObject private var viewModel = AddCropViewModel()
     
-    @State private var cropName = ""
-    @State private var plantingDate = Date()
-    @State private var harvestDate = Date().addingTimeInterval(60 * 60 * 24 * 90) // 90 days from now
-    @State private var currentGrowthStage = GrowthStage.seeding
-    @State private var healthStatus = CropHealthStatus.good
-    @State private var fieldLocation = ""
-    @State private var notes = ""
     @State private var selectedImage: PhotosPickerItem?
-    @State private var cropImage: UIImage?
-    
     @State private var isLoading = false
     @State private var showingAlert = false
     @State private var alertMessage = ""
@@ -26,15 +19,143 @@ struct AddCropView: View {
     var body: some View {
         NavigationView {
             Form {
-                Section(header: Text(localizationManager.localizedString(for: "basic_information"))) {
-                    TextField(localizationManager.localizedString(for: "crop_name"), text: $cropName)
-                    TextField(localizationManager.localizedString(for: "field_location"), text: $fieldLocation)
-                    DatePicker(localizationManager.localizedString(for: "planting_date"), selection: $plantingDate, displayedComponents: .date)
-                    DatePicker(localizationManager.localizedString(for: "expected_harvest"), selection: $harvestDate, displayedComponents: .date)
+                // MARK: - Crop Selection Section
+                Section(header: Text("Smart Crop Selection")) {
+                    Picker("Crop Type", selection: $viewModel.selectedCropType) {
+                        ForEach(CropType.allCases, id: \.self) { cropType in
+                            Text("\(cropType.icon) \(cropType.displayName)")
+                                .tag(cropType)
+                        }
+                    }
+                    .onChange(of: viewModel.selectedCropType) { oldValue, newValue in
+                        if oldValue != newValue {
+                            viewModel.onCropTypeChanged()
+                        }
+                    }
+                    
+                    HStack {
+                        Label("Growth Duration", systemImage: "clock")
+                            .foregroundColor(.secondary)
+                        Spacer()
+                        Text("\(viewModel.selectedCropType.growthDurationDays) days")
+                            .foregroundColor(.blue)
+                            .fontWeight(.semibold)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(Color.blue.opacity(0.1))
+                            .cornerRadius(6)
+                    }
+                }
+                
+                // MARK: - Dates Section
+                Section(header: Text("Planting & Harvest Schedule")) {
+                    DatePicker(
+                        "Planting Date",
+                        selection: $viewModel.plantingDate,
+                        in: ...Calendar.current.date(byAdding: .day, value: 1, to: Date())!,
+                        displayedComponents: .date
+                    )
+                    .onChange(of: viewModel.plantingDate) { oldValue, newValue in
+                        if oldValue != newValue {
+                            viewModel.onPlantingDateChanged()
+                        }
+                    }
+                    
+                    HStack {
+                        Text("Expected Harvest")
+                            .foregroundColor(.secondary)
+                        Spacer()
+                        Text(viewModel.expectedHarvestDate, style: .date)
+                            .foregroundColor(.green)
+                            .fontWeight(.semibold)
+                    }
+                    .padding(.vertical, 4)
+                }
+                
+                // MARK: - Location Section
+                Section(header: Text("📍 Field Location (GPS Required)")) {
+                    if let location = viewModel.locationData {
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack {
+                                Image(systemName: "mappin.circle.fill")
+                                    .foregroundColor(.green)
+                                Text(location.displayString)
+                                    .font(.body)
+                                Spacer()
+                                Button(action: {
+                                    viewModel.clearLocation()
+                                }) {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .foregroundColor(.red)
+                                }
+                            }
+                            
+                            Text(location.coordinatesString)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                                .padding(.leading, 24)
+                        }
+                        .padding(.vertical, 4)
+                    } else {
+                        Button(action: {
+                            viewModel.requestLocation()
+                        }) {
+                            HStack {
+                                if viewModel.isGettingLocation {
+                                    ProgressView()
+                                        .progressViewStyle(CircularProgressViewStyle())
+                                } else {
+                                    Image(systemName: "location.circle.fill")
+                                        .foregroundColor(.blue)
+                                }
+                                
+                                Text(viewModel.isGettingLocation ? "Getting Location..." : "📍 Use Current GPS Location")
+                                    .foregroundColor(.blue)
+                                    .fontWeight(.medium)
+                            }
+                        }
+                        .disabled(viewModel.isGettingLocation)
+                    }
+                    
+                    if let error = viewModel.locationError {
+                        Text(error)
+                            .font(.caption)
+                            .foregroundColor(.red)
+                            .padding(.vertical, 4)
+                    }
+                }
+                
+                // MARK: - Plot Size Section
+                Section(header: Text("🌾 Plot Size (For Fertilizer Calculation)")) {
+                    HStack {
+                        TextField("Enter size", text: $viewModel.plotSize)
+                            .keyboardType(.decimalPad)
+                            .frame(maxWidth: .infinity)
+                        
+                        Picker("", selection: $viewModel.plotSizeUnit) {
+                            ForEach(PlotSizeUnit.allCases, id: \.self) { unit in
+                                Text(unit.displayName).tag(unit)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .frame(width: 120)
+                    }
+                    
+                    if let hectares = viewModel.plotSizeInHectares {
+                        HStack {
+                            Text("Equivalent")
+                                .foregroundColor(.secondary)
+                            Spacer()
+                            Text(String(format: "%.2f hectares", hectares))
+                                .foregroundColor(.primary)
+                                .font(.caption)
+                        }
+                    }
                 }
 
+                // MARK: - Current Status Section
                 Section(header: Text(localizationManager.localizedString(for: "current_status"))) {
-                    Picker(localizationManager.localizedString(for: "growth_stage"), selection: $currentGrowthStage) {
+                    Picker(localizationManager.localizedString(for: "growth_stage"), selection: $viewModel.currentGrowthStage) {
                         ForEach(GrowthStage.allCases, id: \.self) { stage in
                             HStack {
                                 Image(systemName: stage.icon)
@@ -44,7 +165,7 @@ struct AddCropView: View {
                         }
                     }
                     
-                    Picker("Health Status", selection: $healthStatus) {
+                    Picker("Health Status", selection: $viewModel.healthStatus) {
                         ForEach(CropHealthStatus.allCases, id: \.self) { status in
                             Text(status.displayName)
                                 .tag(status)
@@ -52,14 +173,14 @@ struct AddCropView: View {
                     }
                 }
                 
-                // Crop Image (Optional)
+                // MARK: - Crop Image Section (Optional)
                 Section(header: Text(localizationManager.localizedString(for: "crop_image_optional"))) {
                     PhotosPicker(
                         selection: $selectedImage,
                         matching: .images,
                         photoLibrary: .shared()
                     ) {
-                        if let cropImage = cropImage {
+                        if let cropImage = viewModel.cropImage {
                             Image(uiImage: cropImage)
                                 .resizable()
                                 .aspectRatio(contentMode: .fill)
@@ -76,18 +197,20 @@ struct AddCropView: View {
                     }
                 }
                 
+                // MARK: - Notes Section
                 Section(header: Text(localizationManager.localizedString(for: "notes_optional"))) {
-                    TextField(localizationManager.localizedString(for: "additional_notes_placeholder"), text: $notes, axis: .vertical)
+                    TextField(localizationManager.localizedString(for: "additional_notes_placeholder"), text: $viewModel.notes, axis: .vertical)
                         .lineLimit(3...6)
                 }
 
+                // MARK: - Action Button
                 Section {
                     Button(localizationManager.localizedString(for: "add_crop")) {
                         Task {
                             await addCrop()
                         }
                     }
-                    .disabled(cropName.isEmpty || fieldLocation.isEmpty || isLoading)
+                    .disabled(!viewModel.isFormValid || isLoading)
                 }
             }
             .navigationTitle(localizationManager.localizedString(for: "add_new_crop"))
@@ -103,7 +226,7 @@ struct AddCropView: View {
                 Task {
                     if let newItem = newItem {
                         if let data = try? await newItem.loadTransferable(type: Data.self) {
-                            cropImage = UIImage(data: data)
+                            viewModel.cropImage = UIImage(data: data)
                         }
                     }
                 }
@@ -128,6 +251,13 @@ struct AddCropView: View {
     }
     
     private func addCrop() async {
+        // Validate form
+        if let validationError = viewModel.validateForm() {
+            alertMessage = validationError
+            showingAlert = true
+            return
+        }
+        
         guard let userId = userManager.currentUser?.id else {
             alertMessage = "User not found. Please try logging in again."
             showingAlert = true
@@ -139,21 +269,19 @@ struct AddCropView: View {
         do {
             // Upload image if selected
             var imageUrl: String?
-            if let cropImage = cropImage {
+            if let cropImage = viewModel.cropImage {
                 imageUrl = try await cropManager.uploadCropImage(cropImage, userId: userId)
             }
             
-            // Create new crop
-            let newCrop = Crop(
-                name: cropName,
-                plantingDate: plantingDate,
-                expectedHarvestDate: harvestDate,
-                currentGrowthStage: currentGrowthStage,
-                healthStatus: healthStatus,
-                fieldLocation: fieldLocation,
-                notes: notes.isEmpty ? nil : notes,
-                cropImage: imageUrl
-            )
+            // Create new crop from ViewModel
+            guard var newCrop = viewModel.createCrop() else {
+                throw NSError(domain: "AddCropView", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to create crop data"])
+            }
+            
+            // Set image URL if uploaded
+            if let imageUrl = imageUrl {
+                newCrop.cropImage = imageUrl
+            }
             
             // Add crop to user's crops
             var updatedUser = userManager.currentUser!
@@ -190,4 +318,6 @@ struct AddCropView: View {
 
 #Preview {
     AddCropView()
+        .environmentObject(UserManager())
+        .environmentObject(LocalizationManager.shared)
 }

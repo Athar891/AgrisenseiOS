@@ -26,6 +26,7 @@
 "community_events" = "நிகழ்வுகள்";
 "community_experts" = "நிபுணர்கள்";
 "community_groups" = "குழுக்கள்";
+"community_wholesalers" = "மொத்த வியாபாரிகள்";
 
 /* Search & UI Elements */
 "search_community" = "சமுதாயத்தை தேடுங்கள்...";
@@ -187,6 +188,7 @@
 "assistant_input_placeholder" = "ஏதாவது கேளுங்கள்...";
 "assistant_missing_api_key" = "நான் தற்போது அமைக்கப்படுகிறேன். முழுமையான AI திறன்களைப் பயன்படுத்த உங்கள் Gemini API விசையைச் சேர்க்கவும்.";
 "assistant_generic_error" = "பிழை ஏற்பட்டது: %@. தயவுசெய்து மீண்டும் முயற்சி செய்யவும்.";
+"assistant_query_stopped" = "பதில் உருவாக்கம் நிறுத்தப்பட்டது.";
 "assistant_action_weather" = "விவசாயத்திற்கான வானிலை முன்னறிவிப்பு என்ன?";
 "assistant_action_disease" = "பயிர் நோய்களை எப்படி அடையாளம் காணலாம்?";
 "assistant_action_market_prices" = "காய்கறிகளின் தற்போதைய சந்தை விலைகள்";

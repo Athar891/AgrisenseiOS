@@ -50,9 +50,9 @@ struct MandiRecord: Codable {
     let commodity: String
     let variety: String?
     let arrivalDate: String?
-    let minPrice: String?
-    let maxPrice: String?
-    let modalPrice: String?
+    let minPrice: FlexiblePrice?
+    let maxPrice: FlexiblePrice?
+    let modalPrice: FlexiblePrice?
     
     enum CodingKeys: String, CodingKey {
         case state
@@ -66,15 +66,56 @@ struct MandiRecord: Codable {
         case modalPrice = "modal_price"
     }
     
+    // Helper to decode price that can be either String or Number
+    struct FlexiblePrice: Codable {
+        let value: Double
+        
+        init(from decoder: Decoder) throws {
+            let container = try decoder.singleValueContainer()
+            
+            // Try to decode as Double first
+            if let doubleValue = try? container.decode(Double.self) {
+                self.value = doubleValue
+            }
+            // Try to decode as String and convert to Double
+            else if let stringValue = try? container.decode(String.self) {
+                // Remove commas and parse
+                let cleanedString = stringValue.replacingOccurrences(of: ",", with: "")
+                if let doubleValue = Double(cleanedString) {
+                    self.value = doubleValue
+                } else {
+                    throw DecodingError.dataCorruptedError(
+                        in: container,
+                        debugDescription: "Cannot convert string '\(stringValue)' to Double"
+                    )
+                }
+            }
+            // If neither works, throw error
+            else {
+                throw DecodingError.typeMismatch(
+                    Double.self,
+                    DecodingError.Context(
+                        codingPath: decoder.codingPath,
+                        debugDescription: "Expected String or Number for price"
+                    )
+                )
+            }
+        }
+        
+        func encode(to encoder: Encoder) throws {
+            var container = encoder.singleValueContainer()
+            try container.encode(value)
+        }
+    }
+    
     func toMandiCommodityPrice() -> MandiCommodityPrice? {
-        // Parse price strings to doubles (they may contain commas)
-        guard let modalPriceStr = modalPrice,
-              let modal = Double(modalPriceStr.replacingOccurrences(of: ",", with: "")) else {
+        // Get modal price (required)
+        guard let modal = modalPrice?.value else {
             return nil
         }
         
-        let min = minPrice.flatMap { Double($0.replacingOccurrences(of: ",", with: "")) } ?? modal
-        let max = maxPrice.flatMap { Double($0.replacingOccurrences(of: ",", with: "")) } ?? modal
+        let min = minPrice?.value ?? modal
+        let max = maxPrice?.value ?? modal
         
         return MandiCommodityPrice(
             commodity: commodity,

@@ -382,7 +382,7 @@ struct LiveAIInteractionView: View {
         }
         // Show standby hint
         else if liveAIService.currentState == .standby && liveAIService.voiceService.isRecording {
-            return "🎤 Listening... (say \"Krishi AI\" or start speaking)"
+            return "🎤 Listening... (say \"Hey AI\" or start speaking)"
         }
         
         return ""

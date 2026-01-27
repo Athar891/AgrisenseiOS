@@ -188,6 +188,48 @@ struct CommunityGroup: Identifiable {
     let avatar: String?
 }
 
+struct Wholesaler: Identifiable {
+    let id: String
+    let name: String
+    let businessName: String
+    let location: String
+    let city: String
+    let state: String
+    let commodities: [String]
+    let phoneNumber: String
+    let email: String?
+    let rating: Double
+    let reviewsCount: Int
+    let verified: Bool
+    let description: String
+    let distanceKm: Double?
+    let avatar: String?
+    let acceptedPaymentMethods: [String]
+    let minimumQuantity: String?
+    let operatingHours: String
+    
+    init(id: String = UUID().uuidString, name: String, businessName: String, location: String, city: String, state: String, commodities: [String], phoneNumber: String, email: String? = nil, rating: Double = 0.0, reviewsCount: Int = 0, verified: Bool = false, description: String, distanceKm: Double? = nil, avatar: String? = nil, acceptedPaymentMethods: [String] = ["Cash", "UPI"], minimumQuantity: String? = nil, operatingHours: String = "9:00 AM - 6:00 PM") {
+        self.id = id
+        self.name = name
+        self.businessName = businessName
+        self.location = location
+        self.city = city
+        self.state = state
+        self.commodities = commodities
+        self.phoneNumber = phoneNumber
+        self.email = email
+        self.rating = rating
+        self.reviewsCount = reviewsCount
+        self.verified = verified
+        self.description = description
+        self.distanceKm = distanceKm
+        self.avatar = avatar
+        self.acceptedPaymentMethods = acceptedPaymentMethods
+        self.minimumQuantity = minimumQuantity
+        self.operatingHours = operatingHours
+    }
+}
+
 struct Comment: Identifiable {
     let id: String
     let author: String
@@ -295,5 +337,61 @@ let sampleGroups = [
         isMember: false,
         category: "Technology",
         avatar: nil
+    )
+]
+
+let sampleWholesalers = [
+    Wholesaler(
+        name: "Rajesh Kumar",
+        businessName: "Kumar Wholesale Traders",
+        location: "Market Yard, Sector 12",
+        city: "Mumbai",
+        state: "Maharashtra",
+        commodities: ["Rice", "Wheat", "Pulses", "Vegetables"],
+        phoneNumber: "+91 98765 43210",
+        email: "kumar.traders@example.com",
+        rating: 4.5,
+        reviewsCount: 87,
+        verified: true,
+        description: "Dealing in all types of agricultural commodities for over 15 years. Fair prices and prompt payment guaranteed.",
+        distanceKm: 5.2,
+        acceptedPaymentMethods: ["Cash", "UPI", "Bank Transfer"],
+        minimumQuantity: "50 kg",
+        operatingHours: "6:00 AM - 8:00 PM"
+    ),
+    Wholesaler(
+        name: "Priya Sharma",
+        businessName: "Sharma Agro Enterprises",
+        location: "Mandi Road, Near Bus Stand",
+        city: "Pune",
+        state: "Maharashtra",
+        commodities: ["Fruits", "Vegetables", "Spices"],
+        phoneNumber: "+91 98234 56789",
+        email: "sharma.agro@example.com",
+        rating: 4.8,
+        reviewsCount: 142,
+        verified: true,
+        description: "Specialized in fresh fruits and vegetables. Direct farm-to-wholesale model ensuring best quality.",
+        distanceKm: 12.5,
+        acceptedPaymentMethods: ["Cash", "UPI", "Cheque"],
+        minimumQuantity: "100 kg",
+        operatingHours: "7:00 AM - 7:00 PM"
+    ),
+    Wholesaler(
+        name: "Amit Patel",
+        businessName: "Patel Trading Company",
+        location: "Agriculture Market Complex",
+        city: "Ahmedabad",
+        state: "Gujarat",
+        commodities: ["Cotton", "Groundnut", "Castor", "Cumin"],
+        phoneNumber: "+91 99876 54321",
+        rating: 4.3,
+        reviewsCount: 65,
+        verified: false,
+        description: "Leading wholesaler for commercial crops. Competitive rates and reliable transactions.",
+        distanceKm: 28.3,
+        acceptedPaymentMethods: ["Cash", "UPI"],
+        minimumQuantity: "200 kg",
+        operatingHours: "8:00 AM - 6:00 PM"
     )
 ]

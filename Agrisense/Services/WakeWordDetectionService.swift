@@ -3,7 +3,7 @@
 //  Agrisense
 //
 //  Created by GitHub Copilot on 05/10/25.
-//  Wake word detection for "Krishi AI" voice activation
+//  Wake word detection for "Please" voice activation
 //
 
 import Foundation
@@ -27,10 +27,10 @@ class WakeWordDetectionService: NSObject, ObservableObject {
     private var isStarting = false
     
     // Wake word configuration
-    private let wakeWords = ["krishi ai", "krishi a i", "krishy ai", "krishi"]
+    private let wakeWords = ["please", "pleas", "plez", "plz"]
     private let confidenceThreshold: Float = 0.6
     private var lastDetectionTime = Date.distantPast
-    private let detectionCooldown: TimeInterval = 3.0 // Prevent rapid re-triggers
+    private let detectionCooldown: TimeInterval = 2.0 // Prevent rapid re-triggers (reduced for 'please')
     
     // Callback when wake word is detected
     var onWakeWordDetected: (() -> Void)?
@@ -106,7 +106,7 @@ class WakeWordDetectionService: NSObject, ObservableObject {
             print("[WakeWord] Starting recognition...")
             try await startWakeWordRecognition()
             
-            print("🎤 Wake word detection started - listening for 'Krishi AI'")
+            print("🎤 Wake word detection started - listening for 'Please'")
         } catch {
             isListening = false
             errorMessage = "Failed to start wake word detection: \(error.localizedDescription)"
@@ -289,17 +289,44 @@ class WakeWordDetectionService: NSObject, ObservableObject {
     private func containsWakeWord(_ text: String) -> Bool {
         let normalizedText = text.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
         
-        // Check for exact matches and variations
-        for wakeWord in wakeWords {
-            if normalizedText.contains(wakeWord) {
+        // Minimum length check to avoid false positives on very short utterances
+        guard normalizedText.count >= 4 else { return false }
+        
+        // Extract the last few words to check for wake word (user might have said other things first)
+        let words = normalizedText.split(separator: " ")
+        let lastFewWords = words.suffix(3).joined(separator: " ").lowercased()
+        let lastWord = words.last.map { String($0).lowercased() } ?? ""
+        
+        // Check for exact matches and variations of "please"
+        let exactMatches = ["please", "pleas", "plez", "plz", "pleez"]
+        for wakeWord in exactMatches {
+            // Check if last word is the wake word (most common case)
+            if lastWord == wakeWord {
+                return true
+            }
+            // Check if transcription ends with the wake word
+            if normalizedText.hasSuffix(wakeWord) {
+                return true
+            }
+            // Check last few words contain wake word at the end
+            if lastFewWords.hasSuffix(wakeWord) {
                 return true
             }
         }
         
-        // Check for close matches with Levenshtein distance
-        return wakeWords.contains { wakeWord in
-            levenshteinDistance(normalizedText, wakeWord) <= 2
+        // Fuzzy matching for phonetic variations of "please"
+        if lastWord.count >= 4 && lastWord.count <= 8 {
+            let targetPhrase = "please"
+            if levenshteinDistance(lastWord, targetPhrase) <= 2 {
+                // Additional check: must start with 'pl' sound
+                let hasPlSound = lastWord.hasPrefix("pl") || lastWord.hasPrefix("ple")
+                if hasPlSound {
+                    return true
+                }
+            }
         }
+        
+        return false
     }
     
     // Simple Levenshtein distance calculation for fuzzy matching

@@ -19,10 +19,11 @@ class GeminiAIService: @preconcurrency AIService {
     
     // Model fallback chain - try these in order
     private let modelFallbackChain = [
-        "gemini-2.0-flash-exp",                    // Primary: Gemini 2.0 Flash Experimental
-        "gemini-2.0-flash-thinking-exp-01-21",     // Backup 1: Gemini 2.0 Flash Thinking
-        "gemini-1.5-flash",                         // Backup 2: Gemini 1.5 Flash (stable)
-        "gemini-1.5-pro"                            // Backup 3: Gemini 1.5 Pro (most reliable)
+        "gemini-2.5-flash",                        // Primary: Gemini 2.5 Flash (stable and working)
+        "gemini-2.5-pro",                          // Backup 1: Gemini 2.5 Pro
+        "gemini-2.0-flash",                        // Backup 2: Gemini 2.0 Flash (stable)
+        "gemini-2.0-flash-exp",                    // Backup 3: Gemini 2.0 Flash Experimental
+        "gemini-exp-1206"                          // Backup 4: Gemini 2.5 Pro Experimental (Dec 2024)
     ]
     
     // Track which models are rate-limited or unavailable
@@ -33,6 +34,8 @@ class GeminiAIService: @preconcurrency AIService {
     
     nonisolated init(apiKey: String) {
         self.apiKey = apiKey
+        print("[GeminiAI] ⚙️ Initialized with API key: \(apiKey.prefix(10))...")
+        print("[GeminiAI] API key length: \(apiKey.count) characters")
     }
     
     // Get the next available model from the fallback chain
@@ -129,16 +132,31 @@ class GeminiAIService: @preconcurrency AIService {
         ]
         
         // Try each available model in the fallback chain
-        while attemptCount < maxAttempts {
-            attemptCount += 1
+        var triedModels: Set<String> = []
+        
+        for modelIndex in 0..<modelFallbackChain.count {
+            let currentModel = modelFallbackChain[modelIndex]
             
-            guard let currentModel = getAvailableModel() else {
-                print("[GeminiAI] ❌ All models exhausted after \(attemptCount) attempts")
-                throw lastError ?? AIError.serviceUnavailable
+            // Skip if already tried or marked unavailable
+            if triedModels.contains(currentModel) || unavailableModels.contains(currentModel) {
+                continue
             }
             
+            // Check if rate-limited
+            if let rateLimitTime = rateLimitedModels[currentModel] {
+                if Date().timeIntervalSince(rateLimitTime) < rateLimitCooldown {
+                    print("[GeminiAI] ⏭️ Skipping rate-limited model '\(currentModel)'")
+                    continue
+                }
+                // Cooldown expired, remove from rate-limited list
+                rateLimitedModels.removeValue(forKey: currentModel)
+            }
+            
+            attemptCount += 1
+            triedModels.insert(currentModel)
+            
             do {
-                print("[GeminiAI] 🔄 Attempt \(attemptCount)/\(maxAttempts) with model '\(currentModel)'")
+                print("[GeminiAI] 🔄 Attempt \(attemptCount) with model '\(currentModel)' (\(modelIndex + 1)/\(modelFallbackChain.count))")
                 
                 let url = URL(string: "\(baseURL)/models/\(currentModel):generateContent?key=\(apiKey)")!
                 var request = URLRequest(url: url)
@@ -162,36 +180,21 @@ class GeminiAIService: @preconcurrency AIService {
                 
                 // Handle rate limit (429)
                 if httpResponse.statusCode == 429 {
-                    print("[GeminiAI] ❌ Rate limit exceeded")
-                    print("[GeminiAI] ⚠️ Rate limit on '\(currentModel)' (attempt \(attemptCount)/\(maxAttempts))")
+                    print("[GeminiAI] ⚠️ Rate limit on '\(currentModel)', trying next model...")
                     markModelRateLimited(currentModel)
                     lastError = AIError.rateLimitExceeded
-                    
-                    // Try next model in chain
-                    if let nextModel = getAvailableModel() {
-                        print("[GeminiAI] 🔄 Switched from '\(currentModel)' to '\(nextModel)'")
-                        continue
-                    } else {
-                        throw AIError.rateLimitExceeded
-                    }
+                    continue // Try next model
                 }
                 
                 // Handle not found (404) - model doesn't exist
                 if httpResponse.statusCode == 404 {
-                    print("[GeminiAI] ❌ Service error: \(httpResponse.statusCode)")
+                    print("[GeminiAI] ⚠️ Model '\(currentModel)' not found (404), trying next model...")
                     if let errorString = String(data: data, encoding: .utf8) {
                         print("[GeminiAI] Error details: \(errorString)")
                     }
                     markModelUnavailable(currentModel)
                     lastError = AIError.serviceUnavailable
-                    
-                    // Try next model
-                    if let nextModel = getAvailableModel() {
-                        print("[GeminiAI] 🔄 Switched from '\(currentModel)' to '\(nextModel)'")
-                        continue
-                    } else {
-                        throw AIError.serviceUnavailable
-                    }
+                    continue // Try next model
                 }
                 
                 // Handle other errors
@@ -200,7 +203,8 @@ class GeminiAIService: @preconcurrency AIService {
                     if let errorString = String(data: data, encoding: .utf8) {
                         print("[GeminiAI] Error details: \(errorString)")
                     }
-                    throw AIError.serviceUnavailable
+                    lastError = AIError.serviceUnavailable
+                    continue // Try next model
                 }
                 
                 // Success! Parse response
@@ -208,7 +212,9 @@ class GeminiAIService: @preconcurrency AIService {
                 
                 guard let firstCandidate = geminiResponse.candidates.first,
                       let content = firstCandidate.content.parts.first?.text else {
-                    throw AIError.invalidResponse
+                    print("[GeminiAI] ⚠️ Invalid response structure from '\(currentModel)'")
+                    lastError = AIError.invalidResponse
+                    continue // Try next model
                 }
                 
                 // Extract metadata
@@ -239,8 +245,11 @@ class GeminiAIService: @preconcurrency AIService {
             }
         }
         
-        // All attempts failed
-        print("[GeminiAI] ❌ All \(maxAttempts) attempts failed")
+        // All models failed
+        print("[GeminiAI] ❌ All \(modelFallbackChain.count) models in fallback chain failed")
+        print("[GeminiAI] Tried models: \(triedModels)")
+        print("[GeminiAI] Unavailable: \(unavailableModels)")
+        print("[GeminiAI] Rate-limited: \(rateLimitedModels.keys)")
         throw lastError ?? AIError.serviceUnavailable
     }
     
