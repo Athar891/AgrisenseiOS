@@ -34,8 +34,7 @@ class GeminiAIService: @preconcurrency AIService {
     
     nonisolated init(apiKey: String) {
         self.apiKey = apiKey
-        print("[GeminiAI] ⚙️ Initialized with API key: \(apiKey.prefix(10))...")
-        print("[GeminiAI] API key length: \(apiKey.count) characters")
+        print("[GeminiAI] Service initialized")
     }
     
     // Get the next available model from the fallback chain

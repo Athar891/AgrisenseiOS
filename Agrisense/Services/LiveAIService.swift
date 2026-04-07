@@ -64,6 +64,19 @@ class LiveAIService: ObservableObject, @preconcurrency ScreenRecordingDelegate {
         setupTranscriptionMonitoring()
         setupWakeWordDetection()
     }
+
+    private func cancelBackgroundTasks() {
+        transcriptionMonitorTask?.cancel()
+        transcriptionMonitorTask = nil
+        autoProcessTask?.cancel()
+        autoProcessTask = nil
+        responseTimeoutTask?.cancel()
+        responseTimeoutTask = nil
+        standbyTimeoutTask?.cancel()
+        standbyTimeoutTask = nil
+        questionWaitTimeoutTask?.cancel()
+        questionWaitTimeoutTask = nil
+    }
     
     private func setupWakeWordDetection() {
         print("[LiveAI] Setting up wake word detection callback")
@@ -351,16 +364,7 @@ class LiveAIService: ObservableObject, @preconcurrency ScreenRecordingDelegate {
         clearConversationHistory()
         
         // Cancel monitoring tasks
-        transcriptionMonitorTask?.cancel()
-        transcriptionMonitorTask = nil
-        autoProcessTask?.cancel()
-        autoProcessTask = nil
-        responseTimeoutTask?.cancel()
-        responseTimeoutTask = nil
-        standbyTimeoutTask?.cancel()
-        standbyTimeoutTask = nil
-        questionWaitTimeoutTask?.cancel()
-        questionWaitTimeoutTask = nil
+        cancelBackgroundTasks()
         
         // Stop TTS first
         ttsService.stopSpeaking()

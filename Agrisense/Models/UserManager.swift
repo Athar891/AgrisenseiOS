@@ -92,11 +92,23 @@ class UserManager: ObservableObject {
         do {
             try await db.collection("users").document(authResult.user.uid).setData(userData)
         } catch {
-            // Non-fatal: print for debugging but don't fail signup because auth succeeded.
             #if DEBUG
             print("DEBUG: Failed to create Firestore user document: \(error.localizedDescription)")
             #endif
+
+            // Keep auth and profile data consistent by rolling back the newly-created auth user.
+            do {
+                try await authResult.user.delete()
+            } catch {
+                #if DEBUG
+                print("DEBUG: Failed to rollback auth user after Firestore write failure: \(error.localizedDescription)")
+                #endif
+            }
+            throw error
         }
+
+        // Clear rate limit on successful signup.
+        RateLimiter.shared.reset(key: rateLimitKey)
     }
 
     func signIn(email: String, password: String) async throws {

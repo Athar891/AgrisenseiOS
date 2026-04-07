@@ -28,10 +28,11 @@ struct MarketplaceView: View {
     @State private var showingAddProduct = false
     @State private var showingCart = false
     @FocusState private var isSearchFieldFocused: Bool
+    private let guestCartUserId = "guest"
     
     init() {
-        // Initialize with a default user ID, will be updated when user changes
-        self._cartManager = StateObject(wrappedValue: CartManager(userId: "default"))
+        // Initialize with a neutral guest cart. This is replaced once a user is known.
+        self._cartManager = StateObject(wrappedValue: CartManager(userId: "guest"))
     }
     
     var body: some View {
@@ -206,6 +207,8 @@ struct MarketplaceView: View {
     private func updateCartManager() {
         if let userId = userManager.currentUser?.id {
             cartManager.switchUser(to: userId)
+        } else {
+            cartManager.switchUser(to: guestCartUserId)
         }
     }
 }

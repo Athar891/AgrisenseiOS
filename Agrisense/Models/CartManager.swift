@@ -138,6 +138,7 @@ class CartManager: ObservableObject {
     }
     
     func switchUser(to userId: String) {
+        guard currentCart.userId != userId else { return }
         currentCart = Cart(userId: userId)
         migrateFromUserDefaults(for: userId)
         loadCart(for: userId)

@@ -415,48 +415,71 @@ struct CropHealthSection: View {
                 
                 Spacer()
                 
-                if let cropsCount = userManager.currentUser?.crops.count, cropsCount > 0 {
-                    Text("\(cropsCount) crop\(cropsCount == 1 ? "" : "s")")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    
-                    Button(action: {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                            isExpanded.toggle()
-                        }
-                    }) {
-                        Image(systemName: "chevron.down")
+                if let crops = userManager.currentUser?.crops, !crops.isEmpty {
+                    let activeCropsCount = crops.filter { !$0.isOverdue }.count
+                    if activeCropsCount > 0 {
+                        Text("\(activeCropsCount) crop\(activeCropsCount == 1 ? "" : "s")")
                             .font(.caption)
                             .foregroundColor(.secondary)
-                            .rotationEffect(.degrees(isExpanded ? 180 : 0))
+                        
+                        Button(action: {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                isExpanded.toggle()
+                            }
+                        }) {
+                            Image(systemName: "chevron.down")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                                .rotationEffect(.degrees(isExpanded ? 180 : 0))
+                        }
                     }
                 }
             }
             
             if let crops = userManager.currentUser?.crops, !crops.isEmpty {
-                let activeCrops = crops.filter { !$0.isOverdue }
+                let activeCrops = crops.filter { !$0.isOverdue }.sorted(by: { $0.createdAt > $1.createdAt })
                 
-                VStack(spacing: 12) {
-                    if isExpanded {
-                        // Show all crops when expanded
-                        ForEach(activeCrops) { crop in
-                            NavigationLink(destination: CropDetailView(crop: crop)) {
-                                CropHealthRow(crop: crop)
+                if !activeCrops.isEmpty {
+                    VStack(spacing: 12) {
+                        if isExpanded {
+                            // Show all crops when expanded
+                            ForEach(activeCrops, id: \.id) { crop in
+                                NavigationLink(destination: CropDetailView(crop: crop)) {
+                                    CropHealthRow(crop: crop)
+                                }
+                                .buttonStyle(PlainButtonStyle())
                             }
-                            .buttonStyle(PlainButtonStyle())
-                        }
-                    } else {
-                        // Show only the most recent crop when collapsed
-                        if let recentCrop = activeCrops.first {
-                            NavigationLink(destination: CropDetailView(crop: recentCrop)) {
-                                CropHealthRow(crop: recentCrop)
+                        } else {
+                            // Show only the most recent crop when collapsed
+                            if let recentCrop = activeCrops.first {
+                                NavigationLink(destination: CropDetailView(crop: recentCrop)) {
+                                    CropHealthRow(crop: recentCrop)
+                                }
+                                .buttonStyle(PlainButtonStyle())
                             }
-                            .buttonStyle(PlainButtonStyle())
                         }
                     }
+                } else {
+                    // Empty state - all crops are overdue
+                    VStack(spacing: 12) {
+                        Image(systemName: "leaf")
+                            .font(.system(size: 40))
+                            .foregroundColor(.green.opacity(0.6))
+                        
+                        Text(localizationManager.localizedString(for: "no_active_crops"))
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundColor(.primary)
+                        
+                        Text(localizationManager.localizedString(for: "add_first_crop_prompt"))
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .padding(.vertical, 20)
                 }
             } else {
-                // Empty state
+                // Empty state - no crops at all
                 VStack(spacing: 12) {
                     Image(systemName: "leaf")
                         .font(.system(size: 40))

@@ -26,10 +26,25 @@ class VoiceTranscriptionService: NSObject, ObservableObject {
     private var recognitionTask: SFSpeechRecognitionTask?
     // Prevent concurrent start attempts
     private var isStarting = false
+    nonisolated(unsafe) private let pauseStateLock = NSLock()
+    nonisolated(unsafe) private var isPausedForCapture = false
     
     override init() {
         super.init()
         setupSpeechRecognizer()
+    }
+
+    nonisolated private func setCapturePauseState(_ paused: Bool) {
+        pauseStateLock.lock()
+        isPausedForCapture = paused
+        pauseStateLock.unlock()
+    }
+
+    nonisolated private func capturePauseState() -> Bool {
+        pauseStateLock.lock()
+        let paused = isPausedForCapture
+        pauseStateLock.unlock()
+        return paused
     }
     
     private func setupSpeechRecognizer() {
@@ -88,6 +103,7 @@ class VoiceTranscriptionService: NSObject, ObservableObject {
             isTranscribing = true
             transcriptionText = ""
             errorMessage = nil
+            setCapturePauseState(false)
 
             try await startSpeechRecognition()
         } catch {
@@ -108,6 +124,7 @@ class VoiceTranscriptionService: NSObject, ObservableObject {
         guard isRecording && !isPaused else { return }
         
         isPaused = true
+        setCapturePauseState(true)
         
         // Pause audio engine but keep recognition task alive
         if audioEngine.isRunning {
@@ -130,11 +147,13 @@ class VoiceTranscriptionService: NSObject, ObservableObject {
             }
             
             isPaused = false
+            setCapturePauseState(false)
             print("[VoiceTranscription] ▶️ Resumed - ready for continuous listening")
         } catch {
             print("[VoiceTranscription] ❌ Failed to resume: \(error)")
             // Try to restart recording completely if resume fails
             isPaused = false
+            setCapturePauseState(false)
             await restartRecording()
         }
     }
@@ -166,6 +185,7 @@ class VoiceTranscriptionService: NSObject, ObservableObject {
 
         isRecording = false
         isPaused = false
+        setCapturePauseState(false)
         
         // Release audio session
         #if os(iOS)
@@ -213,7 +233,7 @@ class VoiceTranscriptionService: NSObject, ObservableObject {
         // Use nonisolated context for audio engine tap to prevent concurrency warnings
         inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { [weak self, weak recognitionRequest] buffer, _ in
             // Don't process audio when paused (TTS is speaking)
-            guard let self = self, !self.isPaused else { return }
+            guard let self = self, !self.capturePauseState() else { return }
             
             // Validate buffer has valid data, size, and frames
             let bufferList = buffer.audioBufferList.pointee
@@ -273,6 +293,7 @@ class VoiceTranscriptionService: NSObject, ObservableObject {
     }
     
     deinit {
+        setCapturePauseState(true)
         if audioEngine.isRunning {
             audioEngine.inputNode.removeTap(onBus: 0)
             audioEngine.stop()

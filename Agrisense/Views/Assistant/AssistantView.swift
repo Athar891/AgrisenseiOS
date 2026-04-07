@@ -71,15 +71,11 @@ struct AssistantView: View {
         
         // Initialize Gemini AI service with API key from .env or environment
         let apiKey = Secrets.geminiAPIKey
-        print("[AssistantView] API Key loaded: \(apiKey.prefix(10))...")
-        print("[AssistantView] API Key length: \(apiKey.count)")
-        print("[AssistantView] API Key is placeholder: \(apiKey == "YOUR_GEMINI_API_KEY_HERE")")
-        
         if apiKey != "YOUR_GEMINI_API_KEY_HERE" && !apiKey.isEmpty {
             _geminiService = State(initialValue: GeminiAIService(apiKey: apiKey))
-            print("[AssistantView] ✅ GeminiAIService initialized successfully")
+            print("[AssistantView] Gemini AI service initialized")
         } else {
-            print("[AssistantView] ❌ API Key not configured properly")
+            print("[AssistantView] Gemini API key is not configured")
         }
     }
     
@@ -194,6 +190,9 @@ struct AssistantView: View {
                         }
                     }
                 }
+                .onDisappear {
+                    cleanupTransientState()
+                }
             }
             
             // Listening Overlay - Floats above everything with transparent background
@@ -215,13 +214,7 @@ struct AssistantView: View {
         // Clear all chat data
         messages.removeAll()
         displayedMessages.removeAll()
-        
-        // Cancel any active typing timers
-        for timer in typingTimers.values {
-            timer.invalidate()
-        }
-        typingTimers.removeAll()
-        typingIndex.removeAll()
+        cleanupTransientState()
         
         // Reset other states
         messageText = ""
@@ -231,6 +224,23 @@ struct AssistantView: View {
         // Dismiss keyboard
         dismissKeyboard()
         isTextFieldFocused = false
+    }
+
+    private func cleanupTransientState() {
+        // Cancel pending query execution and typing effects.
+        currentQueryTask?.cancel()
+        currentQueryTask = nil
+
+        silenceTimer?.invalidate()
+        silenceTimer = nil
+
+        for timer in typingTimers.values {
+            timer.invalidate()
+        }
+        typingTimers.removeAll()
+        typingIndex.removeAll()
+        currentTypingMessageId = nil
+        isTypingResponse = false
     }
     
     private func startTypingEffect(for message: SimpleMessage) {
